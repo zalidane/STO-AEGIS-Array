@@ -1,0 +1,20 @@
+export const shipFields = [
+    "name",
+    "tier",
+    "type",
+    "hull",
+    "hullmod",
+    "shieldmod",
+    "turnrate",
+    "impulse",
+    "inertia",
+    "boffs",
+    "fore",
+    "aft",
+    "consolestac",
+    "consoleseng",
+    "consolessci",
+    "hangars",
+    "secdeflector",
+    "uniconsole"
+];

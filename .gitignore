@@ -1,0 +1,6 @@
+node_modules/
+dist/
+***put/
+*.log
+/src/generated/prisma
+.env

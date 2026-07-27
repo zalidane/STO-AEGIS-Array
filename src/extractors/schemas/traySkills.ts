@@ -1,0 +1,23 @@
+export const traySkillFields = [
+    "name",
+    "system",
+    "description",
+    "description_long",
+    "targets",
+    "affects",
+    "activation",
+    "recharge_base",
+    "recharge_global",
+    "type",
+    "region",
+    "rank1rank",
+    "rank2rank",
+    "rank3rank",
+    "rank4rank",
+    "rank5rank",
+    "rank1info",
+    "rank2info",
+    "rank3info",
+    "rank4info",
+    "rank5info"
+];
