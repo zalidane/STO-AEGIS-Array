@@ -1,5 +1,9 @@
 import "dotenv/config";
-import { extractTable, getFields } from "./extractors/extractTable.js";
+import {
+  extractTable,
+  getFields,
+  tryGetFields,
+} from "./extractors/extractTable.js";
 import { shouldRefresh } from "./extractors/cache.js";
 import { tableSchemas } from "./extractors/schemas/schemaList.js";
 import { importAll } from "./importers/importAll.js";
@@ -17,10 +21,12 @@ async function main() {
 
     console.log(`${table} is stale or missing, extracting...`);
 
-    const fields = await getFields(table);
+    const fields = await tryGetFields(table);
 
-    if (fields.length === 0) {
-      console.warn(`No fields found for ${table}, skipping...`);
+    if (fields === null) {
+      console.log(
+        `${table}: unable to reach STOWiki, using local data if available`,
+      );
       continue;
     }
 

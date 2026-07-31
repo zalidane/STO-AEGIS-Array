@@ -44,3 +44,13 @@ export async function getFields(table: string): Promise<string[]> {
 
   return Object.keys(data.cargofields);
 }
+
+export async function tryGetFields(table: string): Promise<string[] | null> {
+  try {
+    return await getFields(table);
+  } catch (error) {
+    console.warn(`${table}: failed to load schema, assuming Cloudflare block`);
+  }
+
+  return null;
+}

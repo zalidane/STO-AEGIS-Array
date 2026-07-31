@@ -1,0 +1,90 @@
+import type { RawShip, RawStartshipTrait, RawTrait } from "../types/CargoTypes";
+
+export function mapTrait(row: RawTrait) {
+  return {
+    name: row.name,
+    type: row.type,
+    environment: row.environment ?? "",
+    description: row.description,
+    shortDescription: row["short description"],
+    required: row.required,
+    possible: row.possible,
+    career: row.career,
+    source: row.source,
+    charVariant: row["char variant"],
+    boffVariant: row["boff variant"],
+    doffVariant: row["doff variant"],
+    iconName: row["icon name"],
+    master: row.master,
+
+    rawData: row,
+  };
+}
+
+export function mapShip(row: RawShip) {
+  return {
+    name: row.name,
+    type: row.type,
+    description: row.description,
+    tier: row.tier,
+    image: row.image,
+    image2: row.image2,
+    released: row.released,
+    internalName: row.internalname,
+    fc: row.fc,
+    faction: row.faction,
+    facSort: row.facsort,
+    rank: row.rank,
+    rankLevel: row.ranklevel,
+    upgradeCost: row.upgradecost,
+    hull: row.hull,
+    hullMod: row.hullmod,
+    shieldMod: row.hullmod,
+    turnrate: row.turnrate,
+    impulse: row.impulse,
+    inertia: row.inertia,
+    powerAll: row.powerall,
+    powerWeapons: row.powerweapons,
+    powerEngines: row.powerengines,
+    powerShields: row.powershields,
+    powerAuxiliary: row.powerauxiliary,
+    powerBoost: row.powerboost,
+    boffs: row.boffs,
+    fore: row.fore,
+    aft: row.aft,
+    equipCannons: row.equipcannons,
+    devices: row.devices,
+    consolesTac: row.consolestac,
+    consolesSci: row.consolessci,
+    consolesEng: row.consoleseng,
+    uniConsole: row.uniconsole,
+    t5uConsole: row.t5uconsole,
+    experimental: row.experimental,
+    secDeflector: row.secdeflector,
+    hangars: row.hangars,
+    cost: row.cost,
+    abilities: row.abilities,
+    admiraltyEng: row.admiraltyeng,
+    admiraltySci: row.admiraltysci,
+    admiraltyTac: row.admiraltytac,
+    displayPrefix: row.displayprefix,
+    displayClass: row.displayclass,
+    displayType: row.displaytype,
+    factionLede: row.factionlede,
+  };
+}
+
+export function mapStarshipTrait(row: RawStartshipTrait) {
+  return {
+    name: row.name,
+    basic: row.basic,
+    detailed: row.detailed,
+    type: row.type,
+    tag: row.tag,
+    tag2: row.tag2,
+    tag3: row.tag3,
+    obtained: row.obtained,
+    iconName: row["icon name"],
+    short: row.short,
+  };
+}
