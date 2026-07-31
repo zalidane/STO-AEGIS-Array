@@ -55,9 +55,10 @@ model StarshipTrait {
 model Trait {
   Id Int @id @default(autoincrement())
 
-  name             String  @unique
+  name             String
   type             String?
   environment      String?
+
   description      String?
   shortDescription String?
   required         String?
@@ -74,4 +75,6 @@ model Trait {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([name, type, environment])
 }

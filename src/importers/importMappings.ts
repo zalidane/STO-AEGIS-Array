@@ -1,3 +1,5 @@
+import { mapShip, mapStarshipTrait, mapTrait } from "../mappers/cargoMappers";
+
 export const importMappings = {
   //   GwObtain: "gwObtain",
   //   Infobox: "items",
@@ -5,9 +7,21 @@ export const importMappings = {
   //   Modifiers: "modifiers",
   //   Reputation: "reputation",
   //   SetBonus: "setBonus",
-  Ships: "ship",
-  StarshipTraits: "starshipTrait",
+  Ships: {
+    model: "ship",
+    uniqueFields: ["name"],
+    mapper: mapShip,
+  },
+  StarshipTraits: {
+    model: "starshipTrait",
+    uniqueFields: ["name"],
+    mapper: mapStarshipTrait,
+  },
   //   SwObtain: "swObtain",
-  Traits: "trait",
+  Traits: {
+    model: "trait",
+    uniqueFields: ["name", "type", "environment"],
+    mapper: mapTrait,
+  },
   //   TraySkill: "traySkill",
 } as const;

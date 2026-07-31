@@ -6,16 +6,17 @@ import { importMappings } from "./importMappings.js";
 import { importTable } from "./importTable.js";
 import { loadState, saveState } from "./importState.js";
 import { getFileHash } from "../extractors/getFileHash.js";
+import { ImportConfig } from "./importConfig.js";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({ adapter });
-console.log(Object.keys(prisma));
+
 export async function importAll() {
   const state = await loadState();
 
-  for (const [table, model] of Object.entries(importMappings)) {
+  for (const [table, config] of Object.entries(importMappings)) {
     const filePath = `output/${table}.json`;
     const currentHash = await getFileHash(filePath);
     const previousHash = state[table]?.hash;
@@ -24,8 +25,8 @@ export async function importAll() {
       continue;
     }
 
-    console.log(`Importing ${table} using model ${model}`);
-    await importTable(prisma, table, model);
+    console.log(`Importing ${table} using model ${config}`);
+    await importTable(prisma, table, config as ImportConfig<any, any>);
 
     state[table] = {
       hash: currentHash,
