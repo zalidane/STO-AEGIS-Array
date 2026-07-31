@@ -9,6 +9,7 @@ import { tableSchemas } from "./extractors/schemas/schemaList.js";
 import { importAll } from "./importers/importAll.js";
 
 const forceRefresh = process.argv.includes("--force-refresh");
+const forceImport = process.argv.includes("--force-import");
 
 async function main() {
   for (const table of tableSchemas) {
@@ -33,7 +34,7 @@ async function main() {
     await extractTable(table, fields);
   }
 
-  await importAll();
+  await importAll(forceImport);
 }
 
 main().catch(console.error);

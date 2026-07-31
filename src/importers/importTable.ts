@@ -1,32 +1,48 @@
 import fs from "node:fs/promises";
 
-import type { PrismaClient } from "../generated/prisma/client";
-import type { ImportConfig } from "./importConfig";
+import type { PrismaClient } from "../generated/prisma/client.js";
+import type { ImportConfig } from "./importConfig.js";
+import { validateCargoJson } from "../utils/validateCargoJson.js";
 
 export async function importTable<
   TRaw extends Record<string, unknown>,
   TMapped extends Record<string, unknown>,
->(prisma: PrismaClient, table: string, config: ImportConfig<TRaw, TMapped>) {
+>(
+  prisma: PrismaClient,
+  table: string,
+  config: ImportConfig<TRaw, TMapped>,
+): Promise<boolean> {
   const file = await fs.readFile(`output/${table}.json`, "utf-8");
+  const validation = validateCargoJson(file, `${table} import`);
 
-  const rows = JSON.parse(file) as TRaw[];
-
-  const model = (prisma as Record<string, any>)[config.model];
-
-  if (!model) {
-    throw new Error(`Prisma model '${config.model}' not found`);
+  if (!validation.ok) {
+    console.error(`[JSON] ${table}: import skipped due to invalid JSON`);
+    return false;
   }
 
-  for (const row of rows) {
-    const mapped = config.mapper(row);
+  const rows = validation.rows as TRaw[];
+  const model = (prisma as unknown as Record<string, any>)[config.model];
 
-    const where = buildWhere(mapped, config.uniqueFields);
+  if (!model) {
+    console.error(
+      `${table}: Prisma model '${config.model}' not found — import skipped`,
+    );
+    return false;
+  }
 
-    await model.upsert({
-      where,
-      update: mapped,
-      create: mapped,
-    });
+  const strategy =
+    config.strategy ?? (config.uniqueFields?.length ? "upsert" : "replace");
+
+  if (strategy === "replace") {
+    await replaceAll(model, rows, config.mapper);
+  } else {
+    if (!config.uniqueFields?.length) {
+      console.error(
+        `${table}: upsert strategy requires uniqueFields — import skipped`,
+      );
+      return false;
+    }
+    await upsertAll(model, rows, config.mapper, config.uniqueFields);
   }
 
   const count = await model.count();
@@ -34,6 +50,41 @@ export async function importTable<
   console.log(
     `${table}: imported ${rows.length} records (${count} total in database)`,
   );
+
+  return true;
+}
+
+async function upsertAll<
+  TRaw extends Record<string, unknown>,
+  TMapped extends Record<string, unknown>,
+>(
+  model: any,
+  rows: TRaw[],
+  mapper: (row: TRaw) => TMapped,
+  uniqueFields: readonly (keyof TMapped)[],
+) {
+  for (const row of rows) {
+    const mapped = mapper(row);
+    const where = buildWhere(mapped, uniqueFields);
+
+    await model.upsert({
+      where,
+      update: mapped,
+      create: mapped,
+    });
+  }
+}
+
+async function replaceAll<
+  TRaw extends Record<string, unknown>,
+  TMapped extends Record<string, unknown>,
+>(model: any, rows: TRaw[], mapper: (row: TRaw) => TMapped) {
+  await model.deleteMany();
+  if (rows.length === 0) return;
+
+  await model.createMany({
+    data: rows.map((row) => mapper(row)),
+  });
 }
 
 export function buildWhere<TMapped extends Record<string, unknown>>(
