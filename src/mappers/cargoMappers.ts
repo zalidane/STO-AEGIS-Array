@@ -76,6 +76,7 @@ export function mapShip(row: RawShip) {
     engineeringSlots: parseIntOrNull(row.consoleseng),
     scienceSlots: parseIntOrNull(row.consolessci),
     secondaryDeflector: parseBool(row.secdeflector),
+    uniconsole: row.uniconsole,
     rawData: row,
   };
 }

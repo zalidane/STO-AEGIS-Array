@@ -31,6 +31,13 @@ model Ship {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  starshipTraits StarshipTraitShip[]
+  shipTypeId     Int?
+  shipType       ShipType?           @relation(fields: [shipTypeId], references: [id])
+  uniconsole     String?
+  uniconsoleId   Int?
+  uniConsole     Infobox?            @relation("ShipUniConsole", fields: [uniconsoleId], references: [id])
 }
 
 model StarshipTrait {
@@ -51,14 +58,20 @@ model StarshipTrait {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  ships              StarshipTraitShip[]
+  masteryAsPrimary   Mastery[]           @relation("MasteryPrimaryTrait")
+  masteryAsSecondary Mastery[]           @relation("MasterySecondaryTrait")
+  masteryAsTertiary  Mastery[]           @relation("MasteryTertiaryTrait")
+  masteryAsAccount   Mastery[]           @relation("MasteryAccountTrait")
 }
 
 model Trait {
   Id Int @id @default(autoincrement())
 
-  name             String
-  type             String?
-  environment      String?
+  name        String
+  type        String?
+  environment String?
 
   description      String?
   shortDescription String?
@@ -81,46 +94,55 @@ model Trait {
 }
 
 model GwObtain {
-  id     Int     @id @default(autoincrement())
-  cat    String
-  type   String
-  flavor String
-  box    String?
-  lb     String?
-  rep    String?
-  rawData Json
+  id        Int      @id @default(autoincrement())
+  cat       String
+  type      String
+  flavor    String
+  box       String?
+  lb        String?
+  lockBoxId Int?
+  lockBox   Infobox? @relation("GwLockBox", fields: [lockBoxId], references: [id])
+  rep       String?
+  rawData   Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@unique([cat, type, flavor])
 }
 
 model SwObtain {
-  id     Int     @id @default(autoincrement())
-  cat    String
-  type   String
-  flavor String
-  box    String?
-  lb     String?
-  rep    String?
-  ships  String?
-  rawData Json
+  id        Int      @id @default(autoincrement())
+  cat       String
+  type      String
+  flavor    String
+  box       String?
+  lb        String?
+  lockBoxId Int?
+  lockBox   Infobox? @relation("SwLockBox", fields: [lockBoxId], references: [id])
+  rep       String?
+  ships     String?
+  rawData   Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   @@unique([cat, type, flavor])
 }
 
 model Modifier {
-  id        Int     @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   modifier  String
   stats     String?
   type      String
-  available String?   // comma-separated list — keep as String
-  isunique  Boolean   @default(false)
-  isepic    Boolean   @default(false)
+  available String? // comma-separated list — keep as String
+  isunique  Boolean  @default(false)
+  isepic    Boolean  @default(false)
   info      String?
   rawData   Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  items ModifierItem[]
+
   @@unique([modifier, type])
 }
 
@@ -133,7 +155,7 @@ model Reputation {
   link        String?
   description String?
   released    String?
-  environment String?  
+  environment String?
   boff        Boolean?
   secondary   Boolean?
   rawData     Json
@@ -142,11 +164,11 @@ model Reputation {
 }
 
 model SetBonus {
-  id         Int     @id @default(autoincrement())
-  name       String  @unique          // cargo: Name
-  setPage    String?                  // SetPage
-  reqItems   Int?                     // ReqItems as Int
-  passives   String?                  // ;-separated — keep String
+  id         Int      @id @default(autoincrement())
+  name       String   @unique // cargo: Name
+  setPage    String? // SetPage
+  reqItems   Int? // ReqItems as Int
+  passives   String? // ;-separated — keep String
   traySkills String?
   procs      String?
   abilities  String?
@@ -156,16 +178,16 @@ model SetBonus {
 }
 
 model TraySkill {
-  id              Int     @id @default(autoincrement())
-  name            String  @unique
+  id              Int      @id @default(autoincrement())
+  name            String   @unique
   system          String?
   description     String?
-  descriptionLong String?   // cargo: "description long"
+  descriptionLong String? // cargo: "description long"
   targets         String?
   affects         String?
-  activation      String?   // keep String (mix of "0.5" and "1.25 seconds")
-  rechargeBase    Int?      // "recharge base"
-  rechargeGlobal  Int?      // "recharge global"
+  activation      String? // keep String (mix of "0.5" and "1.25 seconds")
+  rechargeBase    Int? // "recharge base"
+  rechargeGlobal  Int? // "recharge global"
   type            String?
   region          String?
   rank1rank       String?
@@ -184,7 +206,7 @@ model TraySkill {
 }
 
 model Infobox {
-  id         Int     @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   name       String
   rarity     String?
   type       String?
@@ -222,25 +244,79 @@ model Infobox {
   rawData    Json
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  gwLockBoxes      GwObtain[]     @relation("GwLockBox")
+  swLockBoxes      SwObtain[]     @relation("SwLockBox")
+  modifierItems    ModifierItem[]
+  shipsWithConsole Ship[]         @relation("ShipUniConsole")
+
   @@index([name])
 }
 
 model Mastery {
-  id              Int     @id @default(autoincrement())
-  masterytype     String
-  shiptype        String
-  shipfaction     String
-  masterypackage  String
-  trait           String?
-  traitdesc       String?
-  trait2          String?
-  traitdesc2      String?
-  trait3          String?
-  traitdesc3      String?
-  acctrait        String?
-  acctraitdesc    String?
-  rawData         Json
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             Int     @id @default(autoincrement())
+  masterytype    String
+  shiptype       String
+  shipfaction    String
+  masterypackage String
+  trait          String?
+  traitdesc      String?
+  trait2         String?
+  traitdesc2     String?
+  trait3         String?
+  traitdesc3     String?
+  acctrait       String?
+  acctraitdesc   String?
+
+  traitId    Int?
+  trait2Id   Int?
+  trait3Id   Int?
+  acctraitId Int?
+
+  primaryTrait   StarshipTrait? @relation("MasteryPrimaryTrait", fields: [traitId], references: [id])
+  secondaryTrait StarshipTrait? @relation("MasterySecondaryTrait", fields: [trait2Id], references: [id])
+  tertiaryTrait  StarshipTrait? @relation("MasteryTertiaryTrait", fields: [trait3Id], references: [id])
+  accountTrait   StarshipTrait? @relation("MasteryAccountTrait", fields: [acctraitId], references: [id])
+
+  shipTypeId Int?
+  shipType   ShipType? @relation(fields: [shipTypeId], references: [id])
+
+  rawData   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([masterypackage, masterytype, shiptype, shipfaction])
+}
+
+/**
+ * Relationship Schemas
+ */
+model StarshipTraitShip {
+  starshipTraitId Int
+  shipId          Int
+
+  ship          Ship          @relation(fields: [shipId], references: [id], onDelete: Cascade)
+  starshipTrait StarshipTrait @relation(fields: [starshipTraitId], references: [id], onDelete: Cascade)
+
+  @@id([starshipTraitId, shipId])
+  @@index([shipId])
+}
+
+model ShipType {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  ships     Ship[]
+  masteries Mastery[]
+}
+
+model ModifierItem {
+  modifierId Int
+  infoboxId  Int
+
+  modifier Modifier @relation(fields: [modifierId], references: [id], onDelete: Cascade)
+  infobox  Infobox  @relation(fields: [infoboxId], references: [id], onDelete: Cascade)
+
+  @@id([modifierId, infoboxId])
+  @@unique([modifierId, infoboxId])
 }
