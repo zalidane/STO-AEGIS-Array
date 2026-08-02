@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 
-import type { PrismaClient } from "../generated/prisma/client.js";
+import type { PrismaClient } from "@sto-aegis/database";
 import type { ImportConfig } from "./importConfig.js";
 import { validateCargoJson } from "../utils/validateCargoJson.js";
 

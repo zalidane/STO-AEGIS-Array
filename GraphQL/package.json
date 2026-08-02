@@ -1,0 +1,12 @@
+{
+  "name": "@sto-aegis/graphql",
+  "version": "0.0.0",
+  "private": true,
+  "description": "GraphQL API for STO AEGIS Array (planned)",
+  "scripts": {
+    "dev": "echo GraphQL app not implemented yet && exit 1"
+  },
+  "dependencies": {
+    "@sto-aegis/database": "*"
+  }
+}
