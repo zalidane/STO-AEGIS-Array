@@ -1,0 +1,13 @@
+type StarshipTraitShip {
+  starshipTraitId: Int!
+  shipId: Int!
+  ship: Ship!
+  starshipTrait: StarshipTrait!
+}
+
+type ModifierItem {
+  modifierId: Int!
+  infoboxId: Int!
+  modifier: Modifier!
+  infobox: Infobox!
+}

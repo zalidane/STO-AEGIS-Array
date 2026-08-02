@@ -1,0 +1,49 @@
+type Infobox {
+  id: Int!
+  name: String!
+  rarity: String
+  type: String
+  boundto: String
+  boundwhen: String
+  who: String
+  head1: String
+  head2: String
+  head3: String
+  head4: String
+  head5: String
+  head6: String
+  head7: String
+  head8: String
+  head9: String
+  subhead1: String
+  subhead2: String
+  subhead3: String
+  subhead4: String
+  subhead5: String
+  subhead6: String
+  subhead7: String
+  subhead8: String
+  subhead9: String
+  text1: String
+  text2: String
+  text3: String
+  text4: String
+  text5: String
+  text6: String
+  text7: String
+  text8: String
+  text9: String
+  equiplimit: Int
+  rawData: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  gwLockBoxes: [GwObtain!]!
+  swLockBoxes: [SwObtain!]!
+  shipsWithConsole: [Ship!]!
+}
+
+extend type Query {
+  infoboxes: [Infobox!]!
+  infobox(id: Int!): Infobox
+  infoboxesByName(name: String!): [Infobox!]!
+}

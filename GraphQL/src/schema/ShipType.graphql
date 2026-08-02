@@ -1,0 +1,12 @@
+type ShipType {
+  id: Int!
+  name: String!
+  ships: [Ship!]!
+  masteries: [Mastery!]!
+}
+
+extend type Query {
+  shipTypes: [ShipType!]!
+  shipType(id: Int!): ShipType
+  shipTypeByName(name: String!): ShipType
+}

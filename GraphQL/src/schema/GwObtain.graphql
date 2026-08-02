@@ -1,0 +1,20 @@
+type GwObtain {
+  id: Int!
+  cat: String!
+  type: String!
+  flavor: String!
+  box: String
+  lb: String
+  lockBoxId: Int
+  rep: String
+  rawData: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  lockBox: Infobox
+}
+
+extend type Query {
+  gwObtains: [GwObtain!]!
+  gwObtain(id: Int!): GwObtain
+  gwObtainByKey(cat: String!, type: String!, flavor: String!): GwObtain
+}
