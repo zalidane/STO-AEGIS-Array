@@ -1,0 +1,22 @@
+type Reputation {
+  id: Int!
+  name: String!
+  color1: String
+  color2: String
+  icon: String
+  link: String
+  description: String
+  released: String
+  environment: String
+  boff: Boolean
+  secondary: Boolean
+  rawData: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+extend type Query {
+  reputations: [Reputation!]!
+  reputation(id: Int!): Reputation
+  reputationByName(name: String!): Reputation
+}

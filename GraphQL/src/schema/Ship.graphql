@@ -1,0 +1,34 @@
+type Ship {
+  id: Int!
+  name: String!
+  description: String
+  tier: Int
+  type: String
+  hull: String
+  hullMod: Float
+  shieldMod: Float
+  turnRate: Float
+  impulse: Float
+  inertia: Int
+  foreWeapons: Int
+  aftWeapons: Int
+  tacticalSlots: Int
+  engineeringSlots: Int
+  scienceSlots: Int
+  secondaryDeflector: Boolean!
+  rawData: JSON
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  shipTypeId: Int
+  uniconsole: String
+  uniconsoleId: Int
+  shipType: ShipType
+  uniConsole: Infobox
+  starshipTraits: [StarshipTrait!]!
+}
+
+extend type Query {
+  ships: [Ship!]!
+  ship(id: Int!): Ship
+  shipByName(name: String!): Ship
+}

@@ -1,0 +1,20 @@
+type Modifier {
+  id: Int!
+  modifier: String!
+  stats: String
+  type: String!
+  available: String
+  isunique: Boolean!
+  isepic: Boolean!
+  info: String
+  rawData: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  items: [Infobox!]!
+}
+
+extend type Query {
+  modifiers: [Modifier!]!
+  modifier(id: Int!): Modifier
+  modifierByKey(modifier: String!, type: String!): Modifier
+}

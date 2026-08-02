@@ -1,0 +1,21 @@
+type SwObtain {
+  id: Int!
+  cat: String!
+  type: String!
+  flavor: String!
+  box: String
+  lb: String
+  lockBoxId: Int
+  rep: String
+  ships: String
+  rawData: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  lockBox: Infobox
+}
+
+extend type Query {
+  swObtains: [SwObtain!]!
+  swObtain(id: Int!): SwObtain
+  swObtainByKey(cat: String!, type: String!, flavor: String!): SwObtain
+}

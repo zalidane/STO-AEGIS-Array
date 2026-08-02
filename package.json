@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "dev:extractor": "npm run dev -w @sto-aegis/extractor",
+    "dev:graphql": "npm run dev -w @sto-aegis/graphql",
     "build:extractor": "npm run build -w @sto-aegis/extractor",
     "build:database": "npm run build -w @sto-aegis/database",
     "db:generate": "npm run generate -w @sto-aegis/database",

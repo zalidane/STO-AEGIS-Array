@@ -1,0 +1,33 @@
+type Mastery {
+  id: Int!
+  masterytype: String!
+  shiptype: String!
+  shipfaction: String!
+  masterypackage: String!
+  trait: String
+  traitdesc: String
+  trait2: String
+  traitdesc2: String
+  trait3: String
+  traitdesc3: String
+  acctrait: String
+  acctraitdesc: String
+  traitId: Int
+  trait2Id: Int
+  trait3Id: Int
+  acctraitId: Int
+  shipTypeId: Int
+  rawData: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  primaryTrait: StarshipTrait
+  secondaryTrait: StarshipTrait
+  tertiaryTrait: StarshipTrait
+  accountTrait: StarshipTrait
+  shipType: ShipType
+}
+
+extend type Query {
+  masteries: [Mastery!]!
+  mastery(id: Int!): Mastery
+}

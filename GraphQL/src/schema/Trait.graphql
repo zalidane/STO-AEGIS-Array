@@ -1,0 +1,25 @@
+type Trait {
+  id: Int!
+  name: String!
+  type: String
+  environment: String
+  description: String
+  shortDescription: String
+  required: String
+  possible: String
+  career: String
+  source: String
+  charVariant: String
+  boffVariant: String
+  doffVariant: String
+  iconName: String
+  master: String
+  rawData: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+extend type Query {
+  traits: [Trait!]!
+  trait(name: String!, type: String!, environment: String!): Trait
+}

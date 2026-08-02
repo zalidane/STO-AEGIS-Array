@@ -1,0 +1,23 @@
+type StarshipTrait {
+  id: Int!
+  name: String!
+  short: String
+  basic: String
+  detailed: String
+  type: String
+  obtained: String
+  iconName: String
+  tag: String
+  tag2: String
+  tag3: String
+  rawData: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  ships: [Ship!]!
+}
+
+extend type Query {
+  starshipTraits: [StarshipTrait!]!
+  starshipTrait(id: Int!): StarshipTrait
+  starshipTraitByName(name: String!): StarshipTrait
+}

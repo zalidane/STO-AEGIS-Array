@@ -1,0 +1,33 @@
+type TraySkill {
+  id: Int!
+  name: String!
+  system: String
+  description: String
+  descriptionLong: String
+  targets: String
+  affects: String
+  activation: String
+  rechargeBase: Int
+  rechargeGlobal: Int
+  type: String
+  region: String
+  rank1rank: String
+  rank2rank: String
+  rank3rank: String
+  rank4rank: String
+  rank5rank: String
+  rank1info: String
+  rank2info: String
+  rank3info: String
+  rank4info: String
+  rank5info: String
+  rawData: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+extend type Query {
+  traySkills: [TraySkill!]!
+  traySkill(id: Int!): TraySkill
+  traySkillByName(name: String!): TraySkill
+}

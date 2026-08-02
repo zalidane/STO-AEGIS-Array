@@ -1,0 +1,19 @@
+type SetBonus {
+  id: Int!
+  name: String!
+  setPage: String
+  reqItems: Int
+  passives: String
+  traySkills: String
+  procs: String
+  abilities: String
+  rawData: JSON!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+extend type Query {
+  setBonuses: [SetBonus!]!
+  setBonus(id: Int!): SetBonus
+  setBonusByName(name: String!): SetBonus
+}
