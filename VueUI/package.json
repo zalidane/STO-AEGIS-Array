@@ -1,0 +1,9 @@
+{
+  "name": "@sto-aegis/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Vue UI for STO AEGIS Array (planned)",
+  "scripts": {
+    "dev": "echo Vue UI not implemented yet && exit 1"
+  }
+}

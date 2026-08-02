@@ -1,7 +1,12 @@
-import "dotenv/config";
+import { config } from "dotenv";
+import { resolve } from "node:path";
+
+// Prefer monorepo root .env, then local Extractor/.env
+config({ path: resolve(process.cwd(), "../.env") });
+config({ path: resolve(process.cwd(), ".env") });
+
 import {
   extractTable,
-  getFields,
   tryGetFields,
 } from "./extractors/extractTable.js";
 import { shouldRefresh } from "./extractors/cache.js";

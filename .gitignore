@@ -1,6 +1,9 @@
 node_modules/
 dist/
-***put/
+**/dist/
 *.log
-/src/generated/prisma
 .env
+**/.env
+Extractor/output/
+**/src/generated/prisma/
+.DS_Store

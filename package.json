@@ -1,27 +1,24 @@
 {
-  "name": "sto-extractor-ts",
+  "name": "sto-aegis-array",
+  "private": true,
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "STO AEGIS Array monorepo — Extractor, shared database, GraphQL API, and Vue UI",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "Extractor",
+    "GraphQL",
+    "VueUI"
+  ],
   "scripts": {
-    "dev": "tsx watch src/main.ts",
-    "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:extractor": "npm run dev -w @sto-aegis/extractor",
+    "build:extractor": "npm run build -w @sto-aegis/extractor",
+    "build:database": "npm run build -w @sto-aegis/database",
+    "db:generate": "npm run generate -w @sto-aegis/database",
+    "db:migrate": "npm run migrate:deploy -w @sto-aegis/database",
+    "db:studio": "npm run studio -w @sto-aegis/database"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "devDependencies": {
-    "@types/node": "^26.1.1",
-    "prisma": "^7.9.1",
-    "tsx": "^4.23.1",
-    "typescript": "^7.0.2"
-  },
-  "dependencies": {
-    "@prisma/adapter-pg": "^7.9.1",
-    "@prisma/client": "^7.9.1",
-    "dotenv": "^17.4.2",
-    "pg": "^8.22.0"
+  "engines": {
+    "node": ">=20"
   }
 }

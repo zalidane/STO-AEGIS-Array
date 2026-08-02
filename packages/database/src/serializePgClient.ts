@@ -2,8 +2,7 @@ import type { Pool, PoolClient } from "pg";
 
 /**
  * Prisma adapter-pg can issue concurrent queries on a single transaction
- * PoolClient (query interpreter Array.map). pg@8 warns; pg@9 will throw.
- * Serialize query() on clients checked out via pool.connect().
+ * PoolClient. Serialize query() on clients checked out via pool.connect().
  */
 export function installSerializedPoolClients(pool: Pool): void {
   const originalConnect = pool.connect.bind(pool) as {

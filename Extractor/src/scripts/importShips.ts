@@ -1,10 +1,7 @@
-import { PrismaClient } from "../generated/prisma/client.js";
-import { PrismaPg } from "@prisma/adapter-pg";
+import { createPrismaClient } from "@sto-aegis/database";
 import ships from "../../output/Ships.json";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-
-const prisma = new PrismaClient({ adapter });
+const { prisma } = createPrismaClient();
 
 async function main() {
   for (const ship of ships) {

@@ -1,21 +1,14 @@
-import { Pool } from "pg";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../generated/prisma/client.js";
+import { createPrismaClient } from "@sto-aegis/database";
 
 import { importMappings } from "./importMappings.js";
 import { importTable } from "./importTable.js";
 import { loadState, saveState } from "./importState.js";
 import { getFileHash } from "../extractors/getFileHash.js";
 import { linkRelations } from "./linkRelations.js";
-import { installSerializedPoolClients } from "./serializePgClient.js";
 
 import type { ImportConfig } from "./importConfig.js";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-installSerializedPoolClients(pool);
-const adapter = new PrismaPg(pool);
-
-const prisma = new PrismaClient({ adapter });
+const { prisma } = createPrismaClient();
 
 const IMPORT_ORDER = [
   "Infobox",
@@ -68,7 +61,6 @@ export async function importAll(forceImport = false) {
     await saveState(state);
   }
 
-  // Always re-link when anything changed, or when forced
   if (anyImported || forceImport) {
     console.log("Resolving relationships...");
     await linkRelations(prisma);
