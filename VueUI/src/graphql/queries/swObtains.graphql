@@ -1,0 +1,57 @@
+query SwObtains {
+  swObtains {
+    id
+    cat
+    type
+    flavor
+    box
+    lb
+    lockBoxId
+    rep
+    ships
+    lockBox {
+      id
+      name
+      rarity
+    }
+  }
+}
+
+query SwObtain($id: Int!) {
+  swObtain(id: $id) {
+    id
+    cat
+    type
+    flavor
+    box
+    lb
+    lockBoxId
+    rep
+    ships
+    createdAt
+    updatedAt
+    lockBox {
+      id
+      name
+      rarity
+      type
+    }
+  }
+}
+
+query SwObtainByKey($cat: String!, $type: String!, $flavor: String!) {
+  swObtainByKey(cat: $cat, type: $type, flavor: $flavor) {
+    id
+    cat
+    type
+    flavor
+    box
+    lb
+    rep
+    ships
+    lockBox {
+      id
+      name
+    }
+  }
+}

@@ -1,0 +1,66 @@
+query Masteries {
+  masteries {
+    id
+    masterytype
+    shiptype
+    shipfaction
+    masterypackage
+    trait
+    trait2
+    trait3
+    acctrait
+    shipType {
+      id
+      name
+    }
+  }
+}
+
+query Mastery($id: Int!) {
+  mastery(id: $id) {
+    id
+    masterytype
+    shiptype
+    shipfaction
+    masterypackage
+    trait
+    traitdesc
+    trait2
+    traitdesc2
+    trait3
+    traitdesc3
+    acctrait
+    acctraitdesc
+    traitId
+    trait2Id
+    trait3Id
+    acctraitId
+    shipTypeId
+    createdAt
+    updatedAt
+    primaryTrait {
+      id
+      name
+      short
+    }
+    secondaryTrait {
+      id
+      name
+      short
+    }
+    tertiaryTrait {
+      id
+      name
+      short
+    }
+    accountTrait {
+      id
+      name
+      short
+    }
+    shipType {
+      id
+      name
+    }
+  }
+}

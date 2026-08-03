@@ -1,0 +1,36 @@
+query Traits {
+  traits {
+    id
+    name
+    type
+    environment
+    description
+    shortDescription
+    career
+    source
+    iconName
+    master
+  }
+}
+
+query Trait($name: String!, $type: String!, $environment: String!) {
+  trait(name: $name, type: $type, environment: $environment) {
+    id
+    name
+    type
+    environment
+    description
+    shortDescription
+    required
+    possible
+    career
+    source
+    charVariant
+    boffVariant
+    doffVariant
+    iconName
+    master
+    createdAt
+    updatedAt
+  }
+}

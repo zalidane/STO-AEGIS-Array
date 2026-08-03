@@ -1,0 +1,58 @@
+query TraySkills {
+  traySkills {
+    id
+    name
+    system
+    description
+    targets
+    affects
+    activation
+    rechargeBase
+    rechargeGlobal
+    type
+    region
+  }
+}
+
+query TraySkill($id: Int!) {
+  traySkill(id: $id) {
+    id
+    name
+    system
+    description
+    descriptionLong
+    targets
+    affects
+    activation
+    rechargeBase
+    rechargeGlobal
+    type
+    region
+    rank1rank
+    rank2rank
+    rank3rank
+    rank4rank
+    rank5rank
+    rank1info
+    rank2info
+    rank3info
+    rank4info
+    rank5info
+    createdAt
+    updatedAt
+  }
+}
+
+query TraySkillByName($name: String!) {
+  traySkillByName(name: $name) {
+    id
+    name
+    system
+    description
+    descriptionLong
+    type
+    region
+    rechargeBase
+    rechargeGlobal
+  }
+}

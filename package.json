@@ -15,6 +15,7 @@
     "dev:graphql": "npm run dev -w @sto-aegis/graphql",
     "build:extractor": "npm run build -w @sto-aegis/extractor",
     "build:database": "npm run build -w @sto-aegis/database",
+    "codegen:vue": "npm run codegen -w @sto-aegis/vue-ui",
     "db:generate": "npm run generate -w @sto-aegis/database",
     "db:migrate": "npm run migrate:deploy -w @sto-aegis/database",
     "db:studio": "npm run studio -w @sto-aegis/database"
