@@ -1,0 +1,51 @@
+query Modifiers {
+  modifiers {
+    id
+    modifier
+    stats
+    type
+    available
+    isunique
+    isepic
+    info
+  }
+}
+
+query Modifier($id: Int!) {
+  modifier(id: $id) {
+    id
+    modifier
+    stats
+    type
+    available
+    isunique
+    isepic
+    info
+    createdAt
+    updatedAt
+    items {
+      id
+      name
+      rarity
+      type
+    }
+  }
+}
+
+query ModifierByKey($modifier: String!, $type: String!) {
+  modifierByKey(modifier: $modifier, type: $type) {
+    id
+    modifier
+    stats
+    type
+    available
+    isunique
+    isepic
+    info
+    items {
+      id
+      name
+      rarity
+    }
+  }
+}

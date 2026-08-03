@@ -1,0 +1,54 @@
+query StarshipTraits {
+  starshipTraits {
+    id
+    name
+    short
+    basic
+    type
+    obtained
+    iconName
+    tag
+    tag2
+    tag3
+  }
+}
+
+query StarshipTrait($id: Int!) {
+  starshipTrait(id: $id) {
+    id
+    name
+    short
+    basic
+    detailed
+    type
+    obtained
+    iconName
+    tag
+    tag2
+    tag3
+    createdAt
+    updatedAt
+    ships {
+      id
+      name
+      tier
+      type
+    }
+  }
+}
+
+query StarshipTraitByName($name: String!) {
+  starshipTraitByName(name: $name) {
+    id
+    name
+    short
+    basic
+    detailed
+    type
+    obtained
+    ships {
+      id
+      name
+    }
+  }
+}

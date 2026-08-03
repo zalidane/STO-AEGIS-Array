@@ -1,0 +1,49 @@
+query Reputations {
+  reputations {
+    id
+    name
+    color1
+    color2
+    icon
+    link
+    description
+    released
+    environment
+    boff
+    secondary
+  }
+}
+
+query Reputation($id: Int!) {
+  reputation(id: $id) {
+    id
+    name
+    color1
+    color2
+    icon
+    link
+    description
+    released
+    environment
+    boff
+    secondary
+    createdAt
+    updatedAt
+  }
+}
+
+query ReputationByName($name: String!) {
+  reputationByName(name: $name) {
+    id
+    name
+    color1
+    color2
+    icon
+    link
+    description
+    released
+    environment
+    boff
+    secondary
+  }
+}

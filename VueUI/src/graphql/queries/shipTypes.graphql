@@ -1,0 +1,42 @@
+query ShipTypes {
+  shipTypes {
+    id
+    name
+  }
+}
+
+query ShipType($id: Int!) {
+  shipType(id: $id) {
+    id
+    name
+    ships {
+      id
+      name
+      tier
+      type
+    }
+    masteries {
+      id
+      masterytype
+      shipfaction
+      masterypackage
+    }
+  }
+}
+
+query ShipTypeByName($name: String!) {
+  shipTypeByName(name: $name) {
+    id
+    name
+    ships {
+      id
+      name
+      tier
+    }
+    masteries {
+      id
+      masterytype
+      masterypackage
+    }
+  }
+}

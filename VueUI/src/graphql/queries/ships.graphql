@@ -2,6 +2,95 @@ query Ships {
   ships {
     id
     name
+    description
+    tier
     type
+    hull
+    hullMod
+    shieldMod
+    turnRate
+    impulse
+    inertia
+    foreWeapons
+    aftWeapons
+    tacticalSlots
+    engineeringSlots
+    scienceSlots
+    secondaryDeflector
+    uniconsole
+    shipType {
+      id
+      name
+    }
+  }
+}
+
+query Ship($id: Int!) {
+  ship(id: $id) {
+    id
+    name
+    description
+    tier
+    type
+    hull
+    hullMod
+    shieldMod
+    turnRate
+    impulse
+    inertia
+    foreWeapons
+    aftWeapons
+    tacticalSlots
+    engineeringSlots
+    scienceSlots
+    secondaryDeflector
+    uniconsole
+    uniconsoleId
+    shipTypeId
+    createdAt
+    updatedAt
+    shipType {
+      id
+      name
+    }
+    uniConsole {
+      id
+      name
+      rarity
+      type
+    }
+    starshipTraits {
+      id
+      name
+      short
+      type
+      obtained
+    }
+  }
+}
+
+query ShipByName($name: String!) {
+  shipByName(name: $name) {
+    id
+    name
+    description
+    tier
+    type
+    hull
+    turnRate
+    shipType {
+      id
+      name
+    }
+    uniConsole {
+      id
+      name
+      rarity
+    }
+    starshipTraits {
+      id
+      name
+      short
+    }
   }
 }

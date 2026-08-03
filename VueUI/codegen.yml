@@ -6,3 +6,5 @@ documents:
 generates:
   src/graphql/generated/:
     preset: client
+    config:
+      useTypeImports: true
