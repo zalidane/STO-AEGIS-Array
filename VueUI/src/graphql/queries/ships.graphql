@@ -1,0 +1,7 @@
+query Ships {
+  ships {
+    id
+    name
+    type
+  }
+}
