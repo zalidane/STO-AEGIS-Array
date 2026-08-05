@@ -1,0 +1,22 @@
+# Default service config when Railway deploys the repo as a single root service.
+# For VueUI / Extractor, create additional services and set Config-as-code to:
+#   /VueUI/railway.toml
+#   /Extractor/railway.toml
+
+[build]
+builder = "RAILPACK"
+buildCommand = "npm install && npm run generate -w @sto-aegis/database"
+watchPatterns = [
+  "/GraphQL/**",
+  "/packages/database/**",
+  "/package.json",
+  "/package-lock.json",
+]
+
+[deploy]
+startCommand = "npm run start -w @sto-aegis/graphql"
+releaseCommand = "npm run migrate:deploy -w @sto-aegis/database"
+healthcheckPath = "/graphql"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
