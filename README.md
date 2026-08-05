@@ -63,6 +63,32 @@ Both **Extractor** and future **GraphQL** should depend on this package instead 
 - **GraphQL** — placeholder; see [GraphQL/README.md](GraphQL/README.md)
 - **VueUI** — placeholder; see [VueUI/README.md](VueUI/README.md)
 
+## Railway (shared monorepo)
+
+This is a **shared npm workspaces** monorepo. Do **not** set each service’s Root Directory to `GraphQL/`, `VueUI/`, etc. — keep **Root Directory = `/`** so workspace packages like `@sto-aegis/database` resolve.
+
+Per-service config files:
+
+| Service | Config-as-code path |
+|---------|---------------------|
+| GraphQL | `/GraphQL/railway.toml` |
+| VueUI | `/VueUI/railway.toml` |
+| Extractor import | `/Extractor/railway.toml` |
+
+**GraphQL**
+- Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (private network URL preferred)
+- Generate domain; Yoga serves `/graphql`
+- Runs `prisma migrate deploy` as `releaseCommand`
+
+**VueUI**
+- Build variable: `VITE_GRAPHQL_URL=https://${{GraphQL.RAILWAY_PUBLIC_DOMAIN}}/graphql`
+- Generate a public domain for the SPA
+
+**Extractor**
+- Prefer a **Cron Job** / one-shot service (`restartPolicyType = NEVER`) that runs `import:force`
+- Variables: same `DATABASE_URL` as GraphQL
+- Or fold import into GraphQL `releaseCommand` and skip this service
+
 ## License
 
 MIT

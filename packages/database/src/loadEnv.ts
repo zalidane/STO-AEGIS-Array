@@ -11,6 +11,11 @@ import { resolve } from "node:path";
  * - otherwise: `.env`, then `.env.production` (no override)
  */
 export function loadDatabaseEnv(): void {
+  // Platform-injected vars (Railway, etc.) take precedence — do not overwrite.
+  if (process.env.DATABASE_URL) {
+    return;
+  }
+
   const useProduction =
     process.env.NODE_ENV === "production" ||
     process.env.PRISMA_ENV === "production";

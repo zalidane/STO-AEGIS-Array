@@ -17,11 +17,11 @@
   },
   "dependencies": {
     "@sto-aegis/database": "*",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "tsx": "^4.23.1"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
-    "tsx": "^4.23.1",
     "typescript": "^7.0.2"
   }
 }
