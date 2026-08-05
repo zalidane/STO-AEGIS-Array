@@ -1,10 +1,6 @@
 import { config } from "dotenv";
 import { resolve } from "node:path";
 
-// Prefer monorepo root .env, then local Extractor/.env
-config({ path: resolve(process.cwd(), "../.env") });
-config({ path: resolve(process.cwd(), ".env") });
-
 import {
   extractTable,
   tryGetFields,
@@ -13,10 +9,45 @@ import { shouldRefresh } from "./extractors/cache.js";
 import { tableSchemas } from "./extractors/schemas/schemaList.js";
 import { importAll } from "./importers/importAll.js";
 
-const forceRefresh = process.argv.includes("--force-refresh");
-const forceImport = process.argv.includes("--force-import");
+type Command = "extract" | "import";
 
-async function main() {
+function parseArgs(argv: string[]) {
+  const positional = argv.filter((a) => !a.startsWith("--"));
+  const command = (positional[0] ?? "extract") as Command;
+  if (command !== "extract" && command !== "import") {
+    throw new Error(
+      `Unknown command "${command}". Use: extract | import`,
+    );
+  }
+
+  return {
+    command,
+    forceRefresh: argv.includes("--force-refresh"),
+    forceImport: argv.includes("--force-import"),
+    prod: argv.includes("--prod"),
+  };
+}
+
+function loadEnv(prod: boolean) {
+  if (prod) {
+    process.env.PRISMA_ENV = "production";
+    if (!process.env.NODE_ENV) process.env.NODE_ENV = "production";
+    config({
+      path: resolve(process.cwd(), "../.env.production"),
+      override: true,
+    });
+    config({
+      path: resolve(process.cwd(), ".env.production"),
+      override: true,
+    });
+    return;
+  }
+
+  config({ path: resolve(process.cwd(), "../.env") });
+  config({ path: resolve(process.cwd(), ".env") });
+}
+
+async function runExtract(forceRefresh: boolean) {
   for (const table of tableSchemas) {
     const outputFile = `output/${table}.json`;
 
@@ -39,7 +70,36 @@ async function main() {
     await extractTable(table, fields);
   }
 
+  console.log(
+    "Extract complete. Commit Extractor/output/*.json when ready for production import.",
+  );
+}
+
+async function runImport(forceImport: boolean) {
   await importAll(forceImport);
 }
 
-main().catch(console.error);
+async function main() {
+  const { command, forceRefresh, forceImport, prod } = parseArgs(
+    process.argv.slice(2),
+  );
+
+  loadEnv(prod);
+
+  if (command === "extract") {
+    if (prod) {
+      console.warn(
+        "Note: extract is a manual/local operation; --prod only affects which .env file is loaded (not used for wiki fetch).",
+      );
+    }
+    await runExtract(forceRefresh);
+    return;
+  }
+
+  await runImport(forceImport);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

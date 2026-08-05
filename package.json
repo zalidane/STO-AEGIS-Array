@@ -11,14 +11,19 @@
     "VueUI"
   ],
   "scripts": {
-    "dev:extractor": "npm run dev -w @sto-aegis/extractor",
+    "dev:extractor": "npm run extract -w @sto-aegis/extractor",
     "dev:graphql": "npm run dev -w @sto-aegis/graphql",
+    "extract": "npm run extract -w @sto-aegis/extractor",
+    "import": "npm run import -w @sto-aegis/extractor",
+    "import:prod": "npm run import:prod -w @sto-aegis/extractor",
     "build:extractor": "npm run build -w @sto-aegis/extractor",
     "build:database": "npm run build -w @sto-aegis/database",
     "codegen:vue": "npm run codegen -w @sto-aegis/vue-ui",
     "db:generate": "npm run generate -w @sto-aegis/database",
     "db:migrate": "npm run migrate:deploy -w @sto-aegis/database",
-    "db:studio": "npm run studio -w @sto-aegis/database"
+    "db:migrate:prod": "npm run migrate:deploy:prod -w @sto-aegis/database",
+    "db:studio": "npm run studio -w @sto-aegis/database",
+    "db:studio:prod": "npm run studio:prod -w @sto-aegis/database"
   },
   "engines": {
     "node": ">=20"

@@ -13,8 +13,10 @@
     "build": "tsc -p tsconfig.json",
     "generate": "prisma generate",
     "migrate:deploy": "prisma migrate deploy",
+    "migrate:deploy:prod": "node scripts/withProdEnv.cjs migrate deploy",
     "migrate:dev": "prisma migrate dev",
-    "studio": "prisma studio"
+    "studio": "prisma studio",
+    "studio:prod": "node scripts/withProdEnv.cjs studio"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

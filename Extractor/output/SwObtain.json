@@ -1,0 +1,578 @@
+[
+  {
+    "cat": "Event",
+    "type": "Matter Conversion",
+    "flavor": "Antiproton",
+    "box": null,
+    "lb": null,
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Aetherian Concordium",
+    "flavor": "Proton",
+    "box": "Aetherian Concordium Proton Weapons",
+    "lb": "Aetherian Concordium",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Agony",
+    "flavor": "Phaser",
+    "box": "Terran Empire Agony Phaser Weapons",
+    "lb": "Mirror Incursion",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Altamid",
+    "flavor": "Plasma",
+    "box": "Altamid Plasma Weapons",
+    "lb": "Kelvin Divergence",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Assimilated",
+    "flavor": "Plasma",
+    "box": "Assimilated Plasma Weapons",
+    "lb": "Borg",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Ba&#039;ul",
+    "flavor": "Antiproton",
+    "box": "Ba&#039;ul Antiproton Weapons",
+    "lb": "Angel&#039;s Wake",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Breen Imperium",
+    "flavor": "Polaron",
+    "box": "Breen Imperium Weaponry",
+    "lb": "Discovery: Partners in Crime",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Chronoplasma",
+    "flavor": "Plasma",
+    "box": "Chronoplasma Weapons",
+    "lb": "Na&#039;kuhl",
+    "ships": "[[:Category:Playable Na&#039;kuhl starships|playable Na&#039;kuhl]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Coalition",
+    "flavor": "Disruptor",
+    "box": "Coalition Disruptor Weapons",
+    "lb": "Year of Hell",
+    "ships": "playable Coalition starships - the [[Nihydron Destroyer]], the [[Zahl Heavy Cruiser]], and the [[:Category:Playable Krenim starships|Krenim]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Corrosive",
+    "flavor": "Plasma",
+    "box": "Corrosive Plasma Weapons",
+    "lb": "Delta Expedition",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Covert",
+    "flavor": "Phaser",
+    "box": "Covert Phaser Weapons",
+    "lb": "Section 31",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Delphic",
+    "flavor": "Antiproton",
+    "box": "Delphic Antiproton Weapons",
+    "lb": "Sphere Builder",
+    "ships": "[[:Category:Playable Sphere Builder starships|playable Sphere Builder]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Destabilizing",
+    "flavor": "Tetryon",
+    "box": "Destabilized Tetryon Weapons",
+    "lb": "Hirogen",
+    "ships": "[[:Category:Playable Hirogen starships|playable Hirogen]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Diffusive",
+    "flavor": "Tetryon",
+    "box": "Diffusive Tetryon Weapons",
+    "lb": "Tzenkethi",
+    "ships": "[[:Category:Playable Tzenkethi starships|playable Tzenkethi]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Elachi",
+    "flavor": "Disruptor",
+    "box": "Elachi Crescent Weapons",
+    "lb": "Elachi",
+    "ships": "[[:Category:Playable Elachi Starships|playable Elachi]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Emitter-Linked",
+    "flavor": "Disruptor",
+    "box": "Discovery Disruptor or Phaser Weapons",
+    "lb": "Discovery",
+    "ships": "Discovery-era Klingon",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Emitter-Linked",
+    "flavor": "Phaser",
+    "box": "Discovery Disruptor or Phaser Weapons",
+    "lb": "Discovery",
+    "ships": "Discovery-era Federation",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Federation 32c.",
+    "flavor": "Phaser",
+    "box": "Phaser Weapons (32c.)",
+    "lb": "Discovery: Far From Home",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Federation 32c. Refit",
+    "flavor": "Phaser",
+    "box": "Phaser Weapons (32c.)",
+    "lb": "Discovery: Far From Home",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Ferenginar",
+    "flavor": "Plasma",
+    "box": "Ferenginar Plasma Weapons",
+    "lb": "Deep Space Nine",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Fluidic",
+    "flavor": "Antiproton",
+    "box": "Fluidic Antiproton Weapons",
+    "lb": "Undine",
+    "ships": "[[:Category:Playable Undine starships|playable Undine]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Focusing-Linked",
+    "flavor": "Disruptor",
+    "box": "Terran Linked Weapons",
+    "lb": "Emperor&#039;s",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Focusing-Linked",
+    "flavor": "Phaser",
+    "box": "Terran Linked Weapons",
+    "lb": "Emperor&#039;s",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Herald",
+    "flavor": "Antiproton",
+    "box": "Herald Antiproton Weapons",
+    "lb": "Herald",
+    "ships": "[[:Category:Playable Herald starships|playable Herald]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Integrity-Linked",
+    "flavor": "Disruptor",
+    "box": "Discovery Disruptor or Phaser Weapons",
+    "lb": "Discovery",
+    "ships": "Discovery-era Klingon",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Integrity-Linked",
+    "flavor": "Phaser",
+    "box": "Discovery Disruptor or Phaser Weapons",
+    "lb": "Discovery",
+    "ships": "Discovery-era Federation",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Isolytic",
+    "flavor": "Plasma",
+    "box": "Isolytic Plasma Weapons",
+    "lb": "Son&#039;a",
+    "ships": "[[:Category:Playable Son&#039;a starships|playable Son&#039;a]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Kelvin Timeline",
+    "flavor": "Phaser",
+    "box": "Kelvin Timeline Weapons",
+    "lb": "Kelvin Timeline",
+    "ships": "[[:Category:Playable Kelvin Timeline starships|playable Kelvin Timeline]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Krieger Wave",
+    "flavor": "Disruptor",
+    "box": "Privateer&#039;s Disruptor Weapons",
+    "lb": "Privateer",
+    "ships": "[[Husnock Warship]] and [[Miradorn Theta Heavy Raider]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Nanite",
+    "flavor": "Disruptor",
+    "box": "Nanite Disruptor Weapons",
+    "lb": "Tal Shiar",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Obliviating",
+    "flavor": "Phaser",
+    "box": "A Safe Galaxy Weapons",
+    "lb": "A Safe Galaxy",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Phased",
+    "flavor": "Polaron",
+    "box": "Phased Polaron Weapons",
+    "lb": "Dominion",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Phased",
+    "flavor": "Tetryon",
+    "box": "Phased Tetryon Weapons",
+    "lb": "Tholian",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Phased Biomatter",
+    "flavor": "Phaser",
+    "box": "Phased Biomatter Weapons",
+    "lb": "Xindi-Amphibious",
+    "ships": "[[:Category:Playable Xindi starships|playable Xindi-Aquatic and Xindi-Reptilian]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Phasic Harmonic",
+    "flavor": "Phaser",
+    "box": "Phasic Harmonic Weapons",
+    "lb": "Swarm",
+    "ships": "[[:Category:Playable Hur&#039;q starships|playable Hur&#039;q]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Plasmatic Biomatter",
+    "flavor": "Plasma",
+    "box": "Plasmatic Biomatter Weapons",
+    "lb": "Xindi-Terrestrial",
+    "ships": "Xindi [[Xindi-Insectoid Olaen Heavy Escort Carrier|Insectoid]] and [[Xindi-Insectoid Olaen Heavy Escort Carrier|Primate]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Polarized",
+    "flavor": "Disruptor",
+    "box": "Polarized Disruptor Weapons",
+    "lb": "Temporal",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Protostar",
+    "flavor": "Phaser",
+    "box": "Phaser Weapons (Prodigy)",
+    "lb": "Prodigy",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Pulse",
+    "flavor": "Phaser",
+    "box": "Undiscovered Phaser Weapons",
+    "lb": "Undiscovered",
+    "ships": "[[Columbia Legendary Temporal Operative Escort]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Radiolytic",
+    "flavor": "Phaser",
+    "box": "″The Last Generation″ Weapons",
+    "lb": "The Last Generation",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Resilience-Linked",
+    "flavor": "Disruptor",
+    "box": "Terran Linked Weapons",
+    "lb": "Emperor&#039;s",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Resilience-Linked",
+    "flavor": "Phaser",
+    "box": "Terran Linked Weapons",
+    "lb": "Emperor&#039;s",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Sensor-Linked",
+    "flavor": "Disruptor",
+    "box": "Discovery Disruptor or Phaser Weapons",
+    "lb": "Discovery",
+    "ships": "Discovery-era Klingon",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Sensor-Linked",
+    "flavor": "Phaser",
+    "box": "Discovery Disruptor or Phaser Weapons",
+    "lb": "Discovery",
+    "ships": "Discovery-era Federation",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Targeting-Linked",
+    "flavor": "Disruptor",
+    "box": "Terran Linked Weapons",
+    "lb": "Emperor&#039;s",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Targeting-Linked",
+    "flavor": "Phaser",
+    "box": "Terran Linked Weapons",
+    "lb": "Emperor&#039;s",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Vaadwaur",
+    "flavor": "Polaron",
+    "box": "Vaadwaur Polaron Weapons",
+    "lb": "Vaadwaur",
+    "ships": "[[:Category:Playable Vaadwaur starships|playable Vaadwaur]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Viridian",
+    "flavor": "Plasma",
+    "box": "Viridian Plasma Weapons",
+    "lb": "Discovery: Emerald Chain",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Voth",
+    "flavor": "Antiproton",
+    "box": "Voth Antiproton Weapons",
+    "lb": "Voth",
+    "ships": "[[:Category:Playable Voth starships|playable Voth]]",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Zhat Vash",
+    "flavor": "Disruptor",
+    "box": "Zhat Vash Disruptor Weapons",
+    "lb": "Picard Zhat Vash",
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Mission",
+    "type": "Dominion",
+    "flavor": "Polaron",
+    "box": null,
+    "lb": null,
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Mission",
+    "type": "Piercing",
+    "flavor": "Tetryon",
+    "box": null,
+    "lb": null,
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Mission",
+    "type": "Resonating",
+    "flavor": "Tetryon",
+    "box": null,
+    "lb": null,
+    "ships": null,
+    "rep": null
+  },
+  {
+    "cat": "Reputation",
+    "type": "Bio-Molecular",
+    "flavor": "Disruptor",
+    "box": "Undine",
+    "lb": null,
+    "ships": null,
+    "rep": "8472 Counter-Command"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Bio-Molecular",
+    "flavor": "Phaser",
+    "box": "Undine",
+    "lb": null,
+    "ships": null,
+    "rep": "8472 Counter-Command"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Inhibiting",
+    "flavor": "Polaron",
+    "box": "Gamma",
+    "lb": null,
+    "ships": null,
+    "rep": "Gamma Task Force"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Piezo -",
+    "flavor": "Polaron",
+    "box": "Lukari Restoration Initiative",
+    "lb": null,
+    "ships": null,
+    "rep": "Lukari Restoration Initiative"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Protonic",
+    "flavor": "Polaron",
+    "box": "Dyson",
+    "lb": null,
+    "ships": null,
+    "rep": "Dyson Joint Command"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Radiant",
+    "flavor": "Antiproton",
+    "box": "Iconian Resistance",
+    "lb": null,
+    "ships": null,
+    "rep": "Iconian Resistance"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Refracting",
+    "flavor": "Tetryon",
+    "box": "Nukara Strikeforce",
+    "lb": null,
+    "ships": null,
+    "rep": "Nukara Strikeforce"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Romulan",
+    "flavor": "Plasma",
+    "box": "New Romulus",
+    "lb": null,
+    "ships": null,
+    "rep": "New Romulus"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Temporal Defense",
+    "flavor": "Antiproton",
+    "box": "Temporal Defense Initiative",
+    "lb": null,
+    "ships": null,
+    "rep": "Temporal Defense Initiative"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Thoron Infused",
+    "flavor": "Polaron",
+    "box": "Delta Alliance",
+    "lb": null,
+    "ships": null,
+    "rep": "Delta Alliance"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Withering",
+    "flavor": "Disruptor",
+    "box": "Terran Task Force",
+    "lb": null,
+    "ships": null,
+    "rep": "Terran Task Force"
+  }
+]
