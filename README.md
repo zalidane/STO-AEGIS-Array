@@ -28,17 +28,23 @@ npm run db:migrate
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev:extractor` | Run the Extractor pipeline |
+| `npm run extract` | Manual STOWiki extract → `Extractor/output/*.json` |
+| `npm run import` | Import committed JSON into local DB |
+| `npm run import:prod` | Import committed JSON into production DB |
 | `npm run db:generate` | Generate Prisma client in `packages/database` |
-| `npm run db:migrate` | Apply migrations |
+| `npm run db:migrate` | Apply migrations (local) |
+| `npm run db:migrate:prod` | Apply migrations (production) |
 | `npm run db:studio` | Open Prisma Studio |
 
-Extractor flags (pass after `--`):
+Extract/import flags (pass after `--`):
 
 ```bash
-npm run dev:extractor -- --force-import
-npm run dev:extractor -- --force-refresh --force-import
+npm run extract -- --force-refresh
+npm run import -- --force-import
+npm run import:prod
 ```
+
+Commit updated `Extractor/output/*.json` after extracting so production can import without hitting the wiki.
 
 ## Shared database
 

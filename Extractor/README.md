@@ -1,6 +1,13 @@
 # Extractor
 
-Extracts Star Trek Online game data from [STOWiki](https://stowiki.net) Cargo tables, caches it as JSON under `output/`, and imports it into PostgreSQL using the shared `@sto-aegis/database` package.
+Extracts Star Trek Online game data from [STOWiki](https://stowiki.net) Cargo tables into `output/*.json`, then imports those files into PostgreSQL via `@sto-aegis/database`.
+
+**Workflow**
+
+1. **Extract (manual, local)** — fetch wiki → commit `output/*.json`
+2. **Import (automatic / deploy)** — read committed JSON → production DB
+
+Production never hits STOWiki; it only imports JSON shipped in git.
 
 ## Setup
 
@@ -12,35 +19,47 @@ npm run db:generate
 npm run db:migrate
 ```
 
-Ensure root `.env` contains `DATABASE_URL`.
+Use root `.env` for local DB and `.env.production` for Railway.
 
 ## Usage
 
 ```bash
 # from monorepo root
-npm run dev:extractor
 
-npm run dev:extractor -- --force-import
-npm run dev:extractor -- --force-refresh --force-import
+# Manual wiki extract → updates Extractor/output/*.json
+npm run extract
+npm run extract -- --force-refresh
+
+# Import committed JSON into local DB
+npm run import
+npm run import -- --force-import
+
+# Import committed JSON into production (Railway)
+npm run import:prod
 ```
 
 Or from this directory:
 
 ```bash
-npm run dev
+npm run extract
+npm run import
+npm run import:prod
 ```
 
-## CLI flags
+## CLI
 
-| Flag | Effect |
-|------|--------|
-| `--force-refresh` | Re-extract all Cargo tables from STOWiki |
-| `--force-import` | Re-import all JSON files, ignoring hash skip |
+| Command / flag | Effect |
+|----------------|--------|
+| `extract` | Fetch Cargo tables into `output/{Table}.json` |
+| `import` | Import JSON into PostgreSQL + `linkRelations` |
+| `--force-refresh` | Re-extract all tables from STOWiki |
+| `--force-import` | Re-import all JSON files (ignore hash skip) |
+| `--prod` | Load `.env.production` (used by `import:prod`) |
 
-## Pipeline
+## Output in git
 
-1. Extract → `output/{Table}.json`
-2. Map + import → PostgreSQL
-3. `linkRelations` → FKs / join tables
+`Extractor/output/*.json` **is tracked** so production deploys can import without extracting.
 
-See the monorepo [README](../README.md) for workspace layout and the shared database package.
+`output/importState.json` is **local-only** (gitignored) — hash skip state for local imports.
+
+See the monorepo [README](../README.md) for workspace layout.

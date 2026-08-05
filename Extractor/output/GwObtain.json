@@ -1,0 +1,354 @@
+[
+  {
+    "cat": "Lock Box",
+    "type": "2259c Phaser",
+    "flavor": "Phaser",
+    "box": "Phaser Pistol 2259c",
+    "lb": "Infinity",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "32c Modified",
+    "flavor": "Phaser",
+    "box": "Phaser Weapons (32c.)",
+    "lb": "Discovery: Far From Home",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "32c Standard Issue",
+    "flavor": "Phaser",
+    "box": "Phaser Weapons (32c.)",
+    "lb": "Discovery: Far From Home",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Aetherian Concordium",
+    "flavor": "Proton",
+    "box": "Aetherian Concordium Proton Weapons",
+    "lb": "Aetherian Concordium",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Agony",
+    "flavor": "Phaser",
+    "box": "Terran Empire Agony Phaser Weapons",
+    "lb": "Mirror Incursion",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Altamid",
+    "flavor": "Plasma",
+    "box": "Altamid Plasma Weapons",
+    "lb": "Kelvin Divergence",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Assault",
+    "flavor": "Phaser",
+    "box": "Undiscovered Phaser Weapons",
+    "lb": "Undiscovered",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Assimilated",
+    "flavor": "Plasma",
+    "box": "Assimilated Plasma Weapons",
+    "lb": "Borg",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Ba&#039;ul",
+    "flavor": "Antiproton",
+    "box": "Ba&#039;ul Antiproton Weapons",
+    "lb": "Angel&#039;s Wake",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Breen Imperium",
+    "flavor": "Polaron",
+    "box": "Breen Imperium Weaponry",
+    "lb": "Discovery: Partners in Crime",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Chronoplasma",
+    "flavor": "Plasma",
+    "box": "Chronoplasma Weapons",
+    "lb": "Na&#039;kuhl",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Corrosive",
+    "flavor": "Plasma",
+    "box": "Corrosive Plasma Weapons",
+    "lb": "Delta Expedition",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Courier",
+    "flavor": "Antiproton",
+    "box": "Courier Antiproton Weapons",
+    "lb": "Discovery: Unlikely Allies",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Delphic",
+    "flavor": "Antiproton",
+    "box": "Delphic Antiproton Weapons",
+    "lb": "Sphere Builder",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Destabilizing",
+    "flavor": "Tetryon",
+    "box": "Destabilized Tetryon Weapons",
+    "lb": "Hirogen",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Elachi",
+    "flavor": "Disruptor",
+    "box": "Elachi Crescent Weapons",
+    "lb": "Elachi",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Ferenginar",
+    "flavor": "Plasma",
+    "box": "Ferenginar Plasma Weapons",
+    "lb": "Deep Space Nine",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Fluidic",
+    "flavor": "Antiproton",
+    "box": "Fluidic Antiproton Weapons",
+    "lb": "Undine",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Herald",
+    "flavor": "Antiproton",
+    "box": "Herald Antiproton Weapons",
+    "lb": "Herald",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Isolytic",
+    "flavor": "Plasma",
+    "box": "Isolytic Plasma Weapons",
+    "lb": "Son&#039;a",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Kelvin",
+    "flavor": "Disruptor",
+    "box": "Kelvin Timeline Weapons",
+    "lb": "Kelvin Timeline",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Kelvin",
+    "flavor": "Phaser",
+    "box": "Kelvin Timeline Weapons",
+    "lb": "Kelvin Timeline",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Krieger Wave",
+    "flavor": "Disruptor",
+    "box": "Privateer&#039;s Disruptor Weapons",
+    "lb": "Privateer",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Nanite",
+    "flavor": "Disruptor",
+    "box": "Nanite Disruptor Weapons",
+    "lb": "Tal Shiar",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Phased",
+    "flavor": "Polaron",
+    "box": "Phased Polaron Weapons",
+    "lb": "Dominion",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Phased",
+    "flavor": "Tetryon",
+    "box": "Phased Tetryon Weapons",
+    "lb": "Tholian",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Phased Biomatter",
+    "flavor": "Phaser",
+    "box": "Phased Biomatter Weapons",
+    "lb": "Xindi-Amphibious",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Plasmatic Biomatter",
+    "flavor": "Plasma",
+    "box": "Plasmatic Biomatter Weapons",
+    "lb": "Xindi-Terrestrial",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Polarized",
+    "flavor": "Disruptor",
+    "box": "Polarized Disruptor Weapons",
+    "lb": "Temporal",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Protostar",
+    "flavor": "Phaser",
+    "box": "Phaser Weapons (Prodigy)",
+    "lb": "Prodigy",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Vaadwaur",
+    "flavor": "Polaron",
+    "box": "Vaadwaur Polaron Weapons",
+    "lb": "Vaadwaur",
+    "rep": null
+  },
+  {
+    "cat": "Lock Box",
+    "type": "Voth",
+    "flavor": "Antiproton",
+    "box": "Voth Antiproton Weapons",
+    "lb": "Voth",
+    "rep": null
+  },
+  {
+    "cat": "Reputation",
+    "type": "Anti-Borg",
+    "flavor": "Antiproton",
+    "box": "Task Force Omega",
+    "lb": null,
+    "rep": "Task Force Omega"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Bio-Molecular",
+    "flavor": "Disruptor",
+    "box": "Undine",
+    "lb": null,
+    "rep": "8472 Counter-Command"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Bio-Molecular",
+    "flavor": "Phaser",
+    "box": "Undine",
+    "lb": null,
+    "rep": "8472 Counter-Command"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Inhibiting",
+    "flavor": "Polaron",
+    "box": "Gamma",
+    "lb": null,
+    "rep": "Gamma Task Force"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Piezo -",
+    "flavor": "Polaron",
+    "box": "Lukari Restoration Initiative",
+    "lb": null,
+    "rep": "Lukari Restoration Initiative"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Protonic",
+    "flavor": "Polaron",
+    "box": "Dyson",
+    "lb": null,
+    "rep": "Dyson Joint Command"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Radiant",
+    "flavor": "Antiproton",
+    "box": "Iconian Resistance",
+    "lb": null,
+    "rep": "Iconian Resistance"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Romulan",
+    "flavor": "Plasma",
+    "box": "New Romulus",
+    "lb": null,
+    "rep": "New Romulus"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Sonic",
+    "flavor": "Antiproton",
+    "box": "Nukara Strikeforce",
+    "lb": null,
+    "rep": "Nukara Strikeforce"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Temporal Defense",
+    "flavor": "Antiproton",
+    "box": "Temporal Defense Initiative",
+    "lb": null,
+    "rep": "Temporal Defense Initiative"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Thoron Infused",
+    "flavor": "Polaron",
+    "box": "Delta Alliance",
+    "lb": null,
+    "rep": "Delta Alliance"
+  },
+  {
+    "cat": "Reputation",
+    "type": "Withering",
+    "flavor": "Disruptor",
+    "box": "Terran Task Force",
+    "lb": null,
+    "rep": "Terran Task Force"
+  }
+]

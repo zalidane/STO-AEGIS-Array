@@ -3,7 +3,9 @@ dist/
 **/dist/
 *.log
 .env
+.env.*
 **/.env
-Extractor/output/
+!**/.env.example
+Extractor/output/importState.json
 **/src/generated/prisma/
 .DS_Store

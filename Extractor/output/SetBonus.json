@@ -1,0 +1,20 @@
+[
+  {
+    "Name": "Autonomous Regeneration Sequencer",
+    "SetPage": "Assimilated Borg Technology",
+    "ReqItems": "2",
+    "Passives": "Regenerates 1% of your Hull every 2 seconds;+10 [[Skill: Hull Restoration|Hull Restoration]];+10 [[Skill: Damage Control|Hull Regeneration]]",
+    "TraySkills": null,
+    "Procs": "When taking damage, 2% chance to trigger &#039;&#039;&#039;Autonomous Regeneration Sequencer&#039;&#039;&#039; for 10 sec:\n* X% of your Hull Regenerated per sec\n* +0-50 All Damage Resistance Rating (value increases as Hitpoints fall)\nCannot trigger more than once every 60 seconds.\nSkills that affect this ability:\n* [[Skill: Hull Restoration|Hull Restoration]] (Improves Hull Healing)\nHoT Formula \n* Bonus Heal % / sec = (Skill / 200) + 2",
+    "Abilities": null
+  },
+  {
+    "Name": "Autonomous Regeneration Sequencer",
+    "SetPage": "Assimilated Borg Technology",
+    "ReqItems": "2",
+    "Passives": "Regenerates 1% of your Hull every 2 seconds;+10 [[Skill: Hull Restoration|Hull Restoration]];+10 [[Skill: Damage Control|Hull Regeneration]]",
+    "TraySkills": null,
+    "Procs": "When taking damage, 2% chance to trigger &#039;&#039;&#039;Autonomous Regeneration Sequencer&#039;&#039;&#039; for 10 sec:\n* X% of your Hull Regenerated per sec\n* +0-50 All Damage Resistance Rating (value increases as Hitpoints fall)\nCannot trigger more than once every 60 seconds.\nSkills that affect this ability:\n* [[Skill: Hull Restoration|Hull Restoration]] (Improves Hull Healing)\nHoT Formula \n* Bonus Heal % / sec = (Skill / 200) + 2",
+    "Abilities": null
+  }
+]
