@@ -1,0 +1,21 @@
+# Shared npm-workspaces monorepo — keep Railway Root Directory at `/`.
+# In Railway: Settings → Config-as-code path = `/Extractor/railway.toml`
+#
+# Recommended: deploy as a Cron Job (or one-shot) that imports committed
+# Extractor/output/*.json. Link DATABASE_URL from the Postgres service.
+#
+# Alternatively, skip this service and fold import into GraphQL's releaseCommand.
+
+[build]
+builder = "RAILPACK"
+buildCommand = "npm install && npm run generate -w @sto-aegis/database"
+watchPatterns = [
+  "/Extractor/**",
+  "/packages/database/**",
+  "/package.json",
+  "/package-lock.json",
+]
+
+[deploy]
+startCommand = "npm run import:force -w @sto-aegis/extractor"
+restartPolicyType = "NEVER"

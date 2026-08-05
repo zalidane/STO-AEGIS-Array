@@ -11,9 +11,14 @@ const schema = createSchema({
   resolvers: createResolvers(prisma),
 });
 
-const yoga = createYoga({ schema });
-const server = createServer(yoga);
+const yoga = createYoga({
+  schema,
+  graphqlEndpoint: "/graphql",
+});
 
-server.listen(4000, () => {
-  console.log("GraphQL is running on http://localhost:4000/graphql");
+const server = createServer(yoga);
+const port = Number(process.env.PORT ?? 4000);
+
+server.listen(port, "0.0.0.0", () => {
+  console.log(`GraphQL is running on http://0.0.0.0:${port}/graphql`);
 });
