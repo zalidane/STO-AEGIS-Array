@@ -65,29 +65,42 @@ Both **Extractor** and future **GraphQL** should depend on this package instead 
 
 ## Railway (shared monorepo)
 
-This is a **shared npm workspaces** monorepo. Do **not** set each service’s Root Directory to `GraphQL/`, `VueUI/`, etc. — keep **Root Directory = `/`** so workspace packages like `@sto-aegis/database` resolve.
+**Deploy from GitHub creates one service** (named after the repo). Railway will not auto-add GraphQL / VueUI / Extractor as separate services for this workspace layout. You configure services by hand.
 
-Per-service config files:
+`railway.toml` at the repo root defaults that first service to **GraphQL**. Sub-app configs live at `/GraphQL/railway.toml`, `/VueUI/railway.toml`, `/Extractor/railway.toml`.
 
-| Service | Config-as-code path |
-|---------|---------------------|
-| GraphQL | `/GraphQL/railway.toml` |
-| VueUI | `/VueUI/railway.toml` |
-| Extractor import | `/Extractor/railway.toml` |
+### Fix the service you already created (GraphQL)
 
-**GraphQL**
-- Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (private network URL preferred)
-- Generate domain; Yoga serves `/graphql`
-- Runs `prisma migrate deploy` as `releaseCommand`
+1. Open the `STO-AEGIS-Array` service → **Settings**
+2. **Root Directory**: leave empty / `/` (required so workspaces work)
+3. **Config as Code**: `/railway.toml` (or `/GraphQL/railway.toml` — same GraphQL deploy)
+4. **Variables** → add (after Postgres is in the project):
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
+5. **Networking** → Generate domain
+6. Redeploy
 
-**VueUI**
-- Build variable: `VITE_GRAPHQL_URL=https://${{GraphQL.RAILWAY_PUBLIC_DOMAIN}}/graphql`
-- Generate a public domain for the SPA
+Rename the service to `GraphQL` if you want.
 
-**Extractor**
-- Prefer a **Cron Job** / one-shot service (`restartPolicyType = NEVER`) that runs `import:force`
-- Variables: same `DATABASE_URL` as GraphQL
-- Or fold import into GraphQL `releaseCommand` and skip this service
+### Add VueUI
+
+1. Project canvas → **+ Create** → **Empty service** → name it `VueUI`
+2. Settings → connect the **same** GitHub repo / branch
+3. Root Directory: `/`
+4. Config as Code: `/VueUI/railway.toml`
+5. Variables (available at **build** time):
+   - `VITE_GRAPHQL_URL` = `https://${{GraphQL.RAILWAY_PUBLIC_DOMAIN}}/graphql`
+6. Generate domain → Deploy
+
+### Add Extractor import (optional Cron / one-shot)
+
+1. **+ Create** → Empty service (or Cron Job) → name it `Import`
+2. Same repo, Root Directory `/`, Config as Code: `/Extractor/railway.toml`
+3. Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
+4. Deploy (exits after import; restart policy is `NEVER`)
+
+### Postgres
+
+Add Railway Postgres to the project if it is not already there, then reference its `DATABASE_URL` as above. Use the **private** URL between services when possible.
 
 ## License
 
