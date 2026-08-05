@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 /**
  * Load monorepo env for Prisma CLI (migrate, generate, studio).
@@ -42,6 +42,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Use process.env (not env()) so `prisma generate` works without DATABASE_URL
+    // (e.g. Railway/CI build). migrate/deploy still need a real URL at runtime.
+    url: process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/postgres",
   },
 });
