@@ -7,14 +7,16 @@ buildCommand = "npm install && npm run generate -w @sto-aegis/database"
 watchPatterns = [
   "/GraphQL/**",
   "/packages/database/**",
+  "/Extractor/**",
   "/package.json",
   "/package-lock.json",
 ]
 
 [deploy]
 startCommand = "npm run start -w @sto-aegis/graphql"
+# Import can take several minutes — keep release from being cut off early.
 releaseCommand = "npm run migrate:deploy -w @sto-aegis/database && npm run import:force -w @sto-aegis/extractor"
 healthcheckPath = "/graphql"
-healthcheckTimeout = 30
+healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
