@@ -1,4 +1,5 @@
 import { config } from "dotenv";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 import {
@@ -7,7 +8,6 @@ import {
 } from "./extractors/extractTable.js";
 import { shouldRefresh } from "./extractors/cache.js";
 import { tableSchemas } from "./extractors/schemas/schemaList.js";
-import { importAll } from "./importers/importAll.js";
 
 type Command = "extract" | "import";
 
@@ -28,23 +28,46 @@ function parseArgs(argv: string[]) {
   };
 }
 
+function monorepoRoot(): string {
+  // Extractor/src → ../..
+  return resolve(__dirname, "../..");
+}
+
 function loadEnv(prod: boolean) {
+  const root = monorepoRoot();
+  const candidates = prod
+    ? [
+        resolve(root, ".env.production"),
+        resolve(process.cwd(), "../.env.production"),
+        resolve(process.cwd(), ".env.production"),
+      ]
+    : [
+        resolve(root, ".env"),
+        resolve(process.cwd(), "../.env"),
+        resolve(process.cwd(), ".env"),
+      ];
+
   if (prod) {
     process.env.PRISMA_ENV = "production";
     if (!process.env.NODE_ENV) process.env.NODE_ENV = "production";
-    config({
-      path: resolve(process.cwd(), "../.env.production"),
-      override: true,
-    });
-    config({
-      path: resolve(process.cwd(), ".env.production"),
-      override: true,
-    });
-    return;
   }
 
-  config({ path: resolve(process.cwd(), "../.env") });
-  config({ path: resolve(process.cwd(), ".env") });
+  for (const path of candidates) {
+    if (!existsSync(path)) continue;
+    const result = config({ path, override: true });
+    if (result.parsed && Object.keys(result.parsed).length > 0) {
+      console.log(`Loaded env from ${path}`);
+      return;
+    }
+  }
+
+  if (!process.env.DATABASE_URL) {
+    console.warn(
+      prod
+        ? "No .env.production found and DATABASE_URL is unset."
+        : "No .env found and DATABASE_URL is unset.",
+    );
+  }
 }
 
 async function runExtract(forceRefresh: boolean) {
@@ -76,6 +99,8 @@ async function runExtract(forceRefresh: boolean) {
 }
 
 async function runImport(forceImport: boolean) {
+  // Dynamic import so createPrismaClient runs after loadEnv().
+  const { importAll } = await import("./importers/importAll.js");
   await importAll(forceImport);
 }
 
@@ -95,6 +120,20 @@ async function main() {
     await runExtract(forceRefresh);
     return;
   }
+
+  if (!process.env.DATABASE_URL) {
+    throw new Error(
+      prod
+        ? "DATABASE_URL missing. Set it in monorepo root .env.production or the environment."
+        : "DATABASE_URL missing. Set it in monorepo root .env or the environment.",
+    );
+  }
+
+  console.log(
+    `Importing into ${prod ? "production" : "local"} database host: ${
+      new URL(process.env.DATABASE_URL).host
+    }`,
+  );
 
   await runImport(forceImport);
 }

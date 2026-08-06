@@ -8,8 +8,6 @@ import { linkRelations } from "./linkRelations.js";
 
 import type { ImportConfig } from "./importConfig.js";
 
-const { prisma } = createPrismaClient();
-
 const IMPORT_ORDER = [
   "Infobox",
   "Ships",
@@ -25,44 +23,52 @@ const IMPORT_ORDER = [
 ] as const;
 
 export async function importAll(forceImport = false) {
-  const state = await loadState();
-  let anyImported = false;
+  // Create client only after env is loaded (see main.ts loadEnv).
+  const { prisma, pool } = createPrismaClient();
 
-  for (const table of IMPORT_ORDER) {
-    const config = importMappings[table];
-    if (!config) continue;
+  try {
+    const state = await loadState();
+    let anyImported = false;
 
-    const filePath = `output/${table}.json`;
-    const currentHash = await getFileHash(filePath);
-    const previousHash = state[table]?.hash;
+    for (const table of IMPORT_ORDER) {
+      const config = importMappings[table];
+      if (!config) continue;
 
-    if (!forceImport && currentHash === previousHash) {
-      console.log(`${table}: unchanged, skipping`);
-      continue;
+      const filePath = `output/${table}.json`;
+      const currentHash = await getFileHash(filePath);
+      const previousHash = state[table]?.hash;
+
+      if (!forceImport && currentHash === previousHash) {
+        console.log(`${table}: unchanged, skipping`);
+        continue;
+      }
+
+      console.log(`Importing ${table} → ${config.model}`);
+      const imported = await importTable(
+        prisma,
+        table,
+        config as ImportConfig<any, any>,
+      );
+
+      if (!imported) {
+        console.error(`${table}: import failed — state not updated`);
+        continue;
+      }
+
+      anyImported = true;
+      state[table] = {
+        hash: currentHash,
+        lastImported: new Date().toISOString(),
+      };
+      await saveState(state);
     }
 
-    console.log(`Importing ${table} → ${config.model}`);
-    const imported = await importTable(
-      prisma,
-      table,
-      config as ImportConfig<any, any>,
-    );
-
-    if (!imported) {
-      console.error(`${table}: import failed — state not updated`);
-      continue;
+    if (anyImported || forceImport) {
+      console.log("Resolving relationships...");
+      await linkRelations(prisma);
     }
-
-    anyImported = true;
-    state[table] = {
-      hash: currentHash,
-      lastImported: new Date().toISOString(),
-    };
-    await saveState(state);
-  }
-
-  if (anyImported || forceImport) {
-    console.log("Resolving relationships...");
-    await linkRelations(prisma);
+  } finally {
+    await prisma.$disconnect();
+    await pool.end();
   }
 }
