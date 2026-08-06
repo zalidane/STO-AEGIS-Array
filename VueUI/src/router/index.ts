@@ -3,33 +3,44 @@ import { createRouter, createWebHistory } from "vue-router";
 import Ships from "../views/Ships.vue";
 import Traits from "../views/Traits.vue";
 import StarshipTraits from "@/views/StarshipTraits.vue";
+import ShipDetails from "@/views/ShipDetails.vue";
+import Home from "@/views/Home.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: "/",
-      redirect: "/ships",
+      component: Home,
     },
     {
       path: "/ships",
-      name: "ships",
       component: Ships,
+      meta: {
+        breadcrumb: "Ships",
+      },
     },
     {
       path: "/traits",
-      name: "traits",
       component: Traits,
+      meta: {
+        breadcrumb: "Traits",
+      },
     },
     {
-      path: "/starshipTraits",
-      name: "starshipTraits",
+      path: "/starship-traits",
       component: StarshipTraits,
+      meta: {
+        breadcrumb: "Starship Traits",
+      },
     },
     {
       path: "/ships/:id",
-      name: "ship-details",
-      component: () => import("@/views/ShipDetails.vue"),
+      component: ShipDetails,
+      meta: {
+        breadcrumb: "Ship Details",
+        parent: "/ships",
+      },
     },
   ],
 });

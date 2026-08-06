@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useQuery } from "@vue/apollo-composable";
 import { TraitsDocument } from "@/graphql/generated/graphql";
+import LoadingPanel from "@/components/shared/LoadingPanel.vue";
+import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 
 const { result, loading, error } = useQuery(TraitsDocument);
 
@@ -11,10 +13,12 @@ const groundTraits =
 </script>
 
 <template>
+  <app-breadcrumbs />
   <v-container>
     <h1 class="mb-4">Traits</h1>
 
-    <v-progress-linear v-if="loading" indeterminate class="mb-4" />
+    <loading-panel v-if="loading" :message="'Traits'" />
+
     <v-alert v-else-if="error" type="error" class="mb-4">
       {{ error.message }}
     </v-alert>
