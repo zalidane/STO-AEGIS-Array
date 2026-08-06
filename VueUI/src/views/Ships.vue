@@ -4,6 +4,8 @@ import { useRouter } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
 import { ShipsDocument } from "@/graphql/generated/graphql";
 import type { ShipsQuery } from "@/graphql/generated/graphql";
+import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
+import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 
 const router = useRouter();
 
@@ -24,10 +26,12 @@ function onRowClick(_event: Event, row: { item: Ship }) {
 </script>
 
 <template>
+  <app-breadcrumbs />
   <v-container>
     <h1 class="mb-4">Ships</h1>
 
-    <v-progress-linear v-if="loading" indeterminate class="mb-4" />
+    <loading-panel v-if="loading" :message="'Ships'" />
+
     <v-alert v-else-if="error" type="error" class="mb-4">
       {{ error.message }}
     </v-alert>

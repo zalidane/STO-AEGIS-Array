@@ -4,6 +4,8 @@ import { useRoute } from "vue-router";
 
 import { useQuery } from "@vue/apollo-composable";
 import { ShipDocument, type ShipQuery } from "@/graphql/generated/graphql";
+import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
+import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 
 const route = useRoute();
 
@@ -19,8 +21,10 @@ const ship = computed<ShipDetail | null>(() => result.value?.ship ?? null);
 </script>
 
 <template>
+  <AppBreadcrumbs :title="ship?.name" />
+
   <v-container>
-    <v-progress-linear v-if="loading" indeterminate />
+    <loading-panel v-if="loading" :message="'Ship Details'" />
 
     <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
 
