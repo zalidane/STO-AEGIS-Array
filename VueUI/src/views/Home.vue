@@ -1,4 +1,19 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+const searchText = ref("");
+
+function search() {
+  router.push({
+    path: "/search",
+    query: {
+      q: searchText.value,
+    },
+  });
+}
+</script>
 
 <template>
   <v-sheet class="hero-section pa-10 mb-8" rounded="x1">
@@ -8,16 +23,12 @@
       Explore ships, traits, consoles, abd more for the game Star Trek Online
     </p>
 
-    <v-btn color="primary" size="large" to="/ships">Browse Ships</v-btn>
-
-    <v-card class="mb-6">
-      <v-card-text>
-        <v-text-field
-          prepend-inner-icon="mdi-magnify"
-          label="Search STO-AEGIS"
-        />
-      </v-card-text>
-    </v-card>
+    <v-text-field
+      v-model="searchText"
+      prepend-inner-icon="mdi-magnify"
+      label="Search STO-AEGIS"
+      @keydown.enter="search"
+    />
   </v-sheet>
 
   <v-row>

@@ -11,7 +11,6 @@
     "VueUI"
   ],
   "scripts": {
-    "dev:database": "npm run studio -w @sto-aegis/database",
     "dev:extractor": "npm run dev -w @sto-aegis/extractor",
     "dev:graphql": "npm run dev -w @sto-aegis/graphql",
     "dev:vue": "npm run dev -w @sto-aegis/vue-ui",
@@ -27,7 +26,6 @@
     "db:studio": "npm run studio -w @sto-aegis/database",
     "db:studio:prod": "npm run studio:prod -w @sto-aegis/database",
     "codegen": "npm run codegen -w @sto-aegis/vue-ui",
-    "codegen:vue": "npm run codegen -w @sto-aegis/vue-ui",
     "build": "npm run db:generate && npm run build --workspaces --if-present",
     "build:database": "npm run build -w @sto-aegis/database",
     "build:extractor": "npm run build -w @sto-aegis/extractor",
@@ -39,10 +37,8 @@
     "type-check:graphql": "npm run type-check -w @sto-aegis/graphql",
     "type-check:vue": "npm run type-check -w @sto-aegis/vue-ui",
     "test:unit": "npm run test:unit -w @sto-aegis/vue-ui",
-    "test:unit:vue": "npm run test:unit -w @sto-aegis/vue-ui",
     "start": "npm run start -w @sto-aegis/graphql",
     "start:extractor": "npm run start -w @sto-aegis/extractor",
-    "start:graphql": "npm run start -w @sto-aegis/graphql",
     "start:vue": "npm run start -w @sto-aegis/vue-ui",
     "preview:vue": "npm run preview -w @sto-aegis/vue-ui"
   },

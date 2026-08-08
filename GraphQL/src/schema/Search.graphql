@@ -1,6 +1,7 @@
 type SearchResult {
   type: String!
   name: String!
+  id: Int!
 }
 
 extend type Query {

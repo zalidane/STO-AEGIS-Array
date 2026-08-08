@@ -2,5 +2,6 @@ query Search($text: String!) {
   search(text: $text) {
     type
     name
+    id
   }
 }
