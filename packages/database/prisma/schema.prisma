@@ -13,8 +13,18 @@ model Ship {
   id Int @id @default(autoincrement())
 
   name               String  @unique
-  description        String?
+  description        String? // not present in current Ships.json extracts
+  image              String?
+  image2             String?
+  released           String?
+  internalName       String?
+  fc                 Boolean @default(false)
+  faction            String?
+  facSort            String?
+  rank               String?
+  rankLevel          Int?
   tier               Int?
+  upgradeCost        String?
   type               String?
   hull               String?
   hullMod            Float?
@@ -22,12 +32,34 @@ model Ship {
   turnRate           Float?
   impulse            Float?
   inertia            Int?
+  powerAll           Int?
+  powerWeapons       Int?
+  powerShields       Int?
+  powerEngines       Int?
+  powerAuxiliary     Int?
+  powerBoost         Int?
+  boffs              String?
   foreWeapons        Int?
   aftWeapons         Int?
+  equipCannons       Boolean?
+  devices            Int?
   tacticalSlots      Int?
   engineeringSlots   Int?
   scienceSlots       Int?
+  uniconsole         String?
+  t5uConsole         String?
+  experimental       Boolean @default(false)
   secondaryDeflector Boolean @default(false)
+  hangars            Int?
+  cost               String?
+  abilities          String?
+  admiraltyEng       Int?
+  admiraltyTac       Int?
+  admiraltySci       Int?
+  displayPrefix      String?
+  displayClass       String?
+  displayType        String?
+  factionLede        String?
 
   rawData Json?
 
@@ -37,7 +69,6 @@ model Ship {
   starshipTraits StarshipTraitShip[]
   shipTypeId     Int?
   shipType       ShipType?           @relation(fields: [shipTypeId], references: [id])
-  uniconsole     String?
   uniconsoleId   Int?
   uniConsole     Infobox?            @relation("ShipUniConsole", fields: [uniconsoleId], references: [id])
 }

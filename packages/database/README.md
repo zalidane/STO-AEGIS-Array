@@ -24,6 +24,7 @@ Or from this package:
 
 ```bash
 npm run generate
+npm run migrate:dev
 npm run migrate:deploy
 ```
 

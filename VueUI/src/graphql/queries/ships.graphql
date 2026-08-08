@@ -3,6 +3,12 @@ query Ships {
     id
     name
     description
+    image
+    released
+    faction
+    factionLede
+    rank
+    rankLevel
     tier
     type
     hull
@@ -17,7 +23,11 @@ query Ships {
     engineeringSlots
     scienceSlots
     secondaryDeflector
+    hangars
     uniconsole
+    displayPrefix
+    displayClass
+    displayType
     shipType {
       id
       name
@@ -30,7 +40,17 @@ query Ship($id: Int!) {
     id
     name
     description
+    image
+    image2
+    released
+    internalName
+    fc
+    faction
+    facSort
+    rank
+    rankLevel
     tier
+    upgradeCost
     type
     hull
     hullMod
@@ -38,13 +58,34 @@ query Ship($id: Int!) {
     turnRate
     impulse
     inertia
+    powerAll
+    powerWeapons
+    powerShields
+    powerEngines
+    powerAuxiliary
+    powerBoost
+    boffs
     foreWeapons
     aftWeapons
+    equipCannons
+    devices
     tacticalSlots
     engineeringSlots
     scienceSlots
-    secondaryDeflector
     uniconsole
+    t5uConsole
+    experimental
+    secondaryDeflector
+    hangars
+    cost
+    abilities
+    admiraltyEng
+    admiraltyTac
+    admiraltySci
+    displayPrefix
+    displayClass
+    displayType
+    factionLede
     uniconsoleId
     shipTypeId
     createdAt
@@ -74,10 +115,56 @@ query ShipByName($name: String!) {
     id
     name
     description
+    image
+    image2
+    released
+    internalName
+    fc
+    faction
+    facSort
+    rank
+    rankLevel
     tier
+    upgradeCost
     type
     hull
+    hullMod
+    shieldMod
     turnRate
+    impulse
+    inertia
+    powerAll
+    powerWeapons
+    powerShields
+    powerEngines
+    powerAuxiliary
+    powerBoost
+    boffs
+    foreWeapons
+    aftWeapons
+    equipCannons
+    devices
+    tacticalSlots
+    engineeringSlots
+    scienceSlots
+    uniconsole
+    t5uConsole
+    experimental
+    secondaryDeflector
+    hangars
+    cost
+    abilities
+    admiraltyEng
+    admiraltyTac
+    admiraltySci
+    displayPrefix
+    displayClass
+    displayType
+    factionLede
+    uniconsoleId
+    shipTypeId
+    createdAt
+    updatedAt
     shipType {
       id
       name
@@ -86,11 +173,14 @@ query ShipByName($name: String!) {
       id
       name
       rarity
+      type
     }
     starshipTraits {
       id
       name
       short
+      type
+      obtained
     }
   }
 }

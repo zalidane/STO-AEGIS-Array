@@ -2,7 +2,17 @@ type Ship {
   id: Int!
   name: String!
   description: String
+  image: String
+  image2: String
+  released: String
+  internalName: String
+  fc: Boolean!
+  faction: String
+  facSort: String
+  rank: String
+  rankLevel: Int
   tier: Int
+  upgradeCost: String
   type: String
   hull: String
   hullMod: Float
@@ -10,17 +20,38 @@ type Ship {
   turnRate: Float
   impulse: Float
   inertia: Int
+  powerAll: Int
+  powerWeapons: Int
+  powerShields: Int
+  powerEngines: Int
+  powerAuxiliary: Int
+  powerBoost: Int
+  boffs: String
   foreWeapons: Int
   aftWeapons: Int
+  equipCannons: Boolean
+  devices: Int
   tacticalSlots: Int
   engineeringSlots: Int
   scienceSlots: Int
+  uniconsole: String
+  t5uConsole: String
+  experimental: Boolean!
   secondaryDeflector: Boolean!
+  hangars: Int
+  cost: String
+  abilities: String
+  admiraltyEng: Int
+  admiraltyTac: Int
+  admiraltySci: Int
+  displayPrefix: String
+  displayClass: String
+  displayType: String
+  factionLede: String
   rawData: JSON
   createdAt: DateTime!
   updatedAt: DateTime!
   shipTypeId: Int
-  uniconsole: String
   uniconsoleId: Int
   shipType: ShipType
   uniConsole: Infobox

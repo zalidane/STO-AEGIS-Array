@@ -1,4 +1,5 @@
-schema: http://localhost:4000/graphql
+schema:
+  - ../GraphQL/src/schema/**/*.graphql
 
 documents:
   - src/graphql/**/*.graphql

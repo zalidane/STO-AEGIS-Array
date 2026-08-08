@@ -28,13 +28,20 @@ npm run db:migrate
 
 | Command | Description |
 |---------|-------------|
-| `npm run extract` | Manual STOWiki extract → `Extractor/output/*.json` |
-| `npm run import` | Import committed JSON into local DB |
+| `npm run extract` / `extract:force` | Manual STOWiki extract → `Extractor/output/*.json` |
+| `npm run import` / `import:force` | Import committed JSON into local DB |
 | `npm run import:prod` | Import committed JSON into production DB |
 | `npm run db:generate` | Generate Prisma client in `packages/database` |
-| `npm run db:migrate` | Apply migrations (local) |
+| `npm run db:migrate` | Apply migrations (deploy) |
+| `npm run db:migrate:dev` | Create/apply migrations (Prisma migrate dev) |
 | `npm run db:migrate:prod` | Apply migrations (production) |
 | `npm run db:studio` | Open Prisma Studio |
+| `npm run codegen` | Generate Vue GraphQL client types |
+| `npm run build` | Prisma generate + build all workspaces |
+| `npm run build:database` / `build:extractor` / `build:graphql` / `build:vue` | Build one package |
+| `npm run dev:graphql` / `dev:vue` / `dev:extractor` | Start a package in watch mode |
+| `npm run type-check` | Type-check all workspaces |
+| `npm run test:unit` | Run Vue UI unit tests |
 
 Extract/import flags (pass after `--`):
 

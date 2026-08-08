@@ -6,13 +6,14 @@
   "license": "MIT",
   "type": "commonjs",
   "scripts": {
+    "dev": "tsx watch src/main.ts extract",
     "extract": "tsx src/main.ts extract",
     "extract:force": "tsx src/main.ts extract --force-refresh",
     "import": "tsx src/main.ts import",
     "import:force": "tsx src/main.ts import --force-import",
     "import:prod": "tsx src/main.ts import --prod --force-import",
-    "dev": "tsx watch src/main.ts extract",
     "build": "tsc -p tsconfig.json",
+    "type-check": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/main.js"
   },
   "dependencies": {
