@@ -1,0 +1,21 @@
+query TraitById($id: Int!) {
+  traitById(id: $id) {
+    id
+    name
+    type
+    environment
+    description
+    shortDescription
+    required
+    possible
+    career
+    source
+    charVariant
+    boffVariant
+    doffVariant
+    iconName
+    master
+    createdAt
+    updatedAt
+  }
+}

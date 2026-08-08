@@ -1,15 +1,30 @@
 <script setup lang="ts">
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
-import { TraitsDocument } from "@/graphql/generated/graphql";
-import LoadingPanel from "@/components/shared/LoadingPanel.vue";
+import { TraitsDocument, type TraitsQuery } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
+import LoadingPanel from "@/components/shared/LoadingPanel.vue";
+
+const router = useRouter();
+
+type Trait = TraitsQuery["traits"][number];
 
 const { result, loading, error } = useQuery(TraitsDocument);
+const traits = computed<Trait[]>(() => result.value?.traits ?? []);
+const search = ref("");
+const headers = [
+  { title: "Name", key: "name" },
+  { title: "Type", key: "type" },
+  { title: "Environment", key: "environment" },
+  { title: "Short Description", key: "shortDescription" },
+  { title: "Career", key: "career" },
+  { title: "Source", key: "source" },
+];
 
-const spaceTraits =
-  result.value?.traits.filter((trait) => trait.environment === "space") ?? [];
-const groundTraits =
-  result.value?.traits.filter((trait) => trait.environment === "ground") ?? [];
+function onRowClick(_event: Event, row: { item: Trait }) {
+  router.push(`/traits/${row.item.id}`);
+}
 </script>
 
 <template>
@@ -24,45 +39,14 @@ const groundTraits =
     </v-alert>
 
     <div v-else>
-      <v-table>
-        <thead>
-          <tr>
-            <th colspan="2">Space Traits</th>
-          </tr>
-          <tr>
-            <th>Name</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr v-for="trait in spaceTraits" :key="trait.id">
-            <td>{{ trait.name }}</td>
-            <td>{{ trait.description }}</td>
-          </tr>
-        </tbody>
-      </v-table>
-
-      <hr />
-
-      <v-table>
-        <thead>
-          <tr>
-            <th colspan="2">Ground Traits</th>
-          </tr>
-          <tr>
-            <th>Name</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr v-for="trait in groundTraits" :key="trait.id">
-            <td>{{ trait.name }}</td>
-            <td>{{ trait.description }}</td>
-          </tr>
-        </tbody>
-      </v-table>
+      <v-text-field v-model="search" label="Search" class="mb-4" />
+      <v-data-table
+        :items="traits"
+        :search="search"
+        :headers="headers"
+        :items-per-page="25"
+        @click:row="onRowClick"
+      />
     </div>
   </v-container>
 </template>

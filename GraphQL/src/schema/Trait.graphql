@@ -22,4 +22,5 @@ type Trait {
 extend type Query {
   traits: [Trait!]!
   trait(name: String!, type: String!, environment: String!): Trait
+  traitById(id: Int!): Trait
 }

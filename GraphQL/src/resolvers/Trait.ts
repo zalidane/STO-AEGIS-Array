@@ -24,6 +24,8 @@ export function createTraitResolver(prisma: PrismaClient) {
             },
           },
         }),
+      traitById: (_parent: unknown, args: { id: number }) =>
+        prisma.trait.findUnique({ where: { Id: args.id } }),
     },
     Trait: {
       id: (parent: TraitRow) => parent.Id,
