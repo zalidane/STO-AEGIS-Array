@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@sto-aegis/database";
+import { wrapResolversWithHtmlDecode } from "../logic/wrapResolversWithHtmlDecode.js";
 import { scalarResolvers } from "./scalars.js";
 import { createSearchResolver } from "./Search.js";
 import { createShipResolver } from "./Ship.js";
@@ -27,7 +28,7 @@ function mergeResolvers(...parts: ResolverMap[]): ResolverMap {
 }
 
 export function createResolvers(prisma: PrismaClient) {
-  return {
+  return wrapResolversWithHtmlDecode({
     ...scalarResolvers,
     ...mergeResolvers(
       {
@@ -49,7 +50,7 @@ export function createResolvers(prisma: PrismaClient) {
       createSwObtainResolver(prisma),
       createShipTypeResolver(prisma),
     ),
-  };
+  });
 }
 
 export {
