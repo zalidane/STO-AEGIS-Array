@@ -3,37 +3,30 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
 import {
-  ReputationsDocument,
-  type ReputationsQuery,
+  ShipTypesDocument,
+  type ShipTypesQuery,
 } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 
 const router = useRouter();
-type Reputation = ReputationsQuery["reputations"][number];
+type ShipType = ShipTypesQuery["shipTypes"][number];
 
-const { result, loading, error } = useQuery(ReputationsDocument);
-const items = computed<Reputation[]>(() => result.value?.reputations ?? []);
+const { result, loading, error } = useQuery(ShipTypesDocument);
+const items = computed<ShipType[]>(() => result.value?.shipTypes ?? []);
 const search = ref("");
-const headers = [
-  { title: "Name", key: "name" },
-  { title: "Environment", key: "environment" },
-  { title: "Released", key: "released" },
-  { title: "BOff", key: "boff" },
-  { title: "Secondary", key: "secondary" },
-  { title: "Link", key: "link" },
-];
+const headers = [{ title: "Name", key: "name" }];
 
-function onRowClick(_event: Event, row: { item: Reputation }) {
-  router.push(`/reputations/${row.item.id}`);
+function onRowClick(_event: Event, row: { item: ShipType }) {
+  router.push(`/ship-types/${row.item.id}`);
 }
 </script>
 
 <template>
   <app-breadcrumbs />
   <v-container>
-    <h1 class="mb-4">Reputations</h1>
-    <loading-panel v-if="loading" :message="'Reputations'" />
+    <h1 class="mb-4">Ship Types</h1>
+    <loading-panel v-if="loading" :message="'Ship Types'" />
     <v-alert v-else-if="error" type="error" class="mb-4">
       {{ error.message }}
     </v-alert>

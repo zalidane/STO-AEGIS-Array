@@ -5,4 +5,10 @@ export const friendlyNames = {
   TraySkill: "Tray Skills",
   Reputation: "Reputations",
   SetBonus: "Set Bonuses",
+  Modifier: "Modifiers",
+  Mastery: "Masteries",
+  Infobox: "Infoboxes",
+  GwObtain: "Ground Obtains",
+  SwObtain: "Space Obtains",
+  ShipType: "Ship Types",
 };

@@ -7,4 +7,8 @@ export const typeIcons = {
   SetBonus: "mdi-chart-bell-curve-cumulative",
   Mastery: "mdi-trophy",
   Modifier: "mdi-delta",
+  Infobox: "mdi-information-outline",
+  GwObtain: "mdi-treasure-chest",
+  SwObtain: "mdi-rocket",
+  ShipType: "mdi-shape",
 };

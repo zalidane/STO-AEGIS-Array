@@ -3,37 +3,38 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
 import {
-  ReputationsDocument,
-  type ReputationsQuery,
+  InfoboxesDocument,
+  type InfoboxesQuery,
 } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 
 const router = useRouter();
-type Reputation = ReputationsQuery["reputations"][number];
+type Infobox = InfoboxesQuery["infoboxes"][number];
 
-const { result, loading, error } = useQuery(ReputationsDocument);
-const items = computed<Reputation[]>(() => result.value?.reputations ?? []);
+const { result, loading, error } = useQuery(InfoboxesDocument);
+const items = computed<Infobox[]>(() => result.value?.infoboxes ?? []);
 const search = ref("");
 const headers = [
   { title: "Name", key: "name" },
-  { title: "Environment", key: "environment" },
-  { title: "Released", key: "released" },
-  { title: "BOff", key: "boff" },
-  { title: "Secondary", key: "secondary" },
-  { title: "Link", key: "link" },
+  { title: "Rarity", key: "rarity" },
+  { title: "Type", key: "type" },
+  { title: "Who", key: "who" },
+  { title: "Bound To", key: "boundto" },
+  { title: "Bound When", key: "boundwhen" },
+  { title: "Equip Limit", key: "equiplimit" },
 ];
 
-function onRowClick(_event: Event, row: { item: Reputation }) {
-  router.push(`/reputations/${row.item.id}`);
+function onRowClick(_event: Event, row: { item: Infobox }) {
+  router.push(`/infoboxes/${row.item.id}`);
 }
 </script>
 
 <template>
   <app-breadcrumbs />
   <v-container>
-    <h1 class="mb-4">Reputations</h1>
-    <loading-panel v-if="loading" :message="'Reputations'" />
+    <h1 class="mb-4">Infoboxes</h1>
+    <loading-panel v-if="loading" :message="'Infoboxes'" />
     <v-alert v-else-if="error" type="error" class="mb-4">
       {{ error.message }}
     </v-alert>

@@ -1,10 +1,36 @@
 <script setup lang="ts">
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
-import { StarshipTraitsDocument } from "@/graphql/generated/graphql";
+import {
+  StarshipTraitsDocument,
+  type StarshipTraitsQuery,
+} from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 
+const router = useRouter();
+
+type StarshipTrait = StarshipTraitsQuery["starshipTraits"][number];
+
 const { result, loading, error } = useQuery(StarshipTraitsDocument);
+const traits = computed<StarshipTrait[]>(
+  () => result.value?.starshipTraits ?? [],
+);
+const search = ref("");
+const headers = [
+  { title: "Name", key: "name" },
+  { title: "Type", key: "type" },
+  { title: "Short", key: "short" },
+  { title: "Obtained", key: "obtained" },
+  { title: "Tag", key: "tag" },
+  { title: "Tag 2", key: "tag2" },
+  { title: "Tag 3", key: "tag3" },
+];
+
+function onRowClick(_event: Event, row: { item: StarshipTrait }) {
+  router.push(`/starship-traits/${row.item.id}`);
+}
 </script>
 
 <template>
@@ -18,23 +44,15 @@ const { result, loading, error } = useQuery(StarshipTraitsDocument);
       {{ error.message }}
     </v-alert>
 
-    <v-table v-else>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr
-          v-for="starshipTrait in result?.starshipTraits"
-          :key="starshipTrait.id"
-        >
-          <td>{{ starshipTrait.name }}</td>
-          <td>{{ starshipTrait.short }}</td>
-        </tr>
-      </tbody>
-    </v-table>
+    <div v-else>
+      <v-text-field v-model="search" label="Search" class="mb-4" />
+      <v-data-table
+        :items="traits"
+        :search="search"
+        :headers="headers"
+        :items-per-page="25"
+        @click:row="onRowClick"
+      />
+    </div>
   </v-container>
 </template>

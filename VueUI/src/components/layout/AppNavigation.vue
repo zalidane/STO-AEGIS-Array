@@ -1,31 +1,22 @@
 <script setup lang="ts">
 const items = [
+  { title: "Home", icon: "mdi-home", to: "/" },
+  { title: "Ships", icon: "mdi-ferry", to: "/ships" },
+  { title: "Ship Types", icon: "mdi-shape", to: "/ship-types" },
+  { title: "Traits", icon: "mdi-star-outline", to: "/traits" },
+  { title: "Starship Traits", icon: "mdi-star", to: "/starship-traits" },
+  { title: "Tray Skills", icon: "mdi-lightning-bolt", to: "/tray-skills" },
+  { title: "Masteries", icon: "mdi-trophy", to: "/masteries" },
+  { title: "Reputations", icon: "mdi-medal", to: "/reputations" },
   {
-    title: "Home",
-    icon: "mdi-home",
-    to: "/",
+    title: "Set Bonuses",
+    icon: "mdi-chart-bell-curve-cumulative",
+    to: "/set-bonuses",
   },
-  {
-    title: "Ships",
-    icon: "mdi-ferry",
-    to: "/ships",
-  },
-  {
-    title: "Traits",
-    icon: "mdi-star-outline",
-    to: "/traits",
-  },
-  {
-    title: "Starship Traits",
-    icon: "mdi-star",
-    to: "/starship-traits",
-  },
-];
-
-const comingSoonItems = [
-  { title: "Reputations" },
-  { title: "Set Bonuses" },
-  { title: "Tray Skills" },
+  { title: "Modifiers", icon: "mdi-delta", to: "/modifiers" },
+  { title: "Infoboxes", icon: "mdi-information-outline", to: "/infoboxes" },
+  { title: "Ground Obtains", icon: "mdi-treasure-chest", to: "/gw-obtains" },
+  { title: "Space Obtains", icon: "mdi-rocket", to: "/sw-obtains" },
 ];
 </script>
 
@@ -41,18 +32,6 @@ const comingSoonItems = [
         :prepend-icon="item.icon"
         :title="item.title"
       />
-    </v-list>
-
-    <v-list>
-      <v-list-subheader title="Coming Soon" />
-
-      <v-list-item
-        v-for="item in comingSoonItems"
-        :key="item.title"
-        :title="item.title"
-        :prepend-icon="'mdi-alert-circle-outline'"
-      >
-      </v-list-item>
     </v-list>
   </v-navigation-drawer>
 </template>
