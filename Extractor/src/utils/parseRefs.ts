@@ -1,12 +1,9 @@
+import { decodeHtmlEntities } from "./decodeHtmlEntities";
+
 export function extractWikiTargets(text: string | null | undefined): string[] {
   if (!text) return [];
 
-  const decoded = text
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&amp;/g, "&");
+  const decoded = decodeHtmlEntities(text);
 
   const targets: string[] = [];
   const re = /\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g;
@@ -30,10 +27,14 @@ export function splitList(value: string | null | undefined): string[] {
 
   return value
     .split(/[,;]/)
-    .map((s) => s.trim())
+    .map((s) => decodeHtmlEntities(s.trim()))
     .filter(Boolean);
 }
 
 export function normalizeShipType(value: string): string {
-  return value.toLowerCase().replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+  return decodeHtmlEntities(value)
+    .toLowerCase()
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }

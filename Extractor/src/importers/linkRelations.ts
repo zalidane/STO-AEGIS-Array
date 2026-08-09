@@ -4,12 +4,26 @@ import {
   splitList,
   normalizeShipType,
 } from "../utils/parseRefs";
+import {
+  decodeHtmlEntities,
+  decodeHtmlEntitiesOrNull,
+} from "../utils/decodeHtmlEntities";
+import {
+  dedupeShipsByDecodedName,
+  dedupeStarshipTraitsByDecodedName,
+} from "./dedupeEncodedNames";
 
 function nameIdMap(rows: { id: number; name: string }[]): Map<string, number> {
-  return new Map(rows.map((row) => [row.name, row.id]));
+  return new Map(
+    rows.map((row) => [decodeHtmlEntities(row.name), row.id] as const),
+  );
 }
 
 export async function linkRelations(prisma: PrismaClient) {
+  // Collapse Mat&#039;Ha / Mat'Ha style duplicates before linking.
+  const shipDedupe = await dedupeShipsByDecodedName(prisma);
+  const traitDedupe = await dedupeStarshipTraitsByDecodedName(prisma);
+
   // Sequential reads: concurrent prisma queries on adapter-pg can hit the same
   // pg Client and trigger DeprecationWarning (hard error in pg@9).
   const ships = await prisma.ship.findMany({
@@ -63,16 +77,21 @@ export async function linkRelations(prisma: PrismaClient) {
     const shipTypeId = typeKey ? (shipTypeIdByName.get(typeKey) ?? null) : null;
 
     const raw = ship.rawData as Record<string, unknown> | null;
-    const uniconsole =
+    const uniconsoleRaw =
       ship.uniconsole ??
       (typeof raw?.uniconsole === "string" ? raw.uniconsole : null);
+    const uniconsole = decodeHtmlEntitiesOrNull(uniconsoleRaw);
     const uniconsoleId = uniconsole
       ? (infoboxByName.get(uniconsole) ?? null)
       : null;
 
     await prisma.ship.update({
       where: { id: ship.id },
-      data: { shipTypeId, uniconsole, uniconsoleId },
+      data: {
+        shipTypeId,
+        uniconsole,
+        uniconsoleId,
+      },
     });
   }
 
@@ -100,13 +119,20 @@ export async function linkRelations(prisma: PrismaClient) {
       ? (shipTypeIdByName.get(normalizeShipType(m.masterypackage)) ?? null)
       : null;
 
+    const traitName = decodeHtmlEntitiesOrNull(m.trait);
+    const trait2Name = decodeHtmlEntitiesOrNull(m.trait2);
+    const trait3Name = decodeHtmlEntitiesOrNull(m.trait3);
+    const acctraitName = decodeHtmlEntitiesOrNull(m.acctrait);
+
     await prisma.mastery.update({
       where: { id: m.id },
       data: {
-        traitId: m.trait ? (traitByName.get(m.trait) ?? null) : null,
-        trait2Id: m.trait2 ? (traitByName.get(m.trait2) ?? null) : null,
-        trait3Id: m.trait3 ? (traitByName.get(m.trait3) ?? null) : null,
-        acctraitId: m.acctrait ? (traitByName.get(m.acctrait) ?? null) : null,
+        traitId: traitName ? (traitByName.get(traitName) ?? null) : null,
+        trait2Id: trait2Name ? (traitByName.get(trait2Name) ?? null) : null,
+        trait3Id: trait3Name ? (traitByName.get(trait3Name) ?? null) : null,
+        acctraitId: acctraitName
+          ? (traitByName.get(acctraitName) ?? null)
+          : null,
         shipTypeId,
       },
     });
@@ -114,9 +140,8 @@ export async function linkRelations(prisma: PrismaClient) {
 
   // --- Gw/SwObtain.lb -> Infobox ("{lb}" Lock Box) ---
   for (const row of gwRows) {
-    const lockBoxId = row.lb
-      ? (infoboxByName.get(`${row.lb} Lock Box`) ?? null)
-      : null;
+    const lb = decodeHtmlEntitiesOrNull(row.lb);
+    const lockBoxId = lb ? (infoboxByName.get(`${lb} Lock Box`) ?? null) : null;
     await prisma.gwObtain.update({
       where: { id: row.id },
       data: { lockBoxId },
@@ -124,9 +149,8 @@ export async function linkRelations(prisma: PrismaClient) {
   }
 
   for (const row of swRows) {
-    const lockBoxId = row.lb
-      ? (infoboxByName.get(`${row.lb} Lock Box`) ?? null)
-      : null;
+    const lb = decodeHtmlEntitiesOrNull(row.lb);
+    const lockBoxId = lb ? (infoboxByName.get(`${lb} Lock Box`) ?? null) : null;
     await prisma.swObtain.update({
       where: { id: row.id },
       data: { lockBoxId },
@@ -152,6 +176,12 @@ export async function linkRelations(prisma: PrismaClient) {
   }
 
   console.log("Relations linked:", {
+    encodedNameDedupe: {
+      shipsMerged: shipDedupe.merged,
+      shipsRenamed: shipDedupe.renamed,
+      traitsMerged: traitDedupe.merged,
+      traitsRenamed: traitDedupe.renamed,
+    },
     shipTypes: shipTypeIdByName.size,
     traitShips: traitShipRows.length,
     modifierItems: modifierItems.length,
