@@ -39,7 +39,9 @@ export function buildBreadcrumbs(options: {
     return items;
   }
 
-  const crumbRoutes = matched.filter((route) => readMeta(route.meta).breadcrumb);
+  const crumbRoutes = matched.filter(
+    (route) => readMeta(route.meta).breadcrumb,
+  );
   const leaf =
     crumbRoutes[crumbRoutes.length - 1] ?? matched[matched.length - 1];
 
@@ -65,11 +67,11 @@ export function buildBreadcrumbs(options: {
 
   for (let i = 0; i < crumbRoutes.length; i++) {
     const route = crumbRoutes[i];
-    const routeMeta = readMeta(route.meta);
+    const routeMeta = readMeta(route!.meta);
     const isLast = i === crumbRoutes.length - 1;
     items.push({
       title: isLast && title ? title : String(routeMeta.breadcrumb),
-      to: isLast ? undefined : route.path,
+      to: isLast ? undefined : route!.path,
       disabled: isLast,
     });
   }

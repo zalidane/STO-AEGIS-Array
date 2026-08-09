@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@sto-aegis/database";
+import { formatShipResolvedName } from "../logic/formatShipResolvedName.js";
 
 type ContainsFilter = {
   contains: string;
@@ -128,7 +129,11 @@ export function createSearchResolver(prisma: PrismaClient) {
         ]);
 
         return [
-          ...ships.map((s) => ({ type: "Ship", name: s.name, id: s.id })),
+          ...ships.map((s) => ({
+            type: "Ship",
+            name: formatShipResolvedName(s.name, s.displayClass),
+            id: s.id,
+          })),
           ...starshipTraits.map((t) => ({
             type: "StarshipTrait",
             name: t.name,

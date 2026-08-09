@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@sto-aegis/database";
+import { formatShipResolvedName } from "../logic/formatShipResolvedName.js";
 
 export function createShipResolver(prisma: PrismaClient) {
   return {
@@ -10,6 +11,8 @@ export function createShipResolver(prisma: PrismaClient) {
         prisma.ship.findUnique({ where: { name: args.name } }),
     },
     Ship: {
+      name: (parent: { name: string; displayClass: string | null }) =>
+        formatShipResolvedName(parent.name, parent.displayClass),
       shipType: (parent: { shipTypeId: number | null }) =>
         parent.shipTypeId == null
           ? null
