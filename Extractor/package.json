@@ -14,6 +14,7 @@
     "import:prod": "tsx src/main.ts import --prod --force-import",
     "build": "tsc -p tsconfig.json",
     "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test src/**/*.test.ts",
     "start": "node dist/main.js"
   },
   "dependencies": {
