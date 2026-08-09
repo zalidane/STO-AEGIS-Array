@@ -8,6 +8,7 @@ import {
   decodeHtmlEntities,
   decodeHtmlEntitiesOrNull,
 } from "../utils/decodeHtmlEntities";
+import { buildShipNameIdMap } from "../utils/shipNameLookup";
 import {
   dedupeShipsByDecodedName,
   dedupeStarshipTraitsByDecodedName,
@@ -31,7 +32,11 @@ export async function linkRelations(prisma: PrismaClient) {
       id: true,
       name: true,
       type: true,
+      tier: true,
       uniconsole: true,
+      displayPrefix: true,
+      displayClass: true,
+      displayType: true,
       rawData: true,
     },
   });
@@ -48,7 +53,7 @@ export async function linkRelations(prisma: PrismaClient) {
   const gwRows = await prisma.gwObtain.findMany();
   const swRows = await prisma.swObtain.findMany();
 
-  const shipByName = nameIdMap(ships);
+  const shipByName = buildShipNameIdMap(ships);
   const traitByName = nameIdMap(traits);
   const infoboxByName = nameIdMap(infoboxes);
 

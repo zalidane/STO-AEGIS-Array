@@ -6,6 +6,8 @@ import { useQuery } from "@vue/apollo-composable";
 import { ShipDocument, type ShipQuery } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
+import { formatYesNo } from "@/utils/formatters";
+import { formatFactionsByFacSort } from "@/utils/sortFactionsByFacSort";
 
 const route = useRoute();
 
@@ -38,16 +40,13 @@ function getShipImageUrl(imageField: string) {
         <v-col cols="12" md="8">
           <h3>{{ ship.name }}</h3>
           <h5>Tier {{ ship.tier }} • {{ ship.type }}</h5>
+          <h5>{{ formatFactionsByFacSort(ship.faction, ship.facSort) }}</h5>
 
           <v-card color="surface" rounded="xl" class="mb-4">
             <v-sheet height="150" class="d-flex align-center justify-center">
               <v-img v-if="ship.image" :src="getShipImageUrl(ship.image)" />
               <span v-else>No Image Available</span>
             </v-sheet>
-
-            <v-card-text>
-              {{ ship.description ?? "Description not available" }}
-            </v-card-text>
           </v-card>
         </v-col>
 
@@ -66,9 +65,9 @@ function getShipImageUrl(imageField: string) {
             </v-list-item>
 
             <v-list-item>
-              <template #prepend> Shield Modifier </template>
+              <template #prepend> Hull | Shield Modifiers </template>
               <template #append>
-                {{ ship.shieldMod }}
+                {{ ship.hullMod }} | {{ ship.shieldMod }}
               </template>
             </v-list-item>
 
@@ -76,6 +75,45 @@ function getShipImageUrl(imageField: string) {
               <template #prepend> Turn Rate </template>
               <template #append>
                 {{ ship.turnRate }}
+              </template>
+            </v-list-item>
+
+            <v-list-item>
+              <template #prepend> Impulse Modifier </template>
+              <template #append>
+                {{ ship.impulse }}
+              </template>
+            </v-list-item>
+
+            <v-list-item>
+              <template #prepend> Inertia Rating </template>
+              <template #append>
+                {{ ship.inertia }}
+              </template>
+            </v-list-item>
+
+            <v-list-item>
+              <template #prepend> Bonus Power </template>
+              <template #append>
+                <v-badge v-if="ship.powerAll">
+                  All: {{ ship.powerAll }}
+                </v-badge>
+
+                <v-badge v-if="ship.powerAuxiliary">
+                  A: {{ ship.powerAuxiliary }}
+                </v-badge>
+
+                <v-badge v-if="ship.powerEngines">
+                  E: {{ ship.powerEngines }}
+                </v-badge>
+
+                <v-badge v-if="ship.powerShields">
+                  S: {{ ship.powerShields }}
+                </v-badge>
+
+                <v-badge v-if="ship.powerWeapons">
+                  W: {{ ship.powerWeapons }}
+                </v-badge>
               </template>
             </v-list-item>
           </v-list>
@@ -84,53 +122,104 @@ function getShipImageUrl(imageField: string) {
         <v-card>
           <v-card-title>
             <v-icon class="mr-2"> mdi-account-box </v-icon>
-            Brodge Officers and Consoles
+            Bridge Officers and Consoles
           </v-card-title>
 
           <v-list>
-            <v-list-item>
-              <template #prepend> Hull </template>
+            <!-- TODO: sort by length, desc></TODO -->
+            <v-list-item v-for="b in ship.boffs?.split(',').sort()">
               <template #append>
-                {{ ship.hull }}
+                {{ b }}
               </template>
             </v-list-item>
 
             <v-list-item>
-              <template #prepend> Shield Modifier </template>
               <template #append>
-                {{ ship.shieldMod }}
-              </template>
-            </v-list-item>
-
-            <v-list-item>
-              <template #prepend> Turn Rate </template>
-              <template #append>
-                {{ ship.turnRate }}
+                Eng: {{ ship.engineeringSlots }} | Sci:
+                {{ ship.scienceSlots }} | Tac: {{ ship.tacticalSlots }} | T5U:
+                {{ ship.t5uConsole }}
               </template>
             </v-list-item>
           </v-list>
         </v-card>
 
+        <v-card>
+          <v-card-title>
+            <v-icon class="mr-2"> mdi-explosion </v-icon>
+            Weapon Hardpoints
+          </v-card-title>
+
+          <v-list-item>
+            <template #prepend> Fore Weapons </template>
+            <template #append>
+              {{ ship.foreWeapons }}
+            </template>
+          </v-list-item>
+
+          <v-list-item>
+            <template #prepend> Aft Weapons </template>
+            <template #append>
+              {{ ship.aftWeapons }}
+            </template>
+          </v-list-item>
+
+          <v-list-item>
+            <template #prepend> Type-Specific Slot </template>
+            <template #append>
+              <span v-if="ship.experimental">Experimental Weapon</span>
+            </template>
+          </v-list-item>
+
+          <v-list-item>
+            <template #prepend> Can Equip Cannons </template>
+            <template #append>
+              {{ formatYesNo(ship.equipCannons) }}
+            </template>
+          </v-list-item>
+        </v-card>
+
         <v-card color="surface" rounded="xl">
-          <v-card-title> Universal Console </v-card-title>
+          <v-card-title>
+            <v-icon class="mr-2"> mdi-wrench </v-icon>
+            Equipment and Abilities
+          </v-card-title>
 
-          <v-card-text>
-            <template v-if="ship.uniConsole">
-              <strong>
-                {{ ship.uniConsole.name }}
-              </strong>
-
-              <div>
-                {{ ship.uniConsole.rarity }}
-              </div>
+          <v-list>
+            <template v-if="ship.abilities">
+              <v-list-item v-for="ability in ship.abilities.split(',')">
+                {{ ability }}
+              </v-list-item>
             </template>
 
-            <template v-else> None </template>
-          </v-card-text>
+            <v-list-item>
+              <template #prepend> Device Slots </template>
+              <template #append>
+                {{ ship.devices }}
+              </template>
+            </v-list-item>
+
+            <v-list-item>
+              <template #prepend> Hangars </template>
+              <template #append>
+                <span v-if="ship.hangars"> {{ ship.hangars }}</span>
+                <span v-else>0</span>
+              </template>
+            </v-list-item>
+
+            <v-list-item>
+              <template #prepend> Secondary Deflector </template>
+              <template #append>
+                {{ formatYesNo(ship.secondaryDeflector) }}
+              </template>
+            </v-list-item>
+          </v-list>
         </v-card>
 
         <v-card color="surface" rounded="xl" class="mt-4">
-          <v-card-title> Starship Traits </v-card-title>
+          <v-card-title>
+            <v-icon class="mr-2">mdi-star</v-icon>
+            Starship Traits
+          </v-card-title>
 
           <v-list>
             <v-list-item v-for="trait in ship.starshipTraits" :key="trait.id">
@@ -145,97 +234,20 @@ function getShipImageUrl(imageField: string) {
           </v-list>
         </v-card>
 
-        <v-icon>mdi-star</v-icon>
-
         <v-col cols="12" md="8">
           <v-card>
             <v-card-title> Miscellaneous Stats </v-card-title>
 
             <v-list>
               <v-list-item>
-                <template #prepend> Impulse Modifier </template>
-                <template #append>
-                  {{ ship.impulse }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Inertia Rating </template>
-                <template #append>
-                  {{ ship.inertia }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
                 <template #prepend> Warp Core </template>
                 <template #append> ??? </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Bonus Power </template>
-                <template #append>
-                  All: {{ ship.powerAll }} | Weapons: {{ ship.powerWeapons }} |
-                  Shields: {{ ship.powerShields }} | Engines:
-                  {{ ship.powerEngines }} | Auxilliary:
-                  {{ ship.powerAuxiliary }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Bridge Officers </template>
-                <template #append>
-                  {{ ship.boffs }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Fore Weapons </template>
-                <template #append>
-                  {{ ship.foreWeapons }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Aft Weapons </template>
-                <template #append>
-                  {{ ship.aftWeapons }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Type-Specific Slot </template>
-                <template #append>
-                  {{ ship.experimental }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Device Slots </template>
-                <template #append>
-                  {{ ship.devices }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Consoles </template>
-                <template #append>
-                  Eng: {{ ship.engineeringSlots }} | Sci:
-                  {{ ship.scienceSlots }} | Tac: {{ ship.tacticalSlots }} | T5U:
-                  {{ ship.t5uConsole }}
-                </template>
               </v-list-item>
 
               <v-list-item>
                 <template #prepend> Cost </template>
                 <template #append>
                   {{ ship.cost }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Abilities </template>
-                <template #append>
-                  {{ ship.abilities }}
                 </template>
               </v-list-item>
 
@@ -248,72 +260,9 @@ function getShipImageUrl(imageField: string) {
               </v-list-item>
 
               <v-list-item>
-                <template #prepend> Can Equip Cannons </template>
-                <template #append>
-                  {{ ship.equipCannons }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Fac Sort </template>
-                <template #append>
-                  {{ ship.facSort }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Faction </template>
-                <template #append>
-                  {{ ship.faction }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Faction Lede </template>
-                <template #append>
-                  {{ ship.factionLede }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> FC </template>
-                <template #append>
-                  {{ ship.fc }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Hangars </template>
-                <template #append>
-                  {{ ship.hangars }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Hull Modifier </template>
-                <template #append>
-                  {{ ship.hullMod }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Images </template>
-                <template #append>
-                  {{ ship.image }} | {{ ship.image2 }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
                 <template #prepend> Internal Name </template>
                 <template #append>
                   {{ ship.internalName }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Power Boost </template>
-                <template #append>
-                  {{ ship.powerBoost }}
                 </template>
               </v-list-item>
 
@@ -328,20 +277,6 @@ function getShipImageUrl(imageField: string) {
                 <template #prepend> Released </template>
                 <template #append>
                   {{ ship.released }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Secondary Deflector </template>
-                <template #append>
-                  {{ ship.secondaryDeflector }}
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend> Upgrade Cost </template>
-                <template #append>
-                  {{ ship.upgradeCost }}
                 </template>
               </v-list-item>
             </v-list>
