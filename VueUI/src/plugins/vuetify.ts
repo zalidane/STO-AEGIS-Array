@@ -27,6 +27,13 @@ const stoTheme = {
     science: "#2196f3",
     universal: "#bdbdbd",
 
+    // Hybrid BOff seat specializations (STO UI palette)
+    command: "#ff9838",
+    intelligence: "#9c27b0",
+    pilot: "#4fc3f8",
+    temporal: "#fdd835",
+    miracle: "#66bb6a",
+
     dilithium: "#7e57c2",
     zen: "#d4af37",
     lobi: "#c0c0c0",

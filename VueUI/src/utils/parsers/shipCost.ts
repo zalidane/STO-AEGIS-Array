@@ -138,6 +138,7 @@ export const costNames: Record<string, string> = {
   LC: "Lobi Crystal",
   LB: "Lock Box",
   PPPS: "Epic Phoenix Prize Pack Token",
+
   SRFED5: "Tier 5 Starship Requisition (Federation)",
   SRFED4: "Tier 4 Starship Requisition (Federation)",
   SRFED3: "Tier 3 Starship Requisition (Federation)",
@@ -149,7 +150,7 @@ export const costNames: Record<string, string> = {
   SRROM2: "Tier 2 Starship Requisition (Romulan)",
 
   SRKDF5: "Tier 5 Starship Requisition (KDF)",
-  SRKDF4: "Tier 3 Starship Requisition (KDF)",
+  SRKDF4: "Tier 4 Starship Requisition (KDF)",
   SRKDF3: "Tier 3 Starship Requisition (KDF)",
   SRKDF2: "Tier 2 Starship Requisition (KDF)",
 };
