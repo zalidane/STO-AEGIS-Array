@@ -1,3 +1,5 @@
+import { parseShipCost, costNames } from "./parsers";
+
 export function formatYesNo(
   value: boolean | number | string | null | undefined,
 ): string {
@@ -15,4 +17,30 @@ export function formatNumber(value: number | null | undefined): string {
 
 export function formatValue<T>(value: T | null | undefined): string {
   return value == null ? "N/A" : String(value);
+}
+
+export function formatWikiDate(wikiDate: string | null | undefined): string {
+  if (!wikiDate) return "Unknown";
+
+  if (wikiDate.length !== 8) return wikiDate;
+
+  const year = wikiDate.slice(0, 4);
+  const month = wikiDate.slice(4, 6);
+  const day = wikiDate.slice(6, 8);
+
+  const date = new Date(`${year}-${month}-${day}`);
+
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+export function formatShipCost(cost: string | null | undefined): string[] {
+  return parseShipCost(cost).map((part) => {
+    const label = costNames[part.currency] ?? part.currency;
+
+    return `${part.amount} ${label}`;
+  });
 }
