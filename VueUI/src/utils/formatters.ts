@@ -1,4 +1,4 @@
-import { parseShipCost, costNames } from "./parsers";
+import { parseShipCost, costNames, type ShipCost } from "./parsers";
 
 export function formatYesNo(
   value: boolean | number | string | null | undefined,
@@ -37,10 +37,23 @@ export function formatWikiDate(wikiDate: string | null | undefined): string {
   });
 }
 
-export function formatShipCost(cost: string | null | undefined): string[] {
-  return parseShipCost(cost).map((part) => {
-    const label = costNames[part.currency] ?? part.currency;
-
-    return `${part.amount} ${label}`;
-  });
+export interface BoffSeat {
+  rank: string;
+  specialization?: string;
 }
+
+export function parseBoffSeat(boff: string): BoffSeat {
+  const parts = boff.trim().split("-");
+
+  return {
+    rank: parts[0] ?? "",
+    specialization: parts[1],
+  };
+}
+
+export const boffColors: Record<string, string> = {
+  Tactical: "error",
+  Engineering: "warning",
+  Science: "info",
+  Universal: "success",
+};

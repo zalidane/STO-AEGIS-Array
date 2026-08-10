@@ -6,12 +6,9 @@ import { useQuery } from "@vue/apollo-composable";
 import { ShipDocument, type ShipQuery } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
-import {
-  formatShipCost,
-  formatWikiDate,
-  formatYesNo,
-} from "@/utils/formatters";
+import { boffColors, formatWikiDate, formatYesNo } from "@/utils/formatters";
 import { formatFactionsByFacSort } from "@/utils/sortFactionsByFacSort";
+import { parseShipCost, type ShipCost } from "@/utils/parsers";
 
 const route = useRoute();
 
@@ -49,12 +46,63 @@ const factionGlow = computed(() => {
   return "#9966ff";
 });
 
-const factionColors: Record<string, string> = {
-  "United Federation of Planets": "primary",
-  "Klingon Empire": "error",
-  "Romulan Republic": "success",
-  Dominion: "purple",
-};
+function getFactionColor(faction: string): string {
+  if (faction.includes("Federation")) {
+    return "federation";
+  }
+
+  if (faction.includes("Klingon")) {
+    return "klingon";
+  }
+
+  if (faction.includes("Romulan")) {
+    return "romulan";
+  }
+
+  if (faction.includes("Dominion")) {
+    return "dominion";
+  }
+
+  return "neutral";
+}
+
+function getBoffColor(boff: string): string {
+  if (boff.includes("Tactical")) {
+    return "tactical";
+  }
+
+  if (boff.includes("Engineering")) {
+    return "engineering";
+  }
+
+  if (boff.includes("Science")) {
+    return "science";
+  }
+
+  if (boff.includes("Universal")) {
+    return "universal";
+  }
+
+  return "neutral";
+}
+
+function abbreviateBoff(boff: string): string {
+  return boff
+    .replace("Lieutenant Commander", "LtCmdr")
+    .replace("Commander", "Cmdr")
+    .replace("Lieutenant", "Lt")
+    .replace("Engineering", "ENG")
+    .replace("Science", "SCI")
+    .replace("Tactical", "TAC")
+    .replace("Universal", "UNI")
+    .replace("Intel", "INT")
+    .replace("Command", "CMD")
+    .replace("Pilot", "PIL")
+    .replace("Miracle Worker", "MW")
+    .replace("Temporal", "TMP");
+}
+
+const parsedCosts = computed<ShipCost[]>(() => parseShipCost(ship.value?.cost));
 
 const powerDisplay = computed(() => {
   const all = ship.value?.powerAll ?? 0;
@@ -117,7 +165,7 @@ watch(
                     <v-chip
                       v-for="faction in formattedFactions"
                       :key="faction"
-                      :color="factionColors[faction] ?? 'grey'"
+                      :color="getFactionColor(faction)"
                       size="small"
                       variant="outlined"
                       class="ma-1"
@@ -274,7 +322,7 @@ watch(
             </v-list>
           </v-card>
 
-          <v-card rounded="x1" height="325" class="mt-4 glass-title">
+          <v-card rounded="xl" height="325" class="mt-4 glass-title">
             <v-card-title class="header-green">
               <v-icon class="mr-2"> mdi-store </v-icon>
               Acquisition
@@ -284,14 +332,20 @@ watch(
 
             <v-list>
               <v-list-item
-                v-for="(cost, index) in formatShipCost(ship.cost)"
-                :key="cost"
+                v-for="cost in parsedCosts"
+                :key="`${cost.currencyCode}-${cost.amount}`"
               >
-                <v-icon class="mr-2">mdi-diamond</v-icon>
-                {{ cost }}
-                <v-divider class="or-separator" v-if="index < cost.length - 1">
+                <span
+                  class="currency-dot"
+                  :style="{
+                    borderColor: cost.color,
+                  }"
+                ></span>
+                {{ cost.amount }}
+                {{ cost.label }}
+                <!-- <v-divider class="or-separator" v-if="index < cost.length - 1">
                   OR
-                </v-divider>
+                </v-divider> -->
               </v-list-item>
 
               <v-list-item>
@@ -320,23 +374,37 @@ watch(
               </v-card-title>
               <v-divider />
 
-              <v-list>
-                <!-- TODO: sort by length, desc></TODO -->
-                <v-list-item v-for="b in ship.boffs?.split(',').sort()">
-                  <template #append>
-                    {{ b }}
-                  </template>
-                </v-list-item>
+              <v-card-text>
+                <div class="boff-layout">
+                  <v-chip
+                    v-for="boff in ship.boffs?.split(',').sort()"
+                    :key="boff"
+                    class="boff-chip"
+                    size="small"
+                    variant="outlined"
+                    :color="getBoffColor(boff)"
+                  >
+                    {{ abbreviateBoff(boff) }}
+                  </v-chip>
+                </div>
+              </v-card-text>
 
-                <v-list-item>
-                  <template #append>
-                    Eng: {{ ship.engineeringSlots }} | Sci:
-                    {{ ship.scienceSlots }} | Tac: {{ ship.tacticalSlots }} |
-                    T5U:
-                    {{ ship.t5uConsole }}
-                  </template>
-                </v-list-item>
-              </v-list>
+              <div class="section-header">
+                <span>Consoles</span>
+              </div>
+              <div class="console-summary">
+                <v-chip size="small" color="warning">
+                  ENG {{ ship.engineeringSlots }}
+                </v-chip>
+
+                <v-chip size="small" color="info">
+                  SCI {{ ship.scienceSlots }}
+                </v-chip>
+
+                <v-chip size="small" color="error">
+                  TAC {{ ship.tacticalSlots }}
+                </v-chip>
+              </div>
             </v-card>
           </v-col>
 
@@ -640,5 +708,33 @@ watch(
   display: flex;
   justify-content: space-between;
   padding: 4px 0;
+}
+
+.currency-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin-right: 12px;
+}
+
+.boff-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.boff-chip {
+  min-width: 90px;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.console-summary {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
 }
 </style>
