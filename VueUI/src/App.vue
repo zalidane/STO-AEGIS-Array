@@ -5,7 +5,7 @@ import AppNavigation from "./components/layout/AppNavigation.vue";
 </script>
 
 <template>
-  <v-app>
+  <v-app style="background: linear-gradient(to bottom, #07121f, #020914)">
     <AppNavigation />
 
     <v-app-bar color="surface">

@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
 import { useQuery } from "@vue/apollo-composable";
 import { ShipDocument, type ShipQuery } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
-import { formatYesNo } from "@/utils/formatters";
+import {
+  formatShipCost,
+  formatWikiDate,
+  formatYesNo,
+} from "@/utils/formatters";
 import { formatFactionsByFacSort } from "@/utils/sortFactionsByFacSort";
 
 const route = useRoute();
@@ -21,12 +25,70 @@ type ShipDetail = NonNullable<ShipQuery["ship"]>;
 
 const ship = computed<ShipDetail | null>(() => result.value?.ship ?? null);
 
+const formattedFactions = computed(() => {
+  if (!ship.value) return;
+
+  return formatFactionsByFacSort(ship.value.faction, ship.value.facSort)
+    .split(",")
+    .map((f) => f.trim());
+});
+
+const factionGlow = computed(() => {
+  const primaryFaction = formattedFactions.value?.[0] ?? "";
+
+  if (primaryFaction.startsWith("United")) {
+    return "#3fa7ff";
+  }
+  if (primaryFaction.startsWith("Klingon")) {
+    return "#ff4d4d";
+  }
+  if (primaryFaction.startsWith("Romulan")) {
+    return "#00cc66";
+  }
+
+  return "#9966ff";
+});
+
+const factionColors: Record<string, string> = {
+  "United Federation of Planets": "primary",
+  "Klingon Empire": "error",
+  "Romulan Republic": "success",
+  Dominion: "purple",
+};
+
+const powerDisplay = computed(() => {
+  const all = ship.value?.powerAll ?? 0;
+
+  return {
+    weapons: ship.value?.powerWeapons ?? all,
+    shields: ship.value?.powerShields ?? all,
+    engines: ship.value?.powerEngines ?? all,
+    auxiliary: ship.value?.powerAuxiliary ?? all,
+  };
+});
+
+const fallbackImage = "/images/ships/galaxy-class-angled.jfif";
+const imageFailed = ref(false);
+const imageUrl = computed(() => {
+  if (imageFailed.value || !ship.value?.image) {
+    return fallbackImage;
+  }
+
+  return getShipImageUrl(ship.value.image);
+});
 function getShipImageUrl(imageField: string) {
   const filename = imageField.replace("File:", "").replaceAll(" ", "_");
   const path = `/images/ships/${filename}`;
   console.log(path);
   return path;
 }
+
+watch(
+  () => ship.value?.image,
+  () => {
+    imageFailed.value = false;
+  },
+);
 </script>
 
 <template>
@@ -37,206 +99,355 @@ function getShipImageUrl(imageField: string) {
     <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
     <template v-else-if="ship">
       <v-row>
-        <v-col cols="12" md="8">
-          <h3>{{ ship.name }}</h3>
-          <h5>Tier {{ ship.tier }} • {{ ship.type }}</h5>
-          <h5>{{ formatFactionsByFacSort(ship.faction, ship.facSort) }}</h5>
+        <v-col md="9">
+          <v-card color="surface" rounded="x1" class="mb-4">
+            <v-card-text>
+              <v-row align="stretch" class="mb-4">
+                <v-col cols="8" class="d-flex flex-column justify-center">
+                  <div class="ship-title">
+                    {{ ship.name }}
+                  </div>
+                </v-col>
 
-          <v-card color="surface" rounded="xl" class="mb-4">
-            <v-sheet height="150" class="d-flex align-center justify-center">
-              <v-img v-if="ship.image" :src="getShipImageUrl(ship.image)" />
-              <span v-else>No Image Available</span>
-            </v-sheet>
+                <v-col
+                  cols="4"
+                  class="hero-meta d-flex flex-column justify-space-between align-end"
+                >
+                  <div class="faction-container">
+                    <v-chip
+                      v-for="faction in formattedFactions"
+                      :key="faction"
+                      :color="factionColors[faction] ?? 'grey'"
+                      size="small"
+                      variant="outlined"
+                      class="ma-1"
+                    >
+                      {{ faction }}
+                    </v-chip>
+                  </div>
+
+                  <div class="d-flex ga-2">
+                    <v-chip color="primary" size="small" variant="outlined">
+                      Tier {{ ship.tier }}
+                    </v-chip>
+
+                    <v-chip color="secondary" size="small" variant="outlined">
+                      {{ ship.type }}
+                    </v-chip>
+                  </div>
+                </v-col>
+              </v-row>
+
+              <v-divider class="mb-4" />
+
+              <div
+                class="hero-image"
+                :style="{
+                  background: `radial-gradient(circle at center, ${factionGlow}55 0%, transparent 70%),
+                    linear-gradient(135deg,#102338,#162e4c,#0d1625)`,
+                }"
+              >
+                <v-img :src="imageUrl" @error="() => (imageFailed = true)" />
+              </div>
+            </v-card-text>
           </v-card>
         </v-col>
 
-        <v-card>
-          <v-card-title>
-            <v-icon class="mr-2"> mdi-shield </v-icon>
-            Combat Statistics
-          </v-card-title>
+        <v-col md="3">
+          <v-card rounded="xl" height="365" class="glass-title">
+            <v-card-title class="header-cyan">
+              <v-icon class="mr-2"> mdi-shield </v-icon>
+              Combat Statistics
+            </v-card-title>
 
-          <v-list>
-            <v-list-item>
-              <template #prepend> Hull </template>
-              <template #append>
-                {{ ship.hull }}
-              </template>
-            </v-list-item>
+            <v-divider />
 
-            <v-list-item>
-              <template #prepend> Hull | Shield Modifiers </template>
-              <template #append>
-                {{ ship.hullMod }} | {{ ship.shieldMod }}
-              </template>
-            </v-list-item>
+            <div class="combat-summary">
+              <div class="summary-row">
+                <span>Hull</span>
+                <span>{{ ship.hull?.toLocaleString() }}</span>
+              </div>
 
-            <v-list-item>
-              <template #prepend> Turn Rate </template>
-              <template #append>
-                {{ ship.turnRate }}
-              </template>
-            </v-list-item>
+              <div class="summary-row">
+                <span>Hull Mod</span>
+                <span>{{ ship.hullMod }}</span>
+              </div>
 
-            <v-list-item>
-              <template #prepend> Impulse Modifier </template>
-              <template #append>
-                {{ ship.impulse }}
-              </template>
-            </v-list-item>
+              <div class="summary-row">
+                <span>Shield Mod</span>
+                <span>{{ ship.shieldMod }}</span>
+              </div>
+            </div>
+            <v-list>
+              <v-row class="px-4 mb-2">
+                <v-col cols="6">
+                  <div class="section-header">
+                    <span>Speed</span>
+                  </div>
 
-            <v-list-item>
-              <template #prepend> Inertia Rating </template>
-              <template #append>
-                {{ ship.inertia }}
-              </template>
-            </v-list-item>
+                  <v-list density="compact">
+                    <v-list-item>
+                      <template #prepend>Turn Rate</template>
+                      <template #append>
+                        {{ ship.turnRate }}
+                      </template>
+                    </v-list-item>
 
-            <v-list-item>
-              <template #prepend> Bonus Power </template>
-              <template #append>
-                <v-badge v-if="ship.powerAll">
-                  All: {{ ship.powerAll }}
-                </v-badge>
+                    <v-list-item>
+                      <template #prepend>Inertia</template>
+                      <template #append>
+                        {{ ship.inertia }}
+                      </template>
+                    </v-list-item>
 
-                <v-badge v-if="ship.powerAuxiliary">
-                  A: {{ ship.powerAuxiliary }}
-                </v-badge>
+                    <v-list-item>
+                      <template #prepend>Impulse</template>
+                      <template #append>
+                        {{ ship.impulse }}
+                      </template>
+                    </v-list-item>
+                  </v-list>
+                </v-col>
 
-                <v-badge v-if="ship.powerEngines">
-                  E: {{ ship.powerEngines }}
-                </v-badge>
+                <v-col cols="6">
+                  <div class="section-header">
+                    <span>Power</span>
+                  </div>
 
-                <v-badge v-if="ship.powerShields">
-                  S: {{ ship.powerShields }}
-                </v-badge>
+                  <v-list density="compact">
+                    <v-list-item>
+                      <template #prepend>
+                        <v-icon size="small" color="red">
+                          mdi-crosshairs
+                        </v-icon>
+                      </template>
 
-                <v-badge v-if="ship.powerWeapons">
-                  W: {{ ship.powerWeapons }}
-                </v-badge>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-card>
+                      <template #title> Weapons </template>
 
-        <v-card>
-          <v-card-title>
-            <v-icon class="mr-2"> mdi-account-box </v-icon>
-            Bridge Officers and Consoles
-          </v-card-title>
+                      <template #append>
+                        {{ powerDisplay.weapons ?? "—" }}
+                      </template>
+                    </v-list-item>
 
-          <v-list>
-            <!-- TODO: sort by length, desc></TODO -->
-            <v-list-item v-for="b in ship.boffs?.split(',').sort()">
-              <template #append>
-                {{ b }}
-              </template>
-            </v-list-item>
+                    <v-list-item>
+                      <template #prepend>
+                        <v-icon size="small" color="blue"> mdi-shield </v-icon>
+                      </template>
 
-            <v-list-item>
-              <template #append>
-                Eng: {{ ship.engineeringSlots }} | Sci:
-                {{ ship.scienceSlots }} | Tac: {{ ship.tacticalSlots }} | T5U:
-                {{ ship.t5uConsole }}
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-card>
+                      <template #title> Shields </template>
 
-        <v-card>
-          <v-card-title>
-            <v-icon class="mr-2"> mdi-explosion </v-icon>
-            Weapon Hardpoints
-          </v-card-title>
+                      <template #append>
+                        {{ powerDisplay.shields ?? "—" }}
+                      </template>
+                    </v-list-item>
 
-          <v-list-item>
-            <template #prepend> Fore Weapons </template>
-            <template #append>
-              {{ ship.foreWeapons }}
-            </template>
-          </v-list-item>
+                    <v-list-item>
+                      <template #prepend>
+                        <v-icon size="small" color="yellow">
+                          mdi-rocket-launch
+                        </v-icon>
+                      </template>
 
-          <v-list-item>
-            <template #prepend> Aft Weapons </template>
-            <template #append>
-              {{ ship.aftWeapons }}
-            </template>
-          </v-list-item>
+                      <template #title> Engines </template>
 
-          <v-list-item>
-            <template #prepend> Type-Specific Slot </template>
-            <template #append>
-              <span v-if="ship.experimental">Experimental Weapon</span>
-            </template>
-          </v-list-item>
+                      <template #append>
+                        {{ powerDisplay.engines ?? "—" }}
+                      </template>
+                    </v-list-item>
 
-          <v-list-item>
-            <template #prepend> Can Equip Cannons </template>
-            <template #append>
-              {{ formatYesNo(ship.equipCannons) }}
-            </template>
-          </v-list-item>
-        </v-card>
+                    <v-list-item>
+                      <template #prepend>
+                        <v-icon size="small" color="purple">
+                          mdi-auto-fix
+                        </v-icon>
+                      </template>
 
-        <v-card color="surface" rounded="xl">
-          <v-card-title>
-            <v-icon class="mr-2"> mdi-wrench </v-icon>
-            Equipment and Abilities
-          </v-card-title>
+                      <template #title> Auxiliary </template>
 
-          <v-list>
-            <template v-if="ship.abilities">
-              <v-list-item v-for="ability in ship.abilities.split(',')">
-                {{ ability }}
+                      <template #append>
+                        {{ powerDisplay.auxiliary ?? "—" }}
+                      </template>
+                    </v-list-item>
+                  </v-list>
+                </v-col>
+              </v-row>
+            </v-list>
+          </v-card>
+
+          <v-card rounded="x1" height="325" class="mt-4 glass-title">
+            <v-card-title class="header-green">
+              <v-icon class="mr-2"> mdi-store </v-icon>
+              Acquisition
+            </v-card-title>
+
+            <v-divider />
+
+            <v-list>
+              <v-list-item
+                v-for="(cost, index) in formatShipCost(ship.cost)"
+                :key="cost"
+              >
+                <v-icon class="mr-2">mdi-diamond</v-icon>
+                {{ cost }}
+                <v-divider class="or-separator" v-if="index < cost.length - 1">
+                  OR
+                </v-divider>
               </v-list-item>
-            </template>
 
-            <v-list-item>
-              <template #prepend> Device Slots </template>
-              <template #append>
-                {{ ship.devices }}
-              </template>
-            </v-list-item>
+              <v-list-item>
+                <template #prepend>Available at Level</template>
+                <template #append>
+                  {{ ship.rankLevel }}
+                </template>
+              </v-list-item>
 
-            <v-list-item>
-              <template #prepend> Hangars </template>
-              <template #append>
-                <span v-if="ship.hangars"> {{ ship.hangars }}</span>
-                <span v-else>0</span>
-              </template>
-            </v-list-item>
+              <v-list-item>
+                <template #prepend> Release Date </template>
+                <template #append>
+                  {{ ship.released ? formatWikiDate(ship.released) : "" }}
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-card>
+        </v-col>
 
-            <v-list-item>
-              <template #prepend> Secondary Deflector </template>
-              <template #append>
-                {{ formatYesNo(ship.secondaryDeflector) }}
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-card>
+        <v-row class="mt-4">
+          <v-col md="3">
+            <v-card rounded="xl" height="350" class="glass-title">
+              <v-card-title>
+                <v-icon class="mr-2"> mdi-account-box </v-icon>
+                Bridge Officers and Consoles
+              </v-card-title>
+              <v-divider />
 
-        <v-card color="surface" rounded="xl" class="mt-4">
-          <v-card-title>
-            <v-icon class="mr-2">mdi-star</v-icon>
-            Starship Traits
-          </v-card-title>
+              <v-list>
+                <!-- TODO: sort by length, desc></TODO -->
+                <v-list-item v-for="b in ship.boffs?.split(',').sort()">
+                  <template #append>
+                    {{ b }}
+                  </template>
+                </v-list-item>
 
-          <v-list>
-            <v-list-item v-for="trait in ship.starshipTraits" :key="trait.id">
-              <v-list-item-title>
-                {{ trait.name }}
-              </v-list-item-title>
+                <v-list-item>
+                  <template #append>
+                    Eng: {{ ship.engineeringSlots }} | Sci:
+                    {{ ship.scienceSlots }} | Tac: {{ ship.tacticalSlots }} |
+                    T5U:
+                    {{ ship.t5uConsole }}
+                  </template>
+                </v-list-item>
+              </v-list>
+            </v-card>
+          </v-col>
 
-              <v-list-item-subtitle>
-                {{ trait.short }}
-              </v-list-item-subtitle>
-            </v-list-item>
-          </v-list>
-        </v-card>
+          <v-col md="2">
+            <v-card rounded="xl" height="350" class="glass-title">
+              <v-card-title>
+                <v-icon class="mr-2"> mdi-explosion </v-icon>
+                Weapon Hardpoints
+              </v-card-title>
+              <v-divider />
+
+              <v-list-item>
+                <template #prepend> Fore Weapons </template>
+                <template #append>
+                  {{ ship.foreWeapons }}
+                </template>
+              </v-list-item>
+
+              <v-list-item>
+                <template #prepend> Aft Weapons </template>
+                <template #append>
+                  {{ ship.aftWeapons }}
+                </template>
+              </v-list-item>
+
+              <v-list-item>
+                <template #prepend> Type-Specific Slot </template>
+                <template #append>
+                  <span v-if="ship.experimental">Experimental Weapon</span>
+                </template>
+              </v-list-item>
+
+              <v-list-item>
+                <template #prepend> Can Equip Cannons </template>
+                <template #append>
+                  {{ formatYesNo(ship.equipCannons) }}
+                </template>
+              </v-list-item>
+            </v-card>
+          </v-col>
+
+          <v-col md="2">
+            <v-card rounded="xl" height="350" class="glass-title">
+              <v-card-title class="header-orange">
+                <v-icon class="mr-2"> mdi-wrench </v-icon>
+                Equipment and Abilities
+              </v-card-title>
+              <v-divider />
+
+              <v-list>
+                <template v-if="ship.abilities">
+                  <v-list-item v-for="ability in ship.abilities.split(',')">
+                    {{ ability }}
+                  </v-list-item>
+                </template>
+
+                <v-list-item>
+                  <template #prepend> Device Slots </template>
+                  <template #append>
+                    {{ ship.devices }}
+                  </template>
+                </v-list-item>
+
+                <v-list-item>
+                  <template #prepend> Hangars </template>
+                  <template #append>
+                    <span v-if="ship.hangars"> {{ ship.hangars }}</span>
+                    <span v-else>0</span>
+                  </template>
+                </v-list-item>
+
+                <v-list-item>
+                  <template #prepend> Secondary Deflector </template>
+                  <template #append>
+                    {{ formatYesNo(ship.secondaryDeflector) }}
+                  </template>
+                </v-list-item>
+              </v-list>
+            </v-card>
+          </v-col>
+
+          <v-col md="5">
+            <v-card rounded="xl" height="350" class="glass-title">
+              <v-card-title class="header-purple">
+                <v-icon class="mr-2">mdi-star</v-icon>
+                Starship Traits
+              </v-card-title>
+              <v-divider />
+
+              <v-list>
+                <v-list-item
+                  v-for="trait in ship.starshipTraits"
+                  :key="trait.id"
+                >
+                  <v-list-item-title>
+                    {{ trait.name }}
+                  </v-list-item-title>
+
+                  <v-list-item-subtitle>
+                    {{ trait.short }}
+                  </v-list-item-subtitle>
+                </v-list-item>
+              </v-list>
+            </v-card>
+          </v-col>
+        </v-row>
 
         <v-col cols="12" md="8">
           <v-card>
             <v-card-title> Miscellaneous Stats </v-card-title>
+            <v-divider />
 
             <v-list>
               <v-list-item>
@@ -288,3 +499,146 @@ function getShipImageUrl(imageField: string) {
     <v-alert v-else type="warning"> Ship not found </v-alert>
   </v-container>
 </template>
+
+<style scoped>
+.hero-meta {
+  min-height: 140px;
+}
+
+.hero-image {
+  height: 500px;
+  max-width: 75%;
+  margin: 0 auto;
+
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 180, 255, 0.25) 0%,
+      rgba(0, 180, 255, 0.08) 40%,
+      transparent 75%
+    ),
+    linear-gradient(135deg, #102338, #162e4c, #0d1625);
+
+  position: relative;
+}
+.hero-image :deep(img) {
+  filter: drop-shadow(0 0 30px rgba(80, 180, 255, 0.25))
+    drop-shadow(0 0 80px rgba(80, 180, 255, 0.1));
+}
+.hero-image::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+
+  background-size: 50px 50px;
+
+  pointer-events: none;
+}
+
+.header-cyan {
+  color: #00d4ff;
+}
+
+.header-orange {
+  color: #ff9838;
+}
+
+.header-purple {
+  color: #9966ff;
+}
+
+.header-green {
+  color: #00d26a;
+}
+
+.ship-title {
+  font-size: 3.5rem;
+  font-weight: 300;
+  line-height: 1.1;
+}
+
+.faction-container {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.power-weapons {
+  background-color: #b3261e;
+}
+
+.power-shields {
+  background-color: #1565c0;
+}
+
+.power-engines {
+  background-color: #c49000;
+}
+
+.power-aux {
+  background-color: #673ab7;
+}
+
+.or-separator {
+  opacity: 0.6;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.glass-title {
+  background: rgba(18, 32, 55, 0.85);
+  backdrop-filter: blue(10px);
+}
+
+.section-header {
+  position: relative;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.section-header::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 35%;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.section-header::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 35%;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.section-caption {
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.08rem;
+  margin-bottom: 0.5rem;
+}
+
+.combat-summary {
+  padding: 12px 16px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+</style>
