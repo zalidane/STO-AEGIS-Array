@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
+import { useDisplay } from "vuetify";
 
 import { useQuery } from "@vue/apollo-composable";
 import { ShipDocument, type ShipQuery } from "@/graphql/generated/graphql";
@@ -12,8 +13,14 @@ import { formatWikiDate, formatYesNo } from "@/utils/formatters";
 import { formatFactionsByFacSort } from "@/utils/sortFactionsByFacSort";
 import { parseShipCost, type ShipCost } from "@/utils/parsers";
 import { FALLBACK_SHIP_IMAGE, getShipImageUrl } from "@/utils/shipImage";
+import {
+  densityFromWidth,
+  getShipDetailLabels,
+  SHIP_DETAIL_FULL_LABELS,
+} from "@/logic/shipDetailLabels";
 
 const route = useRoute();
+const display = useDisplay();
 
 const id = computed(() => Number(route.params.id));
 
@@ -24,6 +31,10 @@ const { result, loading, error } = useQuery(ShipDocument, () => ({
 type ShipDetail = NonNullable<ShipQuery["ship"]>;
 
 const ship = computed<ShipDetail | null>(() => result.value?.ship ?? null);
+
+const labels = computed(() =>
+  getShipDetailLabels(densityFromWidth(display.width.value)),
+);
 
 const formattedFactions = computed(() => {
   if (!ship.value) return [];
@@ -69,29 +80,29 @@ watch(
 </script>
 
 <template>
-  <v-container>
+  <v-container class="ship-details" fluid>
     <AppBreadcrumbs :title="ship?.name" />
     <loading-panel v-if="loading" :message="'Ship Details'" />
 
     <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
     <template v-else-if="ship">
       <v-row>
-        <v-col md="9">
+        <v-col cols="12" md="9">
           <v-card color="surface" rounded="xl" class="mb-4">
             <v-card-text>
               <v-row align="stretch" class="mb-4">
-                <v-col cols="8" class="d-flex flex-column justify-center">
+                <v-col cols="12" sm="8" class="d-flex flex-column justify-center">
                   <div class="ship-title font-weight-light">
                     {{ ship.name }}
                   </div>
                 </v-col>
 
                 <v-col
-                  cols="4"
-                  class="d-flex flex-column justify-space-between align-end"
-                  style="min-height: 140px"
+                  cols="12"
+                  sm="4"
+                  class="d-flex flex-column justify-space-between align-sm-end ga-3"
                 >
-                  <div class="d-flex justify-end flex-wrap ga-1">
+                  <div class="d-flex justify-sm-end flex-wrap ga-1">
                     <v-chip
                       v-for="faction in formattedFactions"
                       :key="faction"
@@ -103,7 +114,7 @@ watch(
                     </v-chip>
                   </div>
 
-                  <div class="d-flex ga-2">
+                  <div class="d-flex flex-wrap justify-sm-end ga-2">
                     <v-chip color="primary" size="small" variant="outlined">
                       Tier {{ ship.tier }}
                     </v-chip>
@@ -130,399 +141,402 @@ watch(
           </v-card>
         </v-col>
 
-        <v-col md="3">
-          <v-card rounded="xl" height="365" class="glass-panel">
-            <v-card-title class="text-primary">
-              <v-icon class="mr-2">mdi-shield</v-icon>
-              Combat Statistics
+        <v-col cols="12" md="3">
+          <v-card rounded="xl" class="glass-panel detail-card detail-card--tall mb-4">
+            <v-card-title
+              class="text-primary detail-card__title"
+              :title="SHIP_DETAIL_FULL_LABELS.combatTitle"
+            >
+              <v-icon class="mr-2" size="small">mdi-shield</v-icon>
+              {{ labels.combatTitle }}
             </v-card-title>
 
             <v-divider />
 
-            <div class="px-4 py-3">
-              <div class="d-flex justify-space-between py-1">
+            <div class="detail-card__body">
+              <div class="stat-row">
                 <span>Hull</span>
                 <span>{{ ship.hull?.toLocaleString() }}</span>
               </div>
-
-              <div class="d-flex justify-space-between py-1">
+              <div class="stat-row">
                 <span>Hull Mod</span>
                 <span>{{ ship.hullMod }}</span>
               </div>
-
-              <div class="d-flex justify-space-between py-1">
+              <div class="stat-row">
                 <span>Shield Mod</span>
                 <span>{{ ship.shieldMod }}</span>
               </div>
-            </div>
 
-            <v-list>
-              <v-row class="px-4 mb-2">
+              <v-row class="mt-2" dense>
                 <v-col cols="6">
-                  <div
-                    class="section-header text-medium-emphasis text-uppercase text-caption"
-                  >
-                    <span>Speed</span>
+                  <div class="section-header text-medium-emphasis text-uppercase text-caption">
+                    <span>{{ labels.speedHeader }}</span>
                   </div>
 
-                  <v-list density="compact">
-                    <v-list-item>
-                      <template #prepend>Turn Rate</template>
-                      <template #append>
-                        {{ ship.turnRate }}
-                      </template>
-                    </v-list-item>
-
-                    <v-list-item>
-                      <template #prepend>Inertia</template>
-                      <template #append>
-                        {{ ship.inertia }}
-                      </template>
-                    </v-list-item>
-
-                    <v-list-item>
-                      <template #prepend>Impulse</template>
-                      <template #append>
-                        {{ ship.impulse }}
-                      </template>
-                    </v-list-item>
-                  </v-list>
+                  <div class="stat-stack">
+                    <div
+                      class="stat-row"
+                      :title="SHIP_DETAIL_FULL_LABELS.turnRate"
+                    >
+                      <span>{{ labels.turnRate }}</span>
+                      <span>{{ ship.turnRate }}</span>
+                    </div>
+                    <div
+                      class="stat-row"
+                      :title="SHIP_DETAIL_FULL_LABELS.inertia"
+                    >
+                      <span>{{ labels.inertia }}</span>
+                      <span>{{ ship.inertia }}</span>
+                    </div>
+                    <div
+                      class="stat-row"
+                      :title="SHIP_DETAIL_FULL_LABELS.impulse"
+                    >
+                      <span>{{ labels.impulse }}</span>
+                      <span>{{ ship.impulse }}</span>
+                    </div>
+                  </div>
                 </v-col>
 
                 <v-col cols="6">
-                  <div
-                    class="section-header text-medium-emphasis text-uppercase text-caption"
-                  >
-                    <span>Power</span>
+                  <div class="section-header text-medium-emphasis text-uppercase text-caption">
+                    <span>{{ labels.powerHeader }}</span>
                   </div>
 
-                  <v-list density="compact">
-                    <v-list-item>
-                      <template #prepend>
-                        <v-icon size="small" color="error">
-                          mdi-crosshairs
-                        </v-icon>
-                      </template>
-
-                      <template #title>Weapons</template>
-
-                      <template #append>
-                        {{ powerDisplay.weapons ?? "—" }}
-                      </template>
-                    </v-list-item>
-
-                    <v-list-item>
-                      <template #prepend>
-                        <v-icon size="small" color="info">mdi-shield</v-icon>
-                      </template>
-
-                      <template #title>Shields</template>
-
-                      <template #append>
-                        {{ powerDisplay.shields ?? "—" }}
-                      </template>
-                    </v-list-item>
-
-                    <v-list-item>
-                      <template #prepend>
-                        <v-icon size="small" color="warning">
-                          mdi-rocket-launch
-                        </v-icon>
-                      </template>
-
-                      <template #title>Engines</template>
-
-                      <template #append>
-                        {{ powerDisplay.engines ?? "—" }}
-                      </template>
-                    </v-list-item>
-
-                    <v-list-item>
-                      <template #prepend>
-                        <v-icon size="small" color="dominion">
-                          mdi-auto-fix
-                        </v-icon>
-                      </template>
-
-                      <template #title>Auxiliary</template>
-
-                      <template #append>
-                        {{ powerDisplay.auxiliary ?? "—" }}
-                      </template>
-                    </v-list-item>
-                  </v-list>
+                  <div class="stat-stack">
+                    <div
+                      class="stat-row"
+                      :title="SHIP_DETAIL_FULL_LABELS.weapons"
+                    >
+                      <span class="stat-row__label">
+                        <v-icon size="x-small" color="error">mdi-crosshairs</v-icon>
+                        {{ labels.weapons }}
+                      </span>
+                      <span>{{ powerDisplay.weapons ?? "—" }}</span>
+                    </div>
+                    <div
+                      class="stat-row"
+                      :title="SHIP_DETAIL_FULL_LABELS.shields"
+                    >
+                      <span class="stat-row__label">
+                        <v-icon size="x-small" color="info">mdi-shield</v-icon>
+                        {{ labels.shields }}
+                      </span>
+                      <span>{{ powerDisplay.shields ?? "—" }}</span>
+                    </div>
+                    <div
+                      class="stat-row"
+                      :title="SHIP_DETAIL_FULL_LABELS.engines"
+                    >
+                      <span class="stat-row__label">
+                        <v-icon size="x-small" color="warning">mdi-rocket-launch</v-icon>
+                        {{ labels.engines }}
+                      </span>
+                      <span>{{ powerDisplay.engines ?? "—" }}</span>
+                    </div>
+                    <div
+                      class="stat-row"
+                      :title="SHIP_DETAIL_FULL_LABELS.auxiliary"
+                    >
+                      <span class="stat-row__label">
+                        <v-icon size="x-small" color="dominion">mdi-auto-fix</v-icon>
+                        {{ labels.auxiliary }}
+                      </span>
+                      <span>{{ powerDisplay.auxiliary ?? "—" }}</span>
+                    </div>
+                  </div>
                 </v-col>
               </v-row>
-            </v-list>
+            </div>
           </v-card>
 
-          <v-card rounded="xl" height="325" class="mt-4 glass-panel">
-            <v-card-title class="text-miracle">
-              <v-icon class="mr-2">mdi-store</v-icon>
-              Acquisition
+          <v-card rounded="xl" class="glass-panel detail-card detail-card--short">
+            <v-card-title
+              class="text-miracle detail-card__title"
+              :title="SHIP_DETAIL_FULL_LABELS.acquisitionTitle"
+            >
+              <v-icon class="mr-2" size="small">mdi-store</v-icon>
+              {{ labels.acquisitionTitle }}
             </v-card-title>
 
             <v-divider />
 
-            <v-list>
-              <v-list-item
+            <div class="detail-card__body">
+              <div
                 v-for="cost in parsedCosts"
                 :key="`${cost.currencyCode}-${cost.amount}`"
+                class="stat-row"
               >
-                <span
-                  class="currency-dot"
-                  :style="{ borderColor: cost.color }"
-                />
-                {{ cost.amount }}
-                {{ cost.label }}
-              </v-list-item>
+                <span class="stat-row__label">
+                  <span
+                    class="currency-dot"
+                    :style="{ borderColor: cost.color }"
+                  />
+                  {{ cost.label }}
+                </span>
+                <span>{{ cost.amount }}</span>
+              </div>
 
-              <v-list-item>
-                <template #prepend>Available at Level</template>
-                <template #append>
-                  {{ ship.rankLevel }}
-                </template>
-              </v-list-item>
+              <div class="stat-row" :title="SHIP_DETAIL_FULL_LABELS.level">
+                <span>{{ labels.level }}</span>
+                <span>{{ ship.rankLevel }}</span>
+              </div>
 
-              <v-list-item>
-                <template #prepend>Release Date</template>
-                <template #append>
-                  {{ ship.released ? formatWikiDate(ship.released) : "" }}
-                </template>
-              </v-list-item>
-            </v-list>
+              <div
+                class="stat-row"
+                :title="SHIP_DETAIL_FULL_LABELS.releaseDate"
+              >
+                <span>{{ labels.releaseDate }}</span>
+                <span>{{ ship.released ? formatWikiDate(ship.released) : "" }}</span>
+              </div>
+            </div>
           </v-card>
         </v-col>
+      </v-row>
 
-        <v-row class="mt-4">
-          <v-col md="3">
-            <v-card rounded="xl" height="350" class="glass-panel">
-              <v-card-title>
-                <v-icon class="mr-2">mdi-account-box</v-icon>
-                Bridge Officers and Consoles
-              </v-card-title>
-              <v-divider />
+      <v-row class="mt-2" dense align="stretch">
+        <v-col cols="12" sm="6" md="3">
+          <v-card rounded="xl" class="glass-panel detail-card detail-card--panel">
+            <v-card-title
+              class="detail-card__title"
+              :title="SHIP_DETAIL_FULL_LABELS.bridgeTitle"
+            >
+              <v-icon class="mr-2" size="small">mdi-account-box</v-icon>
+              {{ labels.bridgeTitle }}
+            </v-card-title>
+            <v-divider />
 
-              <v-card-text>
-                <div class="d-flex flex-wrap ga-2">
-                  <v-chip
-                    v-for="seat in boffSeats"
-                    :key="seat.raw"
-                    size="small"
-                    variant="outlined"
-                    :color="seat.career"
-                    class="font-weight-bold justify-center boff-chip"
-                    :class="{ 'boff-chip--hybrid': !!seat.specialization }"
-                    :style="
+            <div class="detail-card__body">
+              <div class="d-flex flex-wrap ga-2">
+                <v-chip
+                  v-for="seat in boffSeats"
+                  :key="seat.raw"
+                  size="small"
+                  variant="outlined"
+                  :color="seat.career"
+                  class="font-weight-bold justify-center boff-chip"
+                  :class="{ 'boff-chip--hybrid': !!seat.specialization }"
+                  :style="
+                    seat.specialization
+                      ? {
+                          '--boff-career': `rgb(var(--v-theme-${seat.career}))`,
+                          '--boff-spec': `rgb(var(--v-theme-${seat.specialization}))`,
+                        }
+                      : undefined
+                  "
+                >
+                  <span>{{ seat.careerLabel }}</span>
+                  <span
+                    v-if="seat.specializationLabel"
+                    :class="
                       seat.specialization
-                        ? {
-                            '--boff-career': `rgb(var(--v-theme-${seat.career}))`,
-                            '--boff-spec': `rgb(var(--v-theme-${seat.specialization}))`,
-                          }
+                        ? `text-${seat.specialization}`
                         : undefined
                     "
                   >
-                    <span>{{ seat.careerLabel }}</span>
-                    <span
-                      v-if="seat.specializationLabel"
-                      :class="
-                        seat.specialization
-                          ? `text-${seat.specialization}`
-                          : undefined
-                      "
-                    >
-                      -{{ seat.specializationLabel }}
-                    </span>
-                  </v-chip>
-                </div>
-              </v-card-text>
-
-              <div
-                class="section-header text-medium-emphasis text-uppercase text-caption"
-              >
-                <span>Consoles</span>
+                    -{{ seat.specializationLabel }}
+                  </span>
+                </v-chip>
               </div>
-              <div class="d-flex justify-center ga-2 mt-3">
+
+              <div class="section-header text-medium-emphasis text-uppercase text-caption mt-4">
+                <span>{{ labels.consolesHeader }}</span>
+              </div>
+              <div class="d-flex justify-center flex-wrap ga-2 mt-3">
                 <v-chip size="small" color="engineering">
                   ENG {{ ship.engineeringSlots }}
                 </v-chip>
-
                 <v-chip size="small" color="science">
                   SCI {{ ship.scienceSlots }}
                 </v-chip>
-
                 <v-chip size="small" color="tactical">
                   TAC {{ ship.tacticalSlots }}
                 </v-chip>
               </div>
-            </v-card>
-          </v-col>
+            </div>
+          </v-card>
+        </v-col>
 
-          <v-col md="2">
-            <v-card rounded="xl" height="350" class="glass-panel">
-              <v-card-title>
-                <v-icon class="mr-2">mdi-explosion</v-icon>
-                Weapon Hardpoints
-              </v-card-title>
-              <v-divider />
+        <v-col cols="12" sm="6" md="2">
+          <v-card rounded="xl" class="glass-panel detail-card detail-card--panel">
+            <v-card-title
+              class="detail-card__title"
+              :title="SHIP_DETAIL_FULL_LABELS.weaponsTitle"
+            >
+              <v-icon class="mr-2" size="small">mdi-explosion</v-icon>
+              {{ labels.weaponsTitle }}
+            </v-card-title>
+            <v-divider />
 
-              <v-list-item>
-                <template #prepend>Fore Weapons</template>
-                <template #append>
-                  {{ ship.foreWeapons }}
-                </template>
-              </v-list-item>
+            <div class="detail-card__body">
+              <div
+                class="stat-row"
+                :title="SHIP_DETAIL_FULL_LABELS.foreWeapons"
+              >
+                <span>{{ labels.foreWeapons }}</span>
+                <span>{{ ship.foreWeapons }}</span>
+              </div>
+              <div
+                class="stat-row"
+                :title="SHIP_DETAIL_FULL_LABELS.aftWeapons"
+              >
+                <span>{{ labels.aftWeapons }}</span>
+                <span>{{ ship.aftWeapons }}</span>
+              </div>
+              <div
+                class="stat-row"
+                :title="SHIP_DETAIL_FULL_LABELS.typeSpecificSlot"
+              >
+                <span>{{ labels.typeSpecificSlot }}</span>
+                <span>{{ ship.experimental ? "Exp Wpn" : "—" }}</span>
+              </div>
+              <div
+                class="stat-row"
+                :title="SHIP_DETAIL_FULL_LABELS.canEquipCannons"
+              >
+                <span>{{ labels.canEquipCannons }}</span>
+                <span>{{ formatYesNo(ship.equipCannons) }}</span>
+              </div>
+            </div>
+          </v-card>
+        </v-col>
 
-              <v-list-item>
-                <template #prepend>Aft Weapons</template>
-                <template #append>
-                  {{ ship.aftWeapons }}
-                </template>
-              </v-list-item>
+        <v-col cols="12" sm="6" md="2">
+          <v-card rounded="xl" class="glass-panel detail-card detail-card--panel">
+            <v-card-title
+              class="text-secondary detail-card__title"
+              :title="SHIP_DETAIL_FULL_LABELS.equipmentTitle"
+            >
+              <v-icon class="mr-2" size="small">mdi-wrench</v-icon>
+              {{ labels.equipmentTitle }}
+            </v-card-title>
+            <v-divider />
 
-              <v-list-item>
-                <template #prepend>Type-Specific Slot</template>
-                <template #append>
-                  <span v-if="ship.experimental">Experimental Weapon</span>
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template #prepend>Can Equip Cannons</template>
-                <template #append>
-                  {{ formatYesNo(ship.equipCannons) }}
-                </template>
-              </v-list-item>
-            </v-card>
-          </v-col>
-
-          <v-col md="2">
-            <v-card rounded="xl" height="350" class="glass-panel">
-              <v-card-title class="text-secondary">
-                <v-icon class="mr-2">mdi-wrench</v-icon>
-                Equipment and Abilities
-              </v-card-title>
-              <v-divider />
-
-              <v-list>
-                <template v-if="ship.abilities">
-                  <v-list-item
-                    v-for="ability in ship.abilities.split(',')"
-                    :key="ability"
-                  >
-                    {{ ability }}
-                  </v-list-item>
-                </template>
-
-                <v-list-item>
-                  <template #prepend>Device Slots</template>
-                  <template #append>
-                    {{ ship.devices }}
-                  </template>
-                </v-list-item>
-
-                <v-list-item>
-                  <template #prepend>Hangars</template>
-                  <template #append>
-                    <span>{{ ship.hangars ?? 0 }}</span>
-                  </template>
-                </v-list-item>
-
-                <v-list-item>
-                  <template #prepend>Secondary Deflector</template>
-                  <template #append>
-                    {{ formatYesNo(ship.secondaryDeflector) }}
-                  </template>
-                </v-list-item>
-              </v-list>
-            </v-card>
-          </v-col>
-
-          <v-col md="3">
-            <v-card rounded="xl" height="350" class="glass-panel">
-              <v-card-title class="text-dominion">
-                <v-icon class="mr-2">mdi-star</v-icon>
-                Starship Traits
-              </v-card-title>
-              <v-divider />
-
-              <v-list>
-                <v-list-item
-                  v-for="trait in ship.starshipTraits"
-                  :key="trait.id"
+            <div class="detail-card__body">
+              <template v-if="ship.abilities">
+                <div
+                  v-for="ability in ship.abilities.split(',')"
+                  :key="ability"
+                  class="ability-line"
+                  :title="ability.trim()"
                 >
-                  <v-list-item-title>
-                    {{ trait.name }}
-                  </v-list-item-title>
+                  {{ ability.trim() }}
+                </div>
+              </template>
 
-                  <v-list-item-subtitle>
-                    {{ trait.short }}
-                  </v-list-item-subtitle>
-                </v-list-item>
-              </v-list>
-            </v-card>
-          </v-col>
+              <div
+                class="stat-row"
+                :title="SHIP_DETAIL_FULL_LABELS.deviceSlots"
+              >
+                <span>{{ labels.deviceSlots }}</span>
+                <span>{{ ship.devices }}</span>
+              </div>
+              <div class="stat-row" :title="SHIP_DETAIL_FULL_LABELS.hangars">
+                <span>{{ labels.hangars }}</span>
+                <span>{{ ship.hangars ?? 0 }}</span>
+              </div>
+              <div
+                class="stat-row"
+                :title="SHIP_DETAIL_FULL_LABELS.secondaryDeflector"
+              >
+                <span>{{ labels.secondaryDeflector }}</span>
+                <span>{{ formatYesNo(ship.secondaryDeflector) }}</span>
+              </div>
+            </div>
+          </v-card>
+        </v-col>
 
-          <v-col md="2">
-            <v-card rounded="xl" height="350" class="glass-panel">
-              <v-card-title>
-                <v-icon class="mr-2">mdi-card-account-details</v-icon>
-                Admiralty
-              </v-card-title>
-              <v-divider />
+        <v-col cols="12" sm="6" md="3">
+          <v-card rounded="xl" class="glass-panel detail-card detail-card--panel">
+            <v-card-title
+              class="text-dominion detail-card__title"
+              :title="SHIP_DETAIL_FULL_LABELS.traitsTitle"
+            >
+              <v-icon class="mr-2" size="small">mdi-star</v-icon>
+              {{ labels.traitsTitle }}
+            </v-card-title>
+            <v-divider />
 
-              <v-list class="px-2 pt-4" lines="one">
-                <v-list-item>
-                  <template #prepend>
-                    <v-avatar color="engineering" variant="tonal" size="40">
-                      <v-icon color="engineering" icon="mdi-wrench" />
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title class="text-engineering font-weight-bold">
-                    Engineering
-                  </v-list-item-title>
-                  <template #append>
-                    <span class="text-h5 text-engineering font-weight-bold">
-                      {{ ship.admiraltyEng ?? "—" }}
-                    </span>
-                  </template>
-                </v-list-item>
+            <div class="detail-card__body">
+              <div
+                v-for="trait in ship.starshipTraits"
+                :key="trait.id"
+                class="trait-block"
+              >
+                <div class="trait-block__name" :title="trait.name">
+                  {{ trait.name }}
+                </div>
+                <div
+                  v-if="trait.short"
+                  class="trait-block__short text-medium-emphasis"
+                  :title="trait.short"
+                >
+                  {{ trait.short }}
+                </div>
+              </div>
+            </div>
+          </v-card>
+        </v-col>
 
-                <v-list-item>
-                  <template #prepend>
-                    <v-avatar color="tactical" variant="tonal" size="40">
-                      <v-icon color="tactical" icon="mdi-crosshairs" />
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title class="text-tactical font-weight-bold">
-                    Tactical
-                  </v-list-item-title>
-                  <template #append>
-                    <span class="text-h5 text-tactical font-weight-bold">
-                      {{ ship.admiraltyTac ?? "—" }}
-                    </span>
-                  </template>
-                </v-list-item>
+        <v-col cols="12" sm="6" md="2">
+          <v-card rounded="xl" class="glass-panel detail-card detail-card--panel">
+            <v-card-title
+              class="detail-card__title"
+              :title="SHIP_DETAIL_FULL_LABELS.admiraltyTitle"
+            >
+              <v-icon class="mr-2" size="small">mdi-card-account-details</v-icon>
+              {{ labels.admiraltyTitle }}
+            </v-card-title>
+            <v-divider />
 
-                <v-list-item>
-                  <template #prepend>
-                    <v-avatar color="science" variant="tonal" size="40">
-                      <v-icon color="science" icon="mdi-flask" />
-                    </v-avatar>
-                  </template>
-                  <v-list-item-title class="text-science font-weight-bold">
-                    Science
-                  </v-list-item-title>
-                  <template #append>
-                    <span class="text-h5 text-science font-weight-bold">
-                      {{ ship.admiraltySci ?? "—" }}
-                    </span>
-                  </template>
-                </v-list-item>
-              </v-list>
-            </v-card>
-          </v-col>
-        </v-row>
+            <div class="detail-card__body admiralty-stack">
+              <div
+                class="admiralty-row"
+                :title="SHIP_DETAIL_FULL_LABELS.engineering"
+              >
+                <v-avatar color="engineering" variant="tonal" size="32">
+                  <v-icon color="engineering" icon="mdi-wrench" size="small" />
+                </v-avatar>
+                <span class="text-engineering font-weight-bold">
+                  {{ labels.engineering }}
+                </span>
+                <span class="admiralty-row__value text-engineering font-weight-bold">
+                  {{ ship.admiraltyEng ?? "—" }}
+                </span>
+              </div>
+
+              <div
+                class="admiralty-row"
+                :title="SHIP_DETAIL_FULL_LABELS.tactical"
+              >
+                <v-avatar color="tactical" variant="tonal" size="32">
+                  <v-icon color="tactical" icon="mdi-crosshairs" size="small" />
+                </v-avatar>
+                <span class="text-tactical font-weight-bold">
+                  {{ labels.tactical }}
+                </span>
+                <span class="admiralty-row__value text-tactical font-weight-bold">
+                  {{ ship.admiraltyTac ?? "—" }}
+                </span>
+              </div>
+
+              <div
+                class="admiralty-row"
+                :title="SHIP_DETAIL_FULL_LABELS.science"
+              >
+                <v-avatar color="science" variant="tonal" size="32">
+                  <v-icon color="science" icon="mdi-flask" size="small" />
+                </v-avatar>
+                <span class="text-science font-weight-bold">
+                  {{ labels.science }}
+                </span>
+                <span class="admiralty-row__value text-science font-weight-bold">
+                  {{ ship.admiraltySci ?? "—" }}
+                </span>
+              </div>
+            </div>
+          </v-card>
+        </v-col>
       </v-row>
     </template>
 
@@ -531,13 +545,18 @@ watch(
 </template>
 
 <style scoped>
+.ship-details {
+  max-width: 1600px;
+}
+
 .ship-title {
-  font-size: 3rem;
+  font-size: clamp(1.75rem, 2.4vw, 3rem);
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .hero-image {
-  height: 500px;
+  height: min(500px, 42vh);
   max-width: 75%;
   margin: 0 auto;
   position: relative;
@@ -562,6 +581,77 @@ watch(
 .glass-panel {
   background: rgba(18, 32, 55, 0.85);
   backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.detail-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.detail-card--tall {
+  min-height: 340px;
+}
+
+.detail-card--short {
+  min-height: 220px;
+}
+
+.detail-card--panel {
+  height: 100%;
+  min-height: 280px;
+}
+
+.detail-card__title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  line-height: 1.25;
+  font-size: 0.98rem;
+  padding-block: 12px;
+  min-width: 0;
+}
+
+.detail-card__body {
+  padding: 12px 14px 16px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stat-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  min-width: 0;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 0;
+  font-size: 0.9rem;
+}
+
+.stat-row > span:first-child,
+.stat-row__label {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.stat-row > span:last-child {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
 }
 
 .section-header {
@@ -575,7 +665,7 @@ watch(
   content: "";
   position: absolute;
   top: 50%;
-  width: 35%;
+  width: 28%;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -589,20 +679,72 @@ watch(
 
 .currency-dot {
   display: inline-block;
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  margin-right: 12px;
+  flex: 0 0 auto;
 }
 
 .boff-chip {
-  min-width: 90px;
+  min-width: 72px;
 }
 
 .boff-chip--hybrid {
   box-shadow:
     inset 3px 0 0 var(--boff-career),
     inset -3px 0 0 var(--boff-spec);
+}
+
+.ability-line,
+.trait-block__name,
+.trait-block__short {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ability-line {
+  padding: 2px 0;
+  font-size: 0.88rem;
+}
+
+.trait-block + .trait-block {
+  margin-top: 10px;
+}
+
+.trait-block__name {
+  font-weight: 600;
+}
+
+.trait-block__short {
+  font-size: 0.8rem;
+}
+
+.admiralty-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.admiralty-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admiralty-row__value {
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 960px) {
+  .hero-image {
+    max-width: 100%;
+    height: min(360px, 40vh);
+  }
 }
 </style>

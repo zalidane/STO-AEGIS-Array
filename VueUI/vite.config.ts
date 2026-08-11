@@ -16,5 +16,7 @@ export default defineConfig({
   preview: {
     host: true,
     allowedHosts: true,
+    // process.env works cross-platform; bash ${PORT:-4173} does not on Windows.
+    port: Number(process.env.PORT) || 4173,
   },
 });
