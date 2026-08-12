@@ -10,7 +10,7 @@
     "start": "vite preview",
     "test:unit": "vitest",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build",
+    "type-check": "node ./scripts/run-vue-tsc.cjs --build",
     "codegen": "graphql-codegen --config codegen.yml"
   },
   "dependencies": {

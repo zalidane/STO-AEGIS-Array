@@ -9,11 +9,16 @@ import {
 import {
   collectObtainedLinkPages,
   parseObtainedMarkup,
-  type ObtainedFactionIcon,
   type ObtainedToken,
 } from "@/logic/parseObtainedMarkup";
 import {
+  layoutObtainedBlocks,
+  type ObtainedFactionMark,
+} from "@/logic/layoutObtainedBlocks";
+import {
   buildNameIdMap,
+  buildShipRefMap,
+  lookupShipRef,
   normalizeLookupKey,
   resolveObtainedLink,
   type ObtainedLinkTarget,
@@ -28,7 +33,15 @@ import {
 const props = defineProps<{
   text: string | null | undefined;
   /** Ships already known to grant this trait (preferred matches). */
-  ships?: ReadonlyArray<{ id: number; name: string } & FactionIdentity>;
+  ships?: ReadonlyArray<
+    {
+      id: number;
+      name: string;
+      displayClass?: string | null;
+      displayPrefix?: string | null;
+      displayType?: string | null;
+    } & FactionIdentity
+  >;
 }>();
 
 const { client } = useApolloClient();
@@ -38,47 +51,35 @@ const tokens = computed(() => parseObtainedMarkup(props.text));
 
 const linkRoutes = ref<Record<string, string | null>>({});
 
-type ShipRef = { id: number; name: string } & FactionIdentity;
+type ShipRef = {
+  id: number;
+  name: string;
+  displayClass?: string | null;
+  displayPrefix?: string | null;
+  displayType?: string | null;
+} & FactionIdentity;
 
-const shipsByName = computed(() => {
-  const map = new Map<string, ShipRef>();
-  for (const ship of shipsResult.value?.ships ?? []) {
-    map.set(normalizeLookupKey(ship.name), ship);
-  }
-  for (const ship of props.ships ?? []) {
-    map.set(normalizeLookupKey(ship.name), ship);
-  }
-  return map;
-});
+const shipsByName = computed(() =>
+  buildShipRefMap<ShipRef>([
+    ...(shipsResult.value?.ships ?? []),
+    ...(props.ships ?? []),
+  ]),
+);
 
 const shipMap = computed(() =>
   buildNameIdMap(
     [...shipsByName.value.values()].map((ship) => ({
       id: ship.id,
       name: ship.name,
+      displayClass: ship.displayClass,
+      displayPrefix: ship.displayPrefix,
+      displayType: ship.displayType,
     })),
   ),
 );
 
-const FACTION_MARK: Record<
-  ObtainedFactionIcon,
-  { letter: string; color: string }
-> = {
-  federation: { letter: "F", color: "federation" },
-  klingon: { letter: "K", color: "klingon" },
-  romulan: { letter: "R", color: "romulan" },
-  dominion: { letter: "D", color: "dominion" },
-  cross: { letter: "C", color: "neutral" },
-  "fed-allies": { letter: "F", color: "federation" },
-  "kdf-allies": { letter: "K", color: "klingon" },
-};
-
-function factionMeta(faction: ObtainedFactionIcon) {
-  return FACTION_MARK[faction];
-}
-
 function shipForPage(page: string): ShipRef | undefined {
-  return shipsByName.value.get(normalizeLookupKey(page));
+  return lookupShipRef(shipsByName.value, page);
 }
 
 function shipLinkClass(page: string): string {
@@ -87,11 +88,7 @@ function shipLinkClass(page: string): string {
   return `text-${resolveFactionThemeColor(ship)}`;
 }
 
-function markFromShip(ship: ShipRef | undefined): {
-  letter: string;
-  color: string;
-  title?: string;
-} | null {
+function markFromShip(ship: ShipRef | undefined): ObtainedFactionMark | null {
   if (!ship) return null;
   const primary = resolvePrimaryFaction(ship);
   if (!primary) return null;
@@ -116,15 +113,9 @@ function markFromShip(ship: ShipRef | undefined): {
   };
 }
 
-/** Prefer factionLede-driven mark when the line references a known ship. */
-function lineFactionOverride(line: ObtainedToken[]) {
-  for (const token of line) {
-    if (token.type !== "link") continue;
-    const mark = markFromShip(shipForPage(token.page));
-    if (mark) return mark;
-  }
-  return null;
-}
+const blocks = computed(() =>
+  layoutObtainedBlocks(tokens.value, shipForPage, markFromShip),
+);
 
 function routeFor(page: string): string | null {
   return linkRoutes.value[page] ?? null;
@@ -232,78 +223,103 @@ watch(
   { immediate: true },
 );
 
-function lineGroups(allTokens: ObtainedToken[]): ObtainedToken[][] {
-  const groups: ObtainedToken[][] = [[]];
-  for (const token of allTokens) {
-    if (token.type === "break") {
-      groups.push([]);
-      continue;
-    }
-    groups[groups.length - 1]!.push(token);
-  }
-  return groups.filter((line) => line.length > 0);
+function renderInlineToken(token: ObtainedToken): ObtainedToken | null {
+  if (token.type === "bullet" || token.type === "break") return null;
+  return token;
 }
 
-const lines = computed(() => lineGroups(tokens.value));
-
-const lineFactionMarks = computed(() =>
-  lines.value.map((line) => lineFactionOverride(line)),
-);
+function factionLetterFromToken(
+  faction: Extract<ObtainedToken, { type: "factionIcon" }>["faction"],
+): { letter: string; color: string } {
+  switch (faction) {
+    case "federation":
+    case "fed-allies":
+      return { letter: "F", color: "federation" };
+    case "klingon":
+    case "kdf-allies":
+      return { letter: "K", color: "klingon" };
+    case "romulan":
+      return { letter: "R", color: "romulan" };
+    case "dominion":
+      return { letter: "D", color: "dominion" };
+    case "cross":
+    default:
+      return { letter: "C", color: "neutral" };
+  }
+}
 </script>
 
 <template>
   <div class="obtained-markup">
-    <div v-for="(line, lineIndex) in lines" :key="lineIndex" class="obtained-line">
-      <template v-for="(token, tokenIndex) in line" :key="tokenIndex">
-        <span v-if="token.type === 'bullet'" class="obtained-bullet">•</span>
-
+    <template v-for="(block, blockIndex) in blocks" :key="blockIndex">
+      <div v-if="block.kind === 'shipGroup'" class="obtained-ship-group">
         <span
-          v-else-if="token.type === 'factionIcon' && lineFactionMarks[lineIndex]"
-          class="obtained-faction-mark"
-          :class="`text-${lineFactionMarks[lineIndex]!.color}`"
-          :title="lineFactionMarks[lineIndex]!.title"
+          v-if="block.mark"
+          class="obtained-faction-mark obtained-faction-mark--boxed"
+          :class="`text-${block.mark.color}`"
+          :title="block.mark.title"
         >
-          {{ lineFactionMarks[lineIndex]!.letter }}
+          {{ block.mark.letter }}
         </span>
 
-        <span
-          v-else-if="token.type === 'factionIcon'"
-          class="obtained-faction-mark"
-          :class="`text-${factionMeta(token.faction).color}`"
-          :title="token.title"
-        >
-          {{ factionMeta(token.faction).letter }}
-        </span>
+        <div class="obtained-ship-list">
+          <template v-for="ship in block.ships" :key="ship.page">
+            <RouterLink
+              v-if="routeFor(ship.page)"
+              :to="routeFor(ship.page)!"
+              class="obtained-link obtained-ship-name"
+              :class="shipLinkClass(ship.page)"
+            >
+              {{ ship.label }}
+            </RouterLink>
+            <span
+              v-else
+              class="obtained-link obtained-link--plain obtained-ship-name"
+              :class="shipLinkClass(ship.page)"
+              :title="ship.page"
+            >
+              {{ ship.label }}
+            </span>
+          </template>
+        </div>
+      </div>
 
-        <span
-          v-else-if="token.type === 'rarityIcon'"
-          class="obtained-faction-mark text-secondary"
-          :title="token.title ?? 'Very rare'"
-        >
-          V
-        </span>
+      <div v-else class="obtained-inline">
+        <template v-for="(token, tokenIndex) in block.tokens" :key="tokenIndex">
+          <template v-if="renderInlineToken(token)">
+            <span v-if="tokenIndex > 0">{{ " " }}</span>
+            <span
+              v-if="token.type === 'factionIcon'"
+              class="obtained-faction-mark"
+              :class="`text-${factionLetterFromToken(token.faction).color}`"
+              :title="token.title"
+            >{{ factionLetterFromToken(token.faction).letter }}</span>
 
-        <RouterLink
-          v-else-if="token.type === 'link' && routeFor(token.page)"
-          :to="routeFor(token.page)!"
-          class="obtained-link"
-          :class="shipLinkClass(token.page)"
-        >
-          {{ token.label }}
-        </RouterLink>
+            <span
+              v-else-if="token.type === 'rarityIcon'"
+              class="obtained-faction-mark text-secondary"
+              :title="token.title ?? 'Very rare'"
+            >V</span>
 
-        <span
-          v-else-if="token.type === 'link'"
-          class="obtained-link obtained-link--plain"
-          :class="shipLinkClass(token.page)"
-          :title="token.page"
-        >
-          {{ token.label }}
-        </span>
+            <RouterLink
+              v-else-if="token.type === 'link' && routeFor(token.page)"
+              :to="routeFor(token.page)!"
+              class="obtained-link"
+              :class="shipLinkClass(token.page)"
+            >{{ token.label }}</RouterLink>
 
-        <span v-else-if="token.type === 'text'">{{ token.value }}</span>
-      </template>
-    </div>
+            <span
+              v-else-if="token.type === 'link'"
+              class="obtained-link obtained-link--plain"
+              :class="shipLinkClass(token.page)"
+              :title="token.page"
+            >{{ token.label }}</span>
+
+            <span v-else-if="token.type === 'text'">{{ token.value }}</span>
+          </template>
+        </template>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -311,20 +327,49 @@ const lineFactionMarks = computed(() =>
 .obtained-markup {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   text-align: left;
 }
 
-.obtained-line {
+.obtained-ship-group {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  line-height: 1.35;
+  gap: 8px;
+  min-width: 0;
 }
 
-.obtained-bullet {
-  color: rgba(255, 255, 255, 0.45);
+.obtained-ship-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.obtained-ship-name {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.obtained-inline {
+  display: block;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.obtained-inline > :deep(a),
+.obtained-inline > span {
+  display: inline;
+}
+
+.obtained-inline .obtained-faction-mark {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-right: 0.2em;
 }
 
 .obtained-faction-mark {
@@ -338,6 +383,17 @@ const lineFactionMarks = computed(() =>
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1;
+}
+
+.obtained-faction-mark--boxed {
+  align-self: center;
+  min-width: 1.55em;
+  height: 1.55em;
+  padding: 0 0.15em;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.25);
+  font-size: 1.05rem;
 }
 
 .obtained-link {

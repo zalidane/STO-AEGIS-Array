@@ -25,13 +25,10 @@ const traits = computed<StarshipTrait[]>(
 );
 const search = ref("");
 const headers = [
-  { title: "Name", key: "name" },
-  { title: "Type", key: "type" },
-  { title: "Short", key: "short" },
-  { title: "Obtained", key: "obtained" },
-  { title: "Tag", key: "tag" },
-  { title: "Tag 2", key: "tag2" },
-  { title: "Tag 3", key: "tag3" },
+  { title: "Name", key: "name", width: "18%" },
+  { title: "Type", key: "type", width: "12%" },
+  { title: "Short", key: "short", width: "30%" },
+  { title: "Obtained", key: "obtained", width: "40%" },
 ];
 
 function onRowClick(_event: Event, row: { item: StarshipTrait }) {
@@ -53,6 +50,7 @@ function onRowClick(_event: Event, row: { item: StarshipTrait }) {
     <div v-else>
       <v-text-field v-model="search" label="Search" class="mb-4" />
       <v-data-table
+        class="starship-traits-table"
         :items="traits"
         :search="search"
         :headers="headers"
@@ -73,8 +71,14 @@ function onRowClick(_event: Event, row: { item: StarshipTrait }) {
 </template>
 
 <style scoped>
+.starship-traits-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
 .obtained-cell {
-  max-width: 28rem;
+  max-width: none;
+  width: 100%;
   padding: 4px 0;
 }
 </style>
