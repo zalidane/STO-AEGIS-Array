@@ -1,11 +1,19 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { getFactionColor, getFactionGlow } from "@/mappers/factionColors";
+import { getFactionColor } from "@/mappers/factionColors";
 import { FALLBACK_SHIP_IMAGE, getShipImageUrl } from "@/utils/shipImage";
 import type { ShipListItem } from "@/logic/shipsBinder";
+import {
+  resolveFactionAccent,
+  resolvePrimaryFaction,
+  factionMarkKey,
+} from "@/logic/resolvePrimaryFaction";
 
 const props = defineProps<{
-  ship: ShipListItem & { image?: string | null };
+  ship: ShipListItem & {
+    image?: string | null;
+    facSort?: string | null;
+  };
 }>();
 
 const emit = defineEmits<{
@@ -21,15 +29,35 @@ const imageUrl = computed(() => {
   return getShipImageUrl(props.ship.image);
 });
 
-const primaryFaction = computed(
-  () =>
-    props.ship.factionLede?.trim() ||
-    props.ship.faction?.split(",")[0]?.trim() ||
-    "",
+const primaryFaction = computed(() =>
+  resolvePrimaryFaction({
+    faction: props.ship.faction,
+    factionLede: props.ship.factionLede,
+    facSort: props.ship.facSort,
+  }),
 );
 
 const factionColor = computed(() => getFactionColor(primaryFaction.value));
-const factionAccent = computed(() => getFactionGlow(primaryFaction.value));
+const factionAccent = computed(() =>
+  resolveFactionAccent({
+    faction: props.ship.faction,
+    factionLede: props.ship.factionLede,
+    facSort: props.ship.facSort,
+  }),
+);
+
+const factionLetter = computed(() => {
+  const key = factionMarkKey(primaryFaction.value);
+  const letters: Record<string, string> = {
+    federation: "F",
+    klingon: "K",
+    romulan: "R",
+    dominion: "D",
+    cross: "C",
+    neutral: "",
+  };
+  return letters[key] ?? "";
+});
 
 watch(
   () => props.ship.image,
@@ -48,6 +76,14 @@ watch(
   >
     <div class="ship-card__frame">
       <div class="ship-card__art">
+        <span
+          v-if="factionLetter"
+          class="ship-card__faction-mark"
+          :class="`text-${factionColor}`"
+          :title="primaryFaction"
+        >
+          {{ factionLetter }}
+        </span>
         <v-img
           :src="imageUrl"
           :alt="ship.name"
@@ -58,7 +94,9 @@ watch(
       </div>
 
       <div class="ship-card__body">
-        <div class="ship-card__name">{{ ship.name }}</div>
+        <div class="ship-card__name" :class="`text-${factionColor}`">
+          {{ ship.name }}
+        </div>
         <div class="ship-card__meta">
           <v-chip
             v-if="ship.tier != null"
@@ -146,6 +184,20 @@ watch(
   background:
     radial-gradient(circle at center, color-mix(in srgb, var(--faction-accent) 35%, transparent) 0%, transparent 70%),
     linear-gradient(135deg, #102338, #162e4c, #0d1625);
+}
+
+.ship-card__faction-mark {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  z-index: 2;
+  font-family: "Orbitron", "Eurostile", "Bank Gothic", "Microgramma", sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
+  pointer-events: none;
 }
 
 .ship-card__image {

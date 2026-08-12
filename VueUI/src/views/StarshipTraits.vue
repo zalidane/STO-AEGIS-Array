@@ -8,6 +8,12 @@ import {
 } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
+import ObtainedMarkup from "@/components/shared/ObtainedMarkup.vue";
+import { useKeepAliveScrollRestore } from "@/composables/useKeepAliveScrollRestore";
+
+defineOptions({ name: "StarshipTraits" });
+
+useKeepAliveScrollRestore();
 
 const router = useRouter();
 
@@ -52,7 +58,23 @@ function onRowClick(_event: Event, row: { item: StarshipTrait }) {
         :headers="headers"
         :items-per-page="25"
         @click:row="onRowClick"
-      />
+      >
+        <template #item.obtained="{ item }">
+          <ObtainedMarkup
+            :text="item.obtained"
+            :ships="item.ships"
+            class="obtained-cell"
+            @click.stop
+          />
+        </template>
+      </v-data-table>
     </div>
   </v-container>
 </template>
+
+<style scoped>
+.obtained-cell {
+  max-width: 28rem;
+  padding: 4px 0;
+}
+</style>

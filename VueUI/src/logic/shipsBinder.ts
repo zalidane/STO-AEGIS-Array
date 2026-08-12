@@ -9,6 +9,7 @@ export type ShipListItem = {
   tier: number | null;
   faction: string | null;
   factionLede: string | null;
+  facSort?: string | null;
   displayClass?: string | null;
   displayType?: string | null;
 };
