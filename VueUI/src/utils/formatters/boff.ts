@@ -21,7 +21,7 @@ export function abbreviateBoffPart(part: string): string {
   let result = part.trim();
 
   for (const [full, short] of BOFF_ABBREVIATIONS) {
-    result = result.replaceAll(full, short);
+    result = result.split(full).join(short);
   }
 
   return result;

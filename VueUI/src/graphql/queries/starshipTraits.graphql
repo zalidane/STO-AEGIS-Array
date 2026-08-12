@@ -16,6 +16,9 @@ query StarshipTraits {
       faction
       factionLede
       facSort
+      displayClass
+      displayPrefix
+      displayType
     }
   }
 }
@@ -41,6 +44,9 @@ query StarshipTrait($id: Int!) {
       faction
       factionLede
       facSort
+      displayClass
+      displayPrefix
+      displayType
       tier
       type
     }
@@ -62,6 +68,9 @@ query StarshipTraitByName($name: String!) {
       faction
       factionLede
       facSort
+      displayClass
+      displayPrefix
+      displayType
     }
   }
 }
