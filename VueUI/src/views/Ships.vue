@@ -24,8 +24,11 @@ import {
   writeStoredShipsListState,
   type ShipsListState,
 } from "@/logic/shipsBinder";
+import { useKeepAliveScrollRestore } from "@/composables/useKeepAliveScrollRestore";
 
 defineOptions({ name: "Ships" });
+
+useKeepAliveScrollRestore();
 
 const router = useRouter();
 const route = useRoute();

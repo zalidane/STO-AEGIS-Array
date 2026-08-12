@@ -10,6 +10,13 @@ query StarshipTraits {
     tag
     tag2
     tag3
+    ships {
+      id
+      name
+      faction
+      factionLede
+      facSort
+    }
   }
 }
 
@@ -31,6 +38,9 @@ query StarshipTrait($id: Int!) {
     ships {
       id
       name
+      faction
+      factionLede
+      facSort
       tier
       type
     }
@@ -49,6 +59,9 @@ query StarshipTraitByName($name: String!) {
     ships {
       id
       name
+      faction
+      factionLede
+      facSort
     }
   }
 }
