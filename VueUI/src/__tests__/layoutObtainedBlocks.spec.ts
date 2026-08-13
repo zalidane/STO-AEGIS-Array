@@ -199,7 +199,7 @@ describe("layoutObtainedBlocks", () => {
         .filter((token) => token.type === "text")
         .map((token) => (token.type === "text" ? token.value : "")),
     ).not.toContain(".");
-    expect(blocks[0].tokens.at(-1)).toMatchObject({
+    expect(blocks[0].tokens[blocks[0].tokens.length - 1]).toMatchObject({
       type: "link",
       label: "Constable specialization",
     });
