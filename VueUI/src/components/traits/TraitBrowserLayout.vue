@@ -1,0 +1,336 @@
+<script setup lang="ts">
+import { computed, ref, watch } from "vue";
+import LoadingPanel from "@/components/shared/LoadingPanel.vue";
+import ObtainedMarkup from "@/components/shared/ObtainedMarkup.vue";
+import {
+  filterTraitBrowserItems,
+  resolveSelectedTrait,
+  traitBrowserMetaChips,
+  type TraitBrowserItem,
+} from "@/logic/traitBrowser";
+
+const props = defineProps<{
+  title: string;
+  items: readonly TraitBrowserItem[];
+  loading?: boolean;
+  errorMessage?: string | null;
+  sourceLabel?: string;
+  descriptionLabel?: string;
+  /** Optional deep-link path builder for full detail pages. */
+  detailsPath?: (id: number) => string;
+}>();
+
+const search = ref("");
+const selectedId = ref<number | null>(null);
+const resolvedSourceLabel = computed(() => props.sourceLabel ?? "Source");
+const resolvedDescriptionLabel = computed(
+  () => props.descriptionLabel ?? "Description",
+);
+
+const filteredItems = computed(() =>
+  filterTraitBrowserItems(props.items, search.value),
+);
+
+const selected = computed(() =>
+  resolveSelectedTrait(filteredItems.value, selectedId.value),
+);
+
+watch(
+  filteredItems,
+  (items) => {
+    if (items.length === 0) {
+      selectedId.value = null;
+      return;
+    }
+    if (
+      selectedId.value == null ||
+      !items.some((item) => item.id === selectedId.value)
+    ) {
+      selectedId.value = items[0]!.id;
+    }
+  },
+  { immediate: true },
+);
+
+function selectItem(id: number) {
+  selectedId.value = id;
+}
+
+const metaChips = computed(() => traitBrowserMetaChips(selected.value));
+</script>
+
+<template>
+  <div class="trait-browser">
+    <h1 class="mb-4">{{ title }}</h1>
+
+    <loading-panel v-if="loading" :message="title" />
+
+    <v-alert v-else-if="errorMessage" type="error" class="mb-4">
+      {{ errorMessage }}
+    </v-alert>
+
+    <template v-else>
+      <v-text-field
+        v-model="search"
+        label="Search"
+        class="mb-4"
+        hide-details
+        clearable
+      />
+
+      <div class="trait-browser__layout">
+        <aside class="trait-browser__list-pane">
+          <div v-if="filteredItems.length === 0" class="trait-browser__empty">
+            No results match your search.
+          </div>
+
+          <button
+            v-for="item in filteredItems"
+            :key="item.id"
+            type="button"
+            class="trait-browser__list-item"
+            :class="{
+              'trait-browser__list-item--active': selected?.id === item.id,
+            }"
+            @click="selectItem(item.id)"
+          >
+            <div class="trait-browser__list-name">{{ item.name }}</div>
+            <div class="trait-browser__list-desc">
+              {{ item.listDescription || "No description available." }}
+            </div>
+          </button>
+        </aside>
+
+        <section class="trait-browser__card-pane">
+          <article v-if="selected" class="trait-browser__card">
+            <header class="trait-browser__card-header">
+              <div>
+                <h2 class="trait-browser__card-title">{{ selected.name }}</h2>
+                <div v-if="metaChips.length" class="trait-browser__meta">
+                  <v-chip
+                    v-for="chip in metaChips"
+                    :key="chip.label"
+                    size="small"
+                    variant="tonal"
+                    color="primary"
+                  >
+                    <span class="trait-browser__meta-label">{{ chip.label }}:</span>
+                    {{ chip.value }}
+                  </v-chip>
+                </div>
+              </div>
+
+              <v-btn
+                v-if="detailsPath"
+                :to="detailsPath(selected.id)"
+                variant="outlined"
+                color="primary"
+                size="small"
+              >
+                Full details
+              </v-btn>
+            </header>
+
+            <div class="trait-browser__card-body">
+              <section
+                v-if="selected.source?.trim()"
+                class="trait-browser__section"
+              >
+                <h3 class="trait-browser__section-title">
+                  {{ resolvedSourceLabel }}
+                </h3>
+                <ObtainedMarkup
+                  :text="selected.source"
+                  :ships="selected.ships"
+                />
+              </section>
+
+              <section
+                v-if="selected.detailDescription?.trim()"
+                class="trait-browser__section"
+              >
+                <h3 class="trait-browser__section-title">
+                  {{ resolvedDescriptionLabel }}
+                </h3>
+                <p class="trait-browser__detail-text">
+                  {{ selected.detailDescription }}
+                </p>
+              </section>
+
+              <p
+                v-if="!selected.source?.trim() && !selected.detailDescription?.trim()"
+                class="trait-browser__empty"
+              >
+                No additional details available.
+              </p>
+            </div>
+          </article>
+
+          <div v-else class="trait-browser__empty trait-browser__card">
+            Select an item to view details.
+          </div>
+        </section>
+      </div>
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.trait-browser__layout {
+  display: grid;
+  grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+  min-height: min(70vh, 52rem);
+}
+
+.trait-browser__list-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 0;
+  max-height: min(70vh, 52rem);
+  overflow: auto;
+  padding-right: 0.25rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trait-browser__list-item {
+  appearance: none;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 55%),
+    rgba(13, 22, 36, 0.72);
+  color: inherit;
+  text-align: left;
+  border-radius: 10px;
+  padding: 0.7rem 0.8rem;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.trait-browser__list-item:hover,
+.trait-browser__list-item:focus-visible {
+  border-color: rgba(var(--v-theme-primary), 0.45);
+  outline: none;
+}
+
+.trait-browser__list-item--active {
+  border-color: rgb(var(--v-theme-primary));
+  background:
+    linear-gradient(
+      180deg,
+      rgba(var(--v-theme-primary), 0.16),
+      rgba(13, 22, 36, 0.85)
+    );
+}
+
+.trait-browser__list-name {
+  font-weight: 650;
+  line-height: 1.25;
+  margin-bottom: 0.25rem;
+}
+
+.trait-browser__list-desc {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.86rem;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.trait-browser__card-pane {
+  min-width: 0;
+  min-height: 0;
+}
+
+.trait-browser__card {
+  height: 100%;
+  max-height: min(70vh, 52rem);
+  overflow: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.04), transparent 40%),
+    linear-gradient(160deg, #152336, #0d1624 70%, #0a121d);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+  padding: 1.15rem 1.25rem 1.35rem;
+}
+
+.trait-browser__card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trait-browser__card-title {
+  margin: 0 0 0.55rem;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.trait-browser__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.trait-browser__meta-label {
+  opacity: 0.75;
+  margin-right: 0.25rem;
+}
+
+.trait-browser__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.trait-browser__section-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 650;
+}
+
+.trait-browser__detail-text {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.trait-browser__empty {
+  color: rgba(255, 255, 255, 0.55);
+  padding: 0.75rem;
+}
+
+@media (max-width: 960px) {
+  .trait-browser__layout {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .trait-browser__list-pane {
+    max-height: 40vh;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.75rem;
+  }
+
+  .trait-browser__card {
+    max-height: none;
+  }
+}
+</style>

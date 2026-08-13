@@ -28,19 +28,8 @@ const fields = computed(() => {
   return [
     { label: "Type", value: t.type },
     { label: "Environment", value: t.environment },
-    { label: "Short Description", value: t.shortDescription },
     { label: "Description", value: t.description },
-    { label: "Required", value: t.required },
-    { label: "Possible", value: t.possible },
     { label: "Career", value: t.career },
-    { label: "Source", value: t.source },
-    { label: "Char Variant", value: t.charVariant },
-    { label: "BOff Variant", value: t.boffVariant },
-    { label: "DOff Variant", value: t.doffVariant },
-    { label: "Icon Name", value: t.iconName },
-    { label: "Master", value: t.master },
-    { label: "Created", value: t.createdAt },
-    { label: "Updated", value: t.updatedAt },
   ];
 });
 </script>
@@ -52,7 +41,6 @@ const fields = computed(() => {
     <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
     <template v-else-if="trait">
       <h3>{{ trait.name }}</h3>
-      <h5>{{ trait.type }} • {{ trait.environment }}</h5>
       <v-card class="mt-4">
         <v-card-title>Trait Details</v-card-title>
         <DetailFieldList :items="fields" />

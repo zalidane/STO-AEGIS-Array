@@ -1,52 +1,79 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+import { computed } from "vue";
 import { useQuery } from "@vue/apollo-composable";
 import {
   TraySkillsDocument,
   type TraySkillsQuery,
 } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
-import LoadingPanel from "@/components/shared/LoadingPanel.vue";
+import TraitBrowserLayout from "@/components/traits/TraitBrowserLayout.vue";
+import { useKeepAliveScrollRestore } from "@/composables/useKeepAliveScrollRestore";
+import {
+  cleanTraitDescriptionText,
+  type TraitBrowserItem,
+} from "@/logic/traitBrowser";
 
-const router = useRouter();
+defineOptions({ name: "TraySkills" });
+
+useKeepAliveScrollRestore();
+
 type TraySkill = TraySkillsQuery["traySkills"][number];
 
 const { result, loading, error } = useQuery(TraySkillsDocument);
-const items = computed<TraySkill[]>(() => result.value?.traySkills ?? []);
-const search = ref("");
-const headers = [
-  { title: "Name", key: "name" },
-  { title: "System", key: "system" },
-  { title: "Type", key: "type" },
-  { title: "Region", key: "region" },
-  { title: "Activation", key: "activation" },
-  { title: "Recharge Base", key: "rechargeBase" },
-  { title: "Recharge Global", key: "rechargeGlobal" },
-];
 
-function onRowClick(_event: Event, row: { item: TraySkill }) {
-  router.push(`/tray-skills/${row.item.id}`);
+function formatRecharge(skill: TraySkill): string | null {
+  const parts: string[] = [];
+  if (skill.rechargeBase != null) parts.push(`Base ${skill.rechargeBase}s`);
+  if (skill.rechargeGlobal != null) {
+    parts.push(`Global ${skill.rechargeGlobal}s`);
+  }
+  return parts.length ? parts.join(" · ") : null;
 }
+
+const items = computed<TraitBrowserItem[]>(() =>
+  (result.value?.traySkills ?? []).map((skill: TraySkill) => {
+    const summary = cleanTraitDescriptionText(skill.description);
+
+    return {
+      id: skill.id,
+      name: skill.name,
+      listDescription: summary,
+      detailDescription: summary,
+      source: skill.descriptionLong?.trim() || null,
+      type: skill.type,
+      environment: skill.region,
+      career: skill.system,
+      meta: [
+        { label: "Type", value: skill.type ?? "" },
+        { label: "Region", value: skill.region ?? "" },
+        { label: "System", value: skill.system ?? "" },
+        { label: "Targets", value: skill.targets ?? "" },
+        { label: "Affects", value: skill.affects ?? "" },
+        { label: "Activation", value: skill.activation ?? "" },
+        { label: "Recharge", value: formatRecharge(skill) ?? "" },
+      ],
+    };
+  }),
+);
 </script>
 
 <template>
   <app-breadcrumbs />
-  <v-container>
-    <h1 class="mb-4">Tray Skills</h1>
-    <loading-panel v-if="loading" :message="'Tray Skills'" />
-    <v-alert v-else-if="error" type="error" class="mb-4">
-      {{ error.message }}
-    </v-alert>
-    <div v-else>
-      <v-text-field v-model="search" label="Search" class="mb-4" />
-      <v-data-table
-        :items="items"
-        :search="search"
-        :headers="headers"
-        :items-per-page="25"
-        @click:row="onRowClick"
-      />
-    </div>
+  <v-container fluid class="trait-page">
+    <TraitBrowserLayout
+      title="Tray Skills"
+      source-label="Description"
+      description-label="Summary"
+      :items="items"
+      :loading="loading"
+      :error-message="error?.message"
+      :details-path="(id) => `/tray-skills/${id}`"
+    />
   </v-container>
 </template>
+
+<style scoped>
+.trait-page {
+  max-width: 1400px;
+}
+</style>

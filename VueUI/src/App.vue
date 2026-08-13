@@ -20,7 +20,7 @@ import AppNavigation from "./components/layout/AppNavigation.vue";
 
     <v-main>
       <router-view v-slot="{ Component }">
-        <keep-alive :include="['Ships', 'StarshipTraits']">
+        <keep-alive :include="['Ships', 'StarshipTraits', 'Traits', 'TraySkills']">
           <component :is="Component" />
         </keep-alive>
       </router-view>

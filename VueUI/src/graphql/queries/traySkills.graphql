@@ -4,6 +4,7 @@ query TraySkills {
     name
     system
     description
+    descriptionLong
     targets
     affects
     activation

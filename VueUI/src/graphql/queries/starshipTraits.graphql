@@ -4,6 +4,7 @@ query StarshipTraits {
     name
     short
     basic
+    detailed
     type
     obtained
     iconName
