@@ -24,6 +24,7 @@ import {
   writeStoredShipsListState,
   type ShipsListState,
 } from "@/logic/shipsBinder";
+import { currencyDisplayLabel } from "@/utils/parsers/shipCost";
 import { useKeepAliveScrollRestore } from "@/composables/useKeepAliveScrollRestore";
 
 defineOptions({ name: "Ships" });
@@ -46,6 +47,7 @@ const search = ref(hydratedState.search);
 const selectedTypes = ref<string[]>([...hydratedState.types]);
 const selectedFactions = ref<string[]>([...hydratedState.factions]);
 const selectedTiers = ref<number[]>([...hydratedState.tiers]);
+const selectedCosts = ref<string[]>([...hydratedState.costs]);
 const page = ref(hydratedState.page);
 const syncingFromRoute = ref(false);
 /** Type filter drawer; closed by default. */
@@ -73,6 +75,7 @@ const currentFilters = computed(() => ({
   types: selectedTypes.value,
   factions: selectedFactions.value,
   tiers: selectedTiers.value,
+  costs: selectedCosts.value,
 }));
 
 const filteredShips = computed(() =>
@@ -124,6 +127,7 @@ watch(
     selectedTypes.value = [...parsed.types];
     selectedFactions.value = [...parsed.factions];
     selectedTiers.value = [...parsed.tiers];
+    selectedCosts.value = [...parsed.costs];
     page.value = parsed.page;
     queueMicrotask(() => {
       syncingFromRoute.value = false;
@@ -178,11 +182,22 @@ function clearTierFilters() {
   page.value = 1;
 }
 
+function clearCostFilters() {
+  selectedCosts.value = [];
+  page.value = 1;
+}
+
+function removeCostFilter(code: string) {
+  selectedCosts.value = selectedCosts.value.filter((cost) => cost !== code);
+  page.value = 1;
+}
+
 function clearFilters() {
   search.value = "";
   selectedTypes.value = [];
   selectedFactions.value = [];
   selectedTiers.value = [];
+  selectedCosts.value = [];
   page.value = 1;
 }
 
@@ -204,7 +219,8 @@ const hasActiveFilters = computed(
     search.value.trim().length > 0 ||
     selectedTypes.value.length > 0 ||
     selectedFactions.value.length > 0 ||
-    selectedTiers.value.length > 0,
+    selectedTiers.value.length > 0 ||
+    selectedCosts.value.length > 0,
 );
 </script>
 
@@ -243,6 +259,30 @@ const hasActiveFilters = computed(
             @input="onSearchUpdate(($event.target as HTMLInputElement).value)"
           />
         </label>
+
+        <div
+          v-if="selectedCosts.length"
+          class="registry-group"
+          role="group"
+          aria-label="Acquisition"
+        >
+          <button
+            type="button"
+            class="registry-chip registry-chip--all"
+            @click="clearCostFilters"
+          >
+            All
+          </button>
+          <button
+            v-for="code in selectedCosts"
+            :key="code"
+            type="button"
+            class="registry-chip registry-chip--active"
+            @click="removeCostFilter(code)"
+          >
+            {{ currencyDisplayLabel(code) }}
+          </button>
+        </div>
 
         <div class="registry-group" role="group" aria-label="Faction">
           <button

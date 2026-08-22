@@ -1,0 +1,281 @@
+import { describe, expect, it } from "vitest";
+import {
+  allowsAccountUnlockFromCost,
+  bindScopeFromBoundTo,
+  bindScopeFromShipCost,
+  bindScopeForKind,
+  defaultBindForKind,
+  inheritBindFromGrantingShips,
+  resolveBindScope,
+} from "@/logic/collection/bind";
+import { bindScopeFromCatalog } from "@/logic/collection/catalogBind";
+import { filterEquipmentInfoboxes } from "@/logic/collection/itemBrowser";
+import {
+  collectItem,
+  collectionStatus,
+  createCharacter,
+  deleteCharacter,
+  setEntryBind,
+  uncollectItem,
+  visibleEntriesForActiveCharacter,
+} from "@/logic/collection/state";
+import {
+  createEmptyCollectionState,
+  type CollectionClock,
+  type CollectionState,
+} from "@/logic/collection/types";
+import {
+  COLLECTION_STORAGE_KEY,
+  createLocalStorageCollectionRepository,
+} from "@/models/collection/localStorageRepository";
+
+const clock: CollectionClock = {
+  now: () => "2026-08-22T00:00:00.000Z",
+  id: () => {
+    clockIds += 1;
+    return `id-${clockIds}`;
+  },
+};
+
+let clockIds = 0;
+
+function resetClock() {
+  clockIds = 0;
+}
+
+function withCaptains(): CollectionState {
+  resetClock();
+  let state = createEmptyCollectionState();
+  state = createCharacter(state, "Alice", clock);
+  state = createCharacter(state, "Bob", clock);
+  return state;
+}
+
+describe("bindScope", () => {
+  it("reads Infobox boundto", () => {
+    expect(bindScopeFromBoundTo("Account")).toBe("account");
+    expect(bindScopeFromBoundTo("character")).toBe("character");
+    expect(bindScopeFromBoundTo(null)).toBe("unknown");
+    expect(bindScopeFromBoundTo("yes")).toBe("unknown");
+  });
+
+  it("defaults personal traits to character; ships and grants need acquisition data", () => {
+    expect(defaultBindForKind("ship")).toBe("unknown");
+    expect(defaultBindForKind("starshipTrait")).toBe("unknown");
+    expect(defaultBindForKind("trait")).toBe("character");
+    expect(resolveBindScope({ kind: "item", boundto: "account" })).toBe(
+      "account",
+    );
+  });
+
+  it("treats Zen Store and dilithium/fleet unlocks as BtA", () => {
+    expect(bindScopeFromShipCost("3000;Zen")).toBe("account");
+    expect(bindScopeFromShipCost("200000;dil")).toBe("account");
+    expect(bindScopeFromShipCost("1;LB / 3000;Zen")).toBe("account");
+  });
+
+  it("defaults Phoenix and Anniversary Prize Pack ships to BtC with an account-unlock choice", () => {
+    expect(bindScopeFromShipCost("1;PPP5")).toBe("character");
+    expect(bindScopeFromShipCost("20;APP")).toBe("character");
+    expect(bindScopeFromShipCost("1;LB / 1;PPP5")).toBe("character");
+    expect(allowsAccountUnlockFromCost("1;PPP5")).toBe(true);
+    expect(allowsAccountUnlockFromCost("20;APP")).toBe(true);
+    expect(allowsAccountUnlockFromCost("1;LB / 1;PPP5")).toBe(true);
+    expect(allowsAccountUnlockFromCost("3000;Zen")).toBe(false);
+  });
+
+  it("treats lockbox and lobi-only ships as BtC", () => {
+    expect(bindScopeFromShipCost("1;LB")).toBe("character");
+    expect(bindScopeFromShipCost("800;LC")).toBe("character");
+    expect(bindScopeFromShipCost("1;MR")).toBe("character");
+    expect(allowsAccountUnlockFromCost("1;LB")).toBe(false);
+  });
+
+  it("inherits hull bind onto granted traits and consoles", () => {
+    expect(inheritBindFromGrantingShips(["3000;Zen", "1;LB"])).toBe("account");
+    expect(inheritBindFromGrantingShips(["1;LB", "800;LC"])).toBe("character");
+    expect(inheritBindFromGrantingShips([])).toBe("unknown");
+    expect(
+      bindScopeForKind({
+        kind: "item",
+        boundto: "character",
+        grantingShipCosts: ["3000;Zen"],
+      }),
+    ).toBe("account");
+    expect(
+      bindScopeForKind({
+        kind: "item",
+        boundto: "character",
+        grantingShipCosts: ["1;LB"],
+      }),
+    ).toBe("character");
+  });
+
+  it("resolves catalog bind from ship cost and unique-console grants", () => {
+    const sources = {
+      ships: [
+        { id: 1, cost: "3000;Zen", uniconsoleId: 10 },
+        { id: 2, cost: "1;LB", uniconsoleId: 11 },
+      ],
+      starshipTraits: [{ id: 5, ships: [{ cost: "1;LB" }] }],
+      items: [
+        { id: 10, boundto: "character" },
+        { id: 11, boundto: "account" },
+        { id: 12, boundto: "character" },
+      ],
+    };
+    expect(bindScopeFromCatalog(sources, "ship", 1)).toBe("account");
+    expect(bindScopeFromCatalog(sources, "ship", 2)).toBe("character");
+    expect(bindScopeFromCatalog(sources, "starshipTrait", 5)).toBe("character");
+    expect(bindScopeFromCatalog(sources, "item", 10)).toBe("account");
+    expect(bindScopeFromCatalog(sources, "item", 11)).toBe("character");
+    expect(bindScopeFromCatalog(sources, "item", 12)).toBe("character");
+  });
+});
+
+describe("equipment infobox filter", () => {
+  it("keeps consoles, weapons, and kits; drops lockboxes and inventory", () => {
+    const kept = filterEquipmentInfoboxes([
+      { type: "Universal Console" },
+      { type: "Experimental Weapon" },
+      { type: "Inventory" },
+      { type: "Lock Box" },
+      { type: null },
+    ]);
+    expect(kept.map((item) => item.type)).toEqual([
+      "Universal Console",
+      "Experimental Weapon",
+    ]);
+  });
+});
+
+describe("collection state", () => {
+  it("creates captains and keeps the newest one active", () => {
+    const state = withCaptains();
+    expect(state.characters.map((c) => c.name)).toEqual(["Alice", "Bob"]);
+    expect(state.activeCharacterId).toBe("id-2");
+  });
+
+  it("lets each captain collect their own BtA copy, and shows the other copy", () => {
+    let state = withCaptains();
+    state = collectItem(state, { kind: "ship", catalogId: 10 }, clock);
+
+    const onBob = collectionStatus(state, {
+      kind: "ship",
+      catalogId: 10,
+      bind: "account",
+    });
+    expect(onBob.ownedByActive).toBe(true);
+    expect(onBob.otherAccountCopies).toEqual([]);
+
+    state = { ...state, activeCharacterId: "id-1" };
+    const onAlice = collectionStatus(state, {
+      kind: "ship",
+      catalogId: 10,
+      bind: "account",
+    });
+    expect(onAlice.ownedByActive).toBe(false);
+    expect(onAlice.otherAccountCopies).toEqual([
+      { characterId: "id-2", characterName: "Bob", isActive: false },
+    ]);
+
+    state = collectItem(state, { kind: "ship", catalogId: 10 }, clock);
+    expect(
+      collectionStatus(state, {
+        kind: "ship",
+        catalogId: 10,
+        bind: "account",
+      }).ownedByActive,
+    ).toBe(true);
+    expect(state.entries).toHaveLength(2);
+  });
+
+  it("shows a Phoenix copy on other captains only after it is marked unlocked for account", () => {
+    let state = withCaptains();
+    state = collectItem(
+      state,
+      { kind: "ship", catalogId: 10, bind: "character" },
+      clock,
+    );
+    state = { ...state, activeCharacterId: "id-1" };
+    expect(
+      collectionStatus(state, {
+        kind: "ship",
+        catalogId: 10,
+        bind: "character",
+      }).otherAccountCopies,
+    ).toEqual([]);
+
+    state = { ...state, activeCharacterId: "id-2" };
+    state = setEntryBind(state, {
+      kind: "ship",
+      catalogId: 10,
+      bind: "account",
+    });
+    state = { ...state, activeCharacterId: "id-1" };
+    expect(
+      collectionStatus(state, {
+        kind: "ship",
+        catalogId: 10,
+        bind: "character",
+      }).otherAccountCopies,
+    ).toEqual([
+      { characterId: "id-2", characterName: "Bob", isActive: false },
+    ]);
+  });
+
+  it("hides another captain's character-bound items", () => {
+    let state = withCaptains();
+    state = collectItem(state, { kind: "trait", catalogId: 4 }, clock);
+    state = { ...state, activeCharacterId: "id-1" };
+
+    const status = collectionStatus(state, {
+      kind: "trait",
+      catalogId: 4,
+      bind: "character",
+    });
+    expect(status.ownedByActive).toBe(false);
+    expect(status.otherAccountCopies).toEqual([]);
+
+    const visible = visibleEntriesForActiveCharacter(state, () => "character");
+    expect(visible).toEqual([]);
+  });
+
+  it("uncollects only the active captain's copy", () => {
+    let state = withCaptains();
+    state = collectItem(state, { kind: "item", catalogId: 9 }, clock);
+    state = { ...state, activeCharacterId: "id-1" };
+    state = collectItem(state, { kind: "item", catalogId: 9 }, clock);
+    state = uncollectItem(state, { kind: "item", catalogId: 9 });
+    expect(state.entries).toHaveLength(1);
+    expect(state.entries[0]?.characterId).toBe("id-2");
+  });
+
+  it("drops a captain's entries when the folder is deleted", () => {
+    let state = withCaptains();
+    state = collectItem(state, { kind: "ship", catalogId: 1 }, clock);
+    state = deleteCharacter(state, "id-2");
+    expect(state.characters.map((c) => c.name)).toEqual(["Alice"]);
+    expect(state.activeCharacterId).toBe("id-1");
+    expect(state.entries).toEqual([]);
+  });
+});
+
+describe("localStorage repository", () => {
+  it("round-trips state and recovers from corrupt JSON", () => {
+    const memory = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => memory.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        memory.set(key, value);
+      },
+    };
+    const repo = createLocalStorageCollectionRepository(storage);
+    const saved = createCharacter(createEmptyCollectionState(), "Alice", clock);
+    repo.save(saved);
+    expect(repo.load().characters[0]?.name).toBe("Alice");
+
+    memory.set(COLLECTION_STORAGE_KEY, "{not json");
+    expect(repo.load().characters).toEqual([]);
+  });
+});

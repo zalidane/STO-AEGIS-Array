@@ -9,6 +9,7 @@ import {
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import DetailFieldList from "@/components/shared/DetailFieldList.vue";
+import CollectToggle from "@/components/collection/CollectToggle.vue";
 
 const route = useRoute();
 const id = computed(() => Number(route.params.id));
@@ -40,7 +41,10 @@ const fields = computed(() => {
     <loading-panel v-if="loading" :message="'Trait Details'" />
     <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
     <template v-else-if="trait">
-      <h3>{{ trait.name }}</h3>
+      <div class="d-flex align-start justify-space-between ga-4 mb-4">
+        <h3>{{ trait.name }}</h3>
+        <CollectToggle kind="trait" :catalog-id="trait.id" bind="character" />
+      </div>
       <v-card class="mt-4">
         <v-card-title>Trait Details</v-card-title>
         <DetailFieldList :items="fields" />

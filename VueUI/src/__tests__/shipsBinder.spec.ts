@@ -7,6 +7,7 @@ import {
   getBinderPage,
   parseShipsListQuery,
   serializeShipsListQuery,
+  shipsListQueryForAcquisition,
   shipsListQueryIsEmpty,
   toggleInclusiveValue,
   uniqueSortedStrings,
@@ -55,6 +56,7 @@ const ships: ShipListItem[] = [
     tier: 5,
     faction: "United Federation of Planets,Klingon Empire",
     factionLede: "Cross-Faction",
+    cost: "1;PPP5",
   },
 ];
 
@@ -87,6 +89,7 @@ describe("filterShips", () => {
       types: ["Escort", "Raider", "Carrier"],
       factions: ["Federation"],
       tiers: [5],
+      costs: [],
     });
 
     // Escort/Raider/Carrier + tier 5 remain; Federation-affiliated ships lead.
@@ -126,6 +129,22 @@ describe("filterShips", () => {
       }).map((ship) => ship.id),
     ).toEqual([2, 5, 1, 3, 4]);
   });
+
+  it("filters and searches by acquisition currency", () => {
+    expect(
+      filterShips(ships, {
+        ...createDefaultShipsListState(),
+        costs: ["PPP5"],
+      }).map((ship) => ship.id),
+    ).toEqual([5]);
+
+    expect(
+      filterShips(ships, {
+        ...createDefaultShipsListState(),
+        search: "Epic Phoenix Prize Pack Token",
+      }).map((ship) => ship.id),
+    ).toEqual([5]);
+  });
 });
 
 describe("getBinderPage", () => {
@@ -154,10 +173,23 @@ describe("ships list query serialization", () => {
       types: ["Escort"],
       factions: ["Federation"],
       tiers: [5, 6],
+      costs: ["PPP5"],
       page: 2,
     };
 
     expect(parseShipsListQuery(serializeShipsListQuery(state))).toEqual(state);
+  });
+
+  it("builds an acquisition query that lists matching ships", () => {
+    const query = shipsListQueryForAcquisition({
+      currencyCode: "PPP5",
+      label: "Epic Phoenix Prize Pack Token",
+    });
+    expect(query).toEqual({
+      q: "Epic Phoenix Prize Pack Token",
+      cost: "PPP5",
+    });
+    expect(shipsListQueryIsEmpty(query)).toBe(false);
   });
 
   it("detects empty query objects", () => {

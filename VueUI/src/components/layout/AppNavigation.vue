@@ -1,10 +1,12 @@
 <script setup lang="ts">
 const items = [
   { title: "Home", icon: "mdi-home", to: "/" },
+  { title: "Collection", icon: "mdi-bookmark", to: "/collection" },
   { title: "Ships", icon: "mdi-ferry", to: "/ships" },
   { title: "Ship Types", icon: "mdi-shape", to: "/ship-types" },
   { title: "Traits", icon: "mdi-star-outline", to: "/traits" },
   { title: "Starship Traits", icon: "mdi-star", to: "/starship-traits" },
+  { title: "Items", icon: "mdi-cube-outline", to: "/items" },
   { title: "Tray Skills", icon: "mdi-lightning-bolt", to: "/tray-skills" },
   { title: "Masteries", icon: "mdi-trophy", to: "/masteries" },
   { title: "Reputations", icon: "mdi-medal", to: "/reputations" },
@@ -14,7 +16,6 @@ const items = [
     to: "/set-bonuses",
   },
   { title: "Modifiers", icon: "mdi-delta", to: "/modifiers" },
-  { title: "Infoboxes", icon: "mdi-information-outline", to: "/infoboxes" },
   { title: "Ground Obtains", icon: "mdi-treasure-chest", to: "/gw-obtains" },
   { title: "Space Obtains", icon: "mdi-rocket", to: "/sw-obtains" },
 ];

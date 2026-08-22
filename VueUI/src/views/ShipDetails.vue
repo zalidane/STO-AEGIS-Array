@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, RouterLink } from "vue-router";
 import { useDisplay } from "vuetify";
 
 import { useQuery } from "@vue/apollo-composable";
@@ -13,6 +13,12 @@ import { formatWikiDate, formatYesNo } from "@/utils/formatters";
 import { formatFactionsByFacSort } from "@/utils/sortFactionsByFacSort";
 import { parseShipCost, type ShipCost } from "@/utils/parsers";
 import { FALLBACK_SHIP_IMAGE, getShipImageUrl } from "@/utils/shipImage";
+import CollectToggle from "@/components/collection/CollectToggle.vue";
+import {
+  allowsAccountUnlockFromCost,
+  bindScopeFromShipCost,
+} from "@/logic/collection/bind";
+import { shipsListQueryForAcquisition } from "@/logic/shipsBinder";
 import {
   densityFromWidth,
   getShipDetailLabels,
@@ -50,6 +56,11 @@ const factionGlow = computed(() => getFactionGlow(formattedFactions.value[0]));
 const boffSeats = computed(() => parseBoffSeats(ship.value?.boffs));
 
 const parsedCosts = computed<ShipCost[]>(() => parseShipCost(ship.value?.cost));
+
+const collectBind = computed(() => bindScopeFromShipCost(ship.value?.cost));
+const allowAccountUnlock = computed(() =>
+  allowsAccountUnlockFromCost(ship.value?.cost),
+);
 
 const powerDisplay = computed(() => {
   const all = ship.value?.powerAll ?? 0;
@@ -102,6 +113,12 @@ watch(
                   sm="4"
                   class="d-flex flex-column justify-space-between align-sm-end ga-3"
                 >
+                  <CollectToggle
+                    kind="ship"
+                    :catalog-id="ship.id"
+                    :bind="collectBind"
+                    :allow-account-unlock="allowAccountUnlock"
+                  />
                   <div class="d-flex justify-sm-end flex-wrap ga-1">
                     <v-chip
                       v-for="faction in formattedFactions"
@@ -262,10 +279,11 @@ watch(
             <v-divider />
 
             <div class="detail-card__body">
-              <div
+              <RouterLink
                 v-for="cost in parsedCosts"
                 :key="`${cost.currencyCode}-${cost.amount}`"
-                class="stat-row"
+                class="stat-row stat-row--link"
+                :to="{ path: '/ships', query: shipsListQueryForAcquisition(cost) }"
               >
                 <span class="stat-row__label">
                   <span
@@ -275,7 +293,7 @@ watch(
                   {{ cost.label }}
                 </span>
                 <span>{{ cost.amount }}</span>
-              </div>
+              </RouterLink>
 
               <div class="stat-row" :title="SHIP_DETAIL_FULL_LABELS.level">
                 <span>{{ labels.level }}</span>
@@ -413,6 +431,19 @@ watch(
             <v-divider />
 
             <div class="detail-card__body">
+              <RouterLink
+                v-if="ship.uniConsole"
+                :to="`/items/${ship.uniConsole.id}`"
+                class="grant-link"
+              >
+                <div class="grant-link__label">Unique console</div>
+                <div class="grant-link__name">{{ ship.uniConsole.name }}</div>
+              </RouterLink>
+
+              <div v-if="ship.experimental" class="grant-flag">
+                Experimental weapon slot
+              </div>
+
               <template v-if="ship.abilities">
                 <div
                   v-for="ability in ship.abilities.split(',')"
@@ -463,9 +494,13 @@ watch(
                 :key="trait.id"
                 class="trait-block"
               >
-                <div class="trait-block__name" :title="trait.name">
+                <RouterLink
+                  :to="`/starship-traits/${trait.id}`"
+                  class="trait-block__name"
+                  :title="trait.name"
+                >
                   {{ trait.name }}
-                </div>
+                </RouterLink>
                 <div
                   v-if="trait.short"
                   class="trait-block__short text-medium-emphasis"
@@ -654,6 +689,24 @@ watch(
   font-variant-numeric: tabular-nums;
 }
 
+.stat-row--link {
+  color: inherit;
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 4px 6px;
+  margin: 0 -6px;
+}
+
+.stat-row--link:hover {
+  background: rgba(125, 211, 252, 0.12);
+}
+
+.stat-row--link .stat-row__label {
+  color: #7dd3fc;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 .section-header {
   position: relative;
   text-align: center;
@@ -715,6 +768,40 @@ watch(
 
 .trait-block__name {
   font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+}
+
+.trait-block__name:hover {
+  color: rgb(var(--v-theme-primary));
+}
+
+.grant-link {
+  display: block;
+  margin-bottom: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.grant-link:hover .grant-link__name {
+  color: rgb(var(--v-theme-primary));
+}
+
+.grant-link__label,
+.grant-flag {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.grant-link__name {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.grant-flag {
+  margin-bottom: 10px;
 }
 
 .trait-block__short {
