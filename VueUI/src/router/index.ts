@@ -15,16 +15,10 @@ import Masteries from "@/views/Masteries.vue";
 import MasteryDetails from "@/views/MasteryDetails.vue";
 import Reputations from "@/views/Reputations.vue";
 import ReputationDetails from "@/views/ReputationDetails.vue";
-import SetBonuses from "@/views/SetBonuses.vue";
-import SetBonusDetails from "@/views/SetBonusDetails.vue";
 import Modifiers from "@/views/Modifiers.vue";
 import ModifierDetails from "@/views/ModifierDetails.vue";
 import InfoboxDetails from "@/views/InfoboxDetails.vue";
 import Items from "@/views/Items.vue";
-import GwObtains from "@/views/GwObtains.vue";
-import GwObtainDetails from "@/views/GwObtainDetails.vue";
-import SwObtains from "@/views/SwObtains.vue";
-import SwObtainDetails from "@/views/SwObtainDetails.vue";
 import ShipTypes from "@/views/ShipTypes.vue";
 import ShipTypeDetails from "@/views/ShipTypeDetails.vue";
 
@@ -121,18 +115,6 @@ const router = createRouter({
       meta: { breadcrumb: "Reputation Details", parent: "/reputations" },
     },
     {
-      path: "/set-bonuses",
-      name: "set-bonuses",
-      component: SetBonuses,
-      meta: { breadcrumb: "Set Bonuses" },
-    },
-    {
-      path: "/set-bonuses/:id",
-      name: "set-bonus-details",
-      component: SetBonusDetails,
-      meta: { breadcrumb: "Set Bonus Details", parent: "/set-bonuses" },
-    },
-    {
       path: "/modifiers",
       name: "modifiers",
       component: Modifiers,
@@ -165,30 +147,6 @@ const router = createRouter({
       name: "infobox-details",
       component: InfoboxDetails,
       meta: { breadcrumb: "Item Details", parent: "/items" },
-    },
-    {
-      path: "/gw-obtains",
-      name: "gw-obtains",
-      component: GwObtains,
-      meta: { breadcrumb: "Ground Obtains" },
-    },
-    {
-      path: "/gw-obtains/:id",
-      name: "gw-obtain-details",
-      component: GwObtainDetails,
-      meta: { breadcrumb: "Ground Obtain Details", parent: "/gw-obtains" },
-    },
-    {
-      path: "/sw-obtains",
-      name: "sw-obtains",
-      component: SwObtains,
-      meta: { breadcrumb: "Space Obtains" },
-    },
-    {
-      path: "/sw-obtains/:id",
-      name: "sw-obtain-details",
-      component: SwObtainDetails,
-      meta: { breadcrumb: "Space Obtain Details", parent: "/sw-obtains" },
     },
     {
       path: "/ship-types",

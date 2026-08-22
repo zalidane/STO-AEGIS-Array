@@ -21,6 +21,7 @@ const groupedResults = computed(() => {
 
   for (const item of result.value?.search ?? []) {
     const type = item.type as SearchType;
+    if (!(type in friendlyNames)) continue;
     if (!groups[type]) {
       groups[type] = [];
     }
@@ -60,7 +61,7 @@ const groupedResults = computed(() => {
         <v-list-item
           v-for="value in values"
           :key="value.id"
-          :to="getSearchResultRoute(value.type, value.id)"
+          :to="getSearchResultRoute(value.type, value.id) ?? undefined"
         >
           <v-list-item-title>
             {{ value.name }}

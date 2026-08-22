@@ -10,21 +10,15 @@ export function getSearchResultRoute(type: string, id: number) {
       return { name: "tray-skill-details", params: { id } };
     case "Reputation":
       return { name: "reputation-details", params: { id } };
-    case "SetBonus":
-      return { name: "set-bonus-details", params: { id } };
     case "Modifier":
       return { name: "modifier-details", params: { id } };
     case "Mastery":
       return { name: "mastery-details", params: { id } };
     case "Infobox":
       return { name: "item-details", params: { id } };
-    case "GwObtain":
-      return { name: "gw-obtain-details", params: { id } };
-    case "SwObtain":
-      return { name: "sw-obtain-details", params: { id } };
     case "ShipType":
       return { name: "ship-type-details", params: { id } };
     default:
-      return { path: "/" };
+      return null;
   }
 }

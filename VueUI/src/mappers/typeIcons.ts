@@ -4,11 +4,8 @@ export const typeIcons = {
   StarshipTrait: "mdi-star",
   TraySkill: "mdi-lightning-bolt",
   Reputation: "mdi-medal",
-  SetBonus: "mdi-chart-bell-curve-cumulative",
   Mastery: "mdi-trophy",
   Modifier: "mdi-delta",
   Infobox: "mdi-information-outline",
-  GwObtain: "mdi-treasure-chest",
-  SwObtain: "mdi-rocket",
   ShipType: "mdi-shape",
 };
