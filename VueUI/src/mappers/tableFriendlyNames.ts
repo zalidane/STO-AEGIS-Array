@@ -7,7 +7,7 @@ export const friendlyNames = {
   SetBonus: "Set Bonuses",
   Modifier: "Modifiers",
   Mastery: "Masteries",
-  Infobox: "Infoboxes",
+  Infobox: "Items",
   GwObtain: "Ground Obtains",
   SwObtain: "Space Obtains",
   ShipType: "Ship Types",

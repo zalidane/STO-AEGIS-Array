@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import Home from "@/views/Home.vue";
 import Search from "@/views/Search.vue";
+import Collection from "@/views/Collection.vue";
 import Ships from "@/views/Ships.vue";
 import ShipDetails from "@/views/ShipDetails.vue";
 import Traits from "@/views/Traits.vue";
@@ -18,8 +19,8 @@ import SetBonuses from "@/views/SetBonuses.vue";
 import SetBonusDetails from "@/views/SetBonusDetails.vue";
 import Modifiers from "@/views/Modifiers.vue";
 import ModifierDetails from "@/views/ModifierDetails.vue";
-import Infoboxes from "@/views/Infoboxes.vue";
 import InfoboxDetails from "@/views/InfoboxDetails.vue";
+import Items from "@/views/Items.vue";
 import GwObtains from "@/views/GwObtains.vue";
 import GwObtainDetails from "@/views/GwObtainDetails.vue";
 import SwObtains from "@/views/SwObtains.vue";
@@ -36,6 +37,12 @@ const router = createRouter({
   },
   routes: [
     { path: "/", component: Home },
+    {
+      path: "/collection",
+      name: "collection",
+      component: Collection,
+      meta: { breadcrumb: "Collection" },
+    },
     {
       path: "/search",
       component: Search,
@@ -138,16 +145,26 @@ const router = createRouter({
       meta: { breadcrumb: "Modifier Details", parent: "/modifiers" },
     },
     {
+      path: "/items",
+      name: "items",
+      component: Items,
+      meta: { breadcrumb: "Items" },
+    },
+    {
+      path: "/items/:id",
+      name: "item-details",
+      component: InfoboxDetails,
+      meta: { breadcrumb: "Item Details", parent: "/items" },
+    },
+    {
       path: "/infoboxes",
-      name: "infoboxes",
-      component: Infoboxes,
-      meta: { breadcrumb: "Infoboxes" },
+      redirect: "/items",
     },
     {
       path: "/infoboxes/:id",
       name: "infobox-details",
       component: InfoboxDetails,
-      meta: { breadcrumb: "Infobox Details", parent: "/infoboxes" },
+      meta: { breadcrumb: "Item Details", parent: "/items" },
     },
     {
       path: "/gw-obtains",

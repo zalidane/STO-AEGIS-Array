@@ -34,6 +34,7 @@ const items = computed<TraitBrowserItem[]>(() =>
       :loading="loading"
       :error-message="error?.message"
       :details-path="(id) => `/traits/${id}`"
+      collect-kind="trait"
     />
   </v-container>
 </template>

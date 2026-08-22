@@ -2,6 +2,7 @@
 import { RouterLink } from "vue-router";
 
 import AppNavigation from "./components/layout/AppNavigation.vue";
+import CharacterSwitcher from "./components/collection/CharacterSwitcher.vue";
 </script>
 
 <template>
@@ -16,11 +17,14 @@ import AppNavigation from "./components/layout/AppNavigation.vue";
       </v-app-bar-title>
 
       <v-spacer />
+      <CharacterSwitcher />
     </v-app-bar>
 
     <v-main>
       <router-view v-slot="{ Component }">
-        <keep-alive :include="['Ships', 'StarshipTraits', 'Traits', 'TraySkills']">
+        <keep-alive
+          :include="['Ships', 'StarshipTraits', 'Traits', 'TraySkills', 'Items']"
+        >
           <component :is="Component" />
         </keep-alive>
       </router-view>

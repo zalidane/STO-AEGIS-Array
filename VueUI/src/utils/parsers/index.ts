@@ -7,6 +7,9 @@ export {
 
 export {
   parseShipCost,
+  shipCostCurrencyCodes,
+  shipHasCurrencyCode,
+  currencyDisplayLabel,
   costNames,
   currencyColors,
   type ShipCost,

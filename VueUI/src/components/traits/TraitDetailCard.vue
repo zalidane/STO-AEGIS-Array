@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import ObtainedMarkup from "@/components/shared/ObtainedMarkup.vue";
+import CollectToggle from "@/components/collection/CollectToggle.vue";
 import {
   traitBrowserMetaChips,
   type TraitBrowserItem,
 } from "@/logic/traitBrowser";
+import type { BindScope, CatalogKind } from "@/logic/collection/types";
+import { defaultBindForKind } from "@/logic/collection/bind";
 
 const props = defineProps<{
   item: TraitBrowserItem;
@@ -13,6 +16,9 @@ const props = defineProps<{
   detailsPath?: (id: number) => string;
   /** Home featured cards: clamp copy and skip obtained markup. */
   compact?: boolean;
+  collectKind?: CatalogKind;
+  collectBind?: BindScope;
+  collectAccountUnlock?: boolean;
 }>();
 
 const resolvedSourceLabel = computed(() => props.sourceLabel ?? "Source");
@@ -27,6 +33,9 @@ const description = computed(() =>
 );
 const showSource = computed(
   () => !props.compact && Boolean(props.item.source?.trim()),
+);
+const resolvedBind = computed(
+  () => props.collectBind ?? defaultBindForKind(props.collectKind ?? "trait"),
 );
 </script>
 
@@ -52,15 +61,24 @@ const showSource = computed(
         </div>
       </div>
 
-      <v-btn
-        v-if="detailsPath"
-        :to="detailsPath(item.id)"
-        variant="outlined"
-        color="primary"
-        size="small"
-      >
-        Full details
-      </v-btn>
+      <div class="trait-browser__card-actions">
+        <CollectToggle
+          v-if="collectKind"
+          :kind="collectKind"
+          :catalog-id="item.id"
+          :bind="resolvedBind"
+          :allow-account-unlock="collectAccountUnlock"
+        />
+        <v-btn
+          v-if="detailsPath"
+          :to="detailsPath(item.id)"
+          variant="outlined"
+          color="primary"
+          size="small"
+        >
+          Full details
+        </v-btn>
+      </div>
     </header>
 
     <div class="trait-browser__card-body">
@@ -116,6 +134,14 @@ const showSource = computed(
   margin-bottom: 1rem;
   padding-bottom: 0.85rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trait-browser__card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .trait-browser__card-title {

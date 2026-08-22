@@ -1,3 +1,5 @@
+import { parseShipCost, shipHasCurrencyCode } from "@/utils/parsers/shipCost";
+
 export const BINDER_SIDE_SIZE = 9;
 export const BINDER_PAGE_SIZE = BINDER_SIDE_SIZE * 2;
 export const SHIPS_LIST_STATE_KEY = "sto-aegis:ships-list-state";
@@ -12,6 +14,7 @@ export type ShipListItem = {
   facSort?: string | null;
   displayClass?: string | null;
   displayType?: string | null;
+  cost?: string | null;
 };
 
 export type ShipsListFilters = {
@@ -19,6 +22,7 @@ export type ShipsListFilters = {
   types: string[];
   factions: string[];
   tiers: number[];
+  costs: string[];
 };
 
 export type ShipsListState = ShipsListFilters & {
@@ -68,6 +72,7 @@ function matchesSearch(ship: ShipListItem, search: string): boolean {
   const needle = search.trim().toLowerCase();
   if (!needle) return true;
 
+  const costParts = parseShipCost(ship.cost);
   const haystack = [
     ship.name,
     ship.type,
@@ -77,12 +82,19 @@ function matchesSearch(ship: ShipListItem, search: string): boolean {
     ship.displayType,
     ship.tier != null ? `tier ${ship.tier}` : null,
     ship.tier != null ? `t${ship.tier}` : null,
+    ...costParts.map((cost) => cost.label),
+    ...costParts.map((cost) => cost.currencyCode),
   ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
 
   return haystack.includes(needle);
+}
+
+function matchesCost(ship: ShipListItem, costs: readonly string[]): boolean {
+  if (costs.length === 0) return true;
+  return costs.some((code) => shipHasCurrencyCode(ship.cost, code));
 }
 
 function matchesType(ship: ShipListItem, types: readonly string[]): boolean {
@@ -170,7 +182,8 @@ export function filterShips<T extends ShipListItem>(
     (ship) =>
       matchesSearch(ship, filters.search) &&
       matchesType(ship, filters.types) &&
-      matchesTier(ship, filters.tiers),
+      matchesTier(ship, filters.tiers) &&
+      matchesCost(ship, filters.costs ?? []),
   );
 
   return prioritizeShipsByFaction(filtered, filters.factions);
@@ -224,6 +237,7 @@ export function createDefaultShipsListState(): ShipsListState {
     types: [],
     factions: [],
     tiers: [],
+    costs: [],
     page: 1,
   };
 }
@@ -237,6 +251,7 @@ export function parseShipsListQuery(
     types: uniqueSortedStrings(parseCsv(query.type)),
     factions: uniqueSortedStrings(parseCsv(query.faction)),
     tiers: uniqueSortedTiers(parseTierCsv(query.tier)),
+    costs: uniqueSortedStrings(parseCsv(query.cost)),
     page: Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1,
   };
 }
@@ -254,8 +269,22 @@ export function serializeShipsListQuery(
   if (state.tiers.length > 0) {
     query.tier = [...state.tiers].sort((a, b) => a - b).join(",");
   }
+  if ((state.costs?.length ?? 0) > 0) {
+    query.cost = [...state.costs].sort((a, b) => a.localeCompare(b)).join(",");
+  }
   if (state.page > 1) query.page = String(state.page);
   return query;
+}
+
+export function shipsListQueryForAcquisition(input: {
+  currencyCode: string;
+  label: string;
+}): Record<string, string> {
+  return serializeShipsListQuery({
+    ...createDefaultShipsListState(),
+    search: input.label,
+    costs: [input.currencyCode],
+  });
 }
 
 export function shipsListQueryIsEmpty(
@@ -266,6 +295,7 @@ export function shipsListQueryIsEmpty(
     !query.type &&
     !query.faction &&
     !query.tier &&
+    !query.cost &&
     !query.page
   );
 }
@@ -287,6 +317,9 @@ export function readStoredShipsListState(
         : [],
       tiers: Array.isArray(parsed.tiers)
         ? uniqueSortedTiers(parsed.tiers.map(Number))
+        : [],
+      costs: Array.isArray(parsed.costs)
+        ? uniqueSortedStrings(parsed.costs.map(String))
         : [],
       page:
         typeof parsed.page === "number" && parsed.page > 0

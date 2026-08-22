@@ -26,6 +26,8 @@ query Ships {
     secondaryDeflector
     hangars
     uniconsole
+    uniconsoleId
+    cost
     displayPrefix
     displayClass
     displayType

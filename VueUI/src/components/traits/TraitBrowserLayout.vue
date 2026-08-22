@@ -7,6 +7,8 @@ import {
   resolveSelectedTrait,
   type TraitBrowserItem,
 } from "@/logic/traitBrowser";
+import type { BindScope, CatalogKind } from "@/logic/collection/types";
+import { defaultBindForKind } from "@/logic/collection/bind";
 
 const props = defineProps<{
   title: string;
@@ -17,6 +19,9 @@ const props = defineProps<{
   descriptionLabel?: string;
   /** Optional deep-link path builder for full detail pages. */
   detailsPath?: (id: number) => string;
+  collectKind?: CatalogKind;
+  collectBind?: BindScope | ((item: TraitBrowserItem) => BindScope);
+  collectAccountUnlock?: boolean | ((item: TraitBrowserItem) => boolean);
 }>();
 
 const search = ref("");
@@ -50,6 +55,22 @@ watch(
 function selectItem(id: number) {
   selectedId.value = id;
 }
+
+const selectedCollectBind = computed<BindScope | undefined>(() => {
+  if (!props.collectKind || !selected.value) return undefined;
+  if (typeof props.collectBind === "function") {
+    return props.collectBind(selected.value);
+  }
+  return props.collectBind ?? defaultBindForKind(props.collectKind);
+});
+
+const selectedCollectAccountUnlock = computed(() => {
+  if (!props.collectKind || !selected.value) return false;
+  if (typeof props.collectAccountUnlock === "function") {
+    return props.collectAccountUnlock(selected.value);
+  }
+  return Boolean(props.collectAccountUnlock);
+});
 </script>
 
 <template>
@@ -101,6 +122,9 @@ function selectItem(id: number) {
             :source-label="sourceLabel"
             :description-label="descriptionLabel"
             :details-path="detailsPath"
+            :collect-kind="collectKind"
+            :collect-bind="selectedCollectBind"
+            :collect-account-unlock="selectedCollectAccountUnlock"
           />
 
           <div v-else class="trait-browser__empty trait-browser__card">

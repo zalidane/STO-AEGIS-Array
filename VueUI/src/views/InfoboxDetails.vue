@@ -9,6 +9,11 @@ import {
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import DetailFieldList from "@/components/shared/DetailFieldList.vue";
+import CollectToggle from "@/components/collection/CollectToggle.vue";
+import {
+  allowsAccountUnlockFromGrantingShips,
+  bindScopeForKind,
+} from "@/logic/collection/bind";
 
 const route = useRoute();
 const router = useRouter();
@@ -19,6 +24,19 @@ const { result, loading, error } = useQuery(InfoboxDocument, () => ({
 
 type Detail = NonNullable<InfoboxQuery["infobox"]>;
 const item = computed<Detail | null>(() => result.value?.infobox ?? null);
+const bind = computed(() =>
+  bindScopeForKind({
+    kind: "item",
+    grantingShipCosts:
+      item.value?.shipsWithConsole.map((ship) => ship.cost) ?? [],
+    boundto: item.value?.boundto,
+  }),
+);
+const allowAccountUnlock = computed(() =>
+  allowsAccountUnlockFromGrantingShips(
+    item.value?.shipsWithConsole.map((ship) => ship.cost) ?? [],
+  ),
+);
 
 const fields = computed(() => {
   if (!item.value) return [];
@@ -48,8 +66,18 @@ const fields = computed(() => {
     <loading-panel v-if="loading" :message="'Infobox Details'" />
     <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
     <template v-else-if="item">
-      <h3>{{ item.name }}</h3>
-      <h5>{{ item.rarity }} • {{ item.type }}</h5>
+      <div class="d-flex align-start justify-space-between ga-4 mb-4">
+        <div>
+          <h3>{{ item.name }}</h3>
+          <h5>{{ item.rarity }} • {{ item.type }}</h5>
+        </div>
+        <CollectToggle
+          kind="item"
+          :catalog-id="item.id"
+          :bind="bind"
+          :allow-account-unlock="allowAccountUnlock"
+        />
+      </div>
 
       <v-card class="mt-4 mb-4">
         <v-card-title>Details</v-card-title>
@@ -57,7 +85,7 @@ const fields = computed(() => {
       </v-card>
 
       <v-card class="mb-4">
-        <v-card-title>Ships With Console</v-card-title>
+        <v-card-title>Granted by ships</v-card-title>
         <v-list>
           <v-list-item
             v-for="ship in item.shipsWithConsole"

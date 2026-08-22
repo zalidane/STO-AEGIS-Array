@@ -12,6 +12,11 @@ import {
   mapStarshipTraitToBrowserItem,
   type TraitBrowserItem,
 } from "@/logic/traitBrowser";
+import {
+  allowsAccountUnlockFromGrantingShips,
+  bindScopeForKind,
+} from "@/logic/collection/bind";
+import type { BindScope } from "@/logic/collection/types";
 
 defineOptions({ name: "StarshipTraits" });
 
@@ -26,6 +31,25 @@ const items = computed<TraitBrowserItem[]>(() =>
     mapStarshipTraitToBrowserItem(trait),
   ),
 );
+
+function collectBindFor(item: TraitBrowserItem): BindScope {
+  const trait = (result.value?.starshipTraits ?? []).find(
+    (row) => row.id === item.id,
+  );
+  return bindScopeForKind({
+    kind: "starshipTrait",
+    grantingShipCosts: trait?.ships.map((ship) => ship.cost) ?? [],
+  });
+}
+
+function collectAccountUnlockFor(item: TraitBrowserItem): boolean {
+  const trait = (result.value?.starshipTraits ?? []).find(
+    (row) => row.id === item.id,
+  );
+  return allowsAccountUnlockFromGrantingShips(
+    trait?.ships.map((ship) => ship.cost) ?? [],
+  );
+}
 </script>
 
 <template>
@@ -38,6 +62,9 @@ const items = computed<TraitBrowserItem[]>(() =>
       :loading="loading"
       :error-message="error?.message"
       :details-path="(id) => `/starship-traits/${id}`"
+      collect-kind="starshipTrait"
+      :collect-bind="collectBindFor"
+      :collect-account-unlock="collectAccountUnlockFor"
     />
   </v-container>
 </template>
