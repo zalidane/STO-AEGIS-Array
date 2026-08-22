@@ -25,6 +25,8 @@ export type TraitBrowserItem = {
   source: string | null;
   /** Optional explicit meta chips; falls back to type/environment/career. */
   meta?: TraitBrowserMetaChip[];
+  /** Infobox Text 1–9 rows for item preview cards. */
+  textBlocks?: Array<{ text: string; subscript: string | null }>;
   type: string | null;
   environment: string | null;
   career: string | null;
@@ -98,6 +100,10 @@ export function filterTraitBrowserItems(
       item.environment,
       item.career,
       ...(item.meta ?? []).flatMap((chip) => [chip.label, chip.value]),
+      ...(item.textBlocks ?? []).flatMap((block) => [
+        block.text,
+        block.subscript,
+      ]),
     ]
       .filter(Boolean)
       .join(" ")

@@ -23,6 +23,10 @@ import {
   mapStarshipTraitToBrowserItem,
   type TraitBrowserItem,
 } from "@/logic/traitBrowser";
+import {
+  FALLBACK_STARSHIP_TRAIT_IMAGE,
+  FALLBACK_TRAIT_IMAGE,
+} from "@/utils/traitImage";
 
 const router = useRouter();
 const searchText = ref("");
@@ -190,6 +194,7 @@ const queryError = computed(
             v-else-if="featuredTrait"
             :item="featuredTrait"
             compact
+            :art-src="FALLBACK_TRAIT_IMAGE"
             :details-path="(id) => `/traits/${id}`"
           />
           <div v-else class="empty-featured">
@@ -207,6 +212,7 @@ const queryError = computed(
             v-else-if="featuredStarshipTrait"
             :item="featuredStarshipTrait"
             compact
+            :art-src="FALLBACK_STARSHIP_TRAIT_IMAGE"
             source-label="Obtained"
             :details-path="(id) => `/starship-traits/${id}`"
           />
