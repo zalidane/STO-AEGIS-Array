@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
-import ObtainedMarkup from "@/components/shared/ObtainedMarkup.vue";
+import TraitDetailCard from "@/components/traits/TraitDetailCard.vue";
 import {
   filterTraitBrowserItems,
   resolveSelectedTrait,
-  traitBrowserMetaChips,
   type TraitBrowserItem,
 } from "@/logic/traitBrowser";
 
@@ -22,10 +21,6 @@ const props = defineProps<{
 
 const search = ref("");
 const selectedId = ref<number | null>(null);
-const resolvedSourceLabel = computed(() => props.sourceLabel ?? "Source");
-const resolvedDescriptionLabel = computed(
-  () => props.descriptionLabel ?? "Description",
-);
 
 const filteredItems = computed(() =>
   filterTraitBrowserItems(props.items, search.value),
@@ -55,8 +50,6 @@ watch(
 function selectItem(id: number) {
   selectedId.value = id;
 }
-
-const metaChips = computed(() => traitBrowserMetaChips(selected.value));
 </script>
 
 <template>
@@ -102,69 +95,13 @@ const metaChips = computed(() => traitBrowserMetaChips(selected.value));
         </aside>
 
         <section class="trait-browser__card-pane">
-          <article v-if="selected" class="trait-browser__card">
-            <header class="trait-browser__card-header">
-              <div>
-                <h2 class="trait-browser__card-title">{{ selected.name }}</h2>
-                <div v-if="metaChips.length" class="trait-browser__meta">
-                  <v-chip
-                    v-for="chip in metaChips"
-                    :key="chip.label"
-                    size="small"
-                    variant="tonal"
-                    color="primary"
-                  >
-                    <span class="trait-browser__meta-label">{{ chip.label }}:</span>
-                    {{ chip.value }}
-                  </v-chip>
-                </div>
-              </div>
-
-              <v-btn
-                v-if="detailsPath"
-                :to="detailsPath(selected.id)"
-                variant="outlined"
-                color="primary"
-                size="small"
-              >
-                Full details
-              </v-btn>
-            </header>
-
-            <div class="trait-browser__card-body">
-              <section
-                v-if="selected.source?.trim()"
-                class="trait-browser__section"
-              >
-                <h3 class="trait-browser__section-title">
-                  {{ resolvedSourceLabel }}
-                </h3>
-                <ObtainedMarkup
-                  :text="selected.source"
-                  :ships="selected.ships"
-                />
-              </section>
-
-              <section
-                v-if="selected.detailDescription?.trim()"
-                class="trait-browser__section"
-              >
-                <h3 class="trait-browser__section-title">
-                  {{ resolvedDescriptionLabel }}
-                </h3>
-                <p class="trait-browser__detail-text">
-                  {{ selected.detailDescription }}
-                </p>
-              </section>
-
-              <p
-                v-if="!selected.source?.trim() && !selected.detailDescription?.trim()"
-                class="trait-browser__empty"
-              >
-                No additional details available.
-              </p>
-            </div>
-          </article>
+          <TraitDetailCard
+            v-if="selected"
+            :item="selected"
+            :source-label="sourceLabel"
+            :description-label="descriptionLabel"
+            :details-path="detailsPath"
+          />
 
           <div v-else class="trait-browser__empty trait-browser__card">
             Select an item to view details.
@@ -259,56 +196,6 @@ const metaChips = computed(() => traitBrowserMetaChips(selected.value));
     linear-gradient(160deg, #152336, #0d1624 70%, #0a121d);
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
   padding: 1.15rem 1.25rem 1.35rem;
-}
-
-.trait-browser__card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.trait-browser__card-title {
-  margin: 0 0 0.55rem;
-  font-size: 1.35rem;
-  line-height: 1.2;
-  font-weight: 700;
-}
-
-.trait-browser__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.trait-browser__meta-label {
-  opacity: 0.75;
-  margin-right: 0.25rem;
-}
-
-.trait-browser__card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1.15rem;
-}
-
-.trait-browser__section-title {
-  margin: 0 0 0.5rem;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.55);
-  font-weight: 650;
-}
-
-.trait-browser__detail-text {
-  margin: 0;
-  white-space: pre-wrap;
-  line-height: 1.5;
-  color: rgba(255, 255, 255, 0.88);
 }
 
 .trait-browser__empty {

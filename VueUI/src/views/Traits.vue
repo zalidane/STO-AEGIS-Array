@@ -6,8 +6,7 @@ import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import TraitBrowserLayout from "@/components/traits/TraitBrowserLayout.vue";
 import { useKeepAliveScrollRestore } from "@/composables/useKeepAliveScrollRestore";
 import {
-  cleanTraitDescriptionText,
-  firstNonEmpty,
+  mapPersonalTraitToBrowserItem,
   type TraitBrowserItem,
 } from "@/logic/traitBrowser";
 
@@ -20,20 +19,9 @@ type Trait = TraitsQuery["traits"][number];
 const { result, loading, error } = useQuery(TraitsDocument);
 
 const items = computed<TraitBrowserItem[]>(() =>
-  (result.value?.traits ?? []).map((trait: Trait) => ({
-    id: trait.id,
-    name: trait.name,
-    listDescription: cleanTraitDescriptionText(
-      firstNonEmpty(trait.description, trait.shortDescription),
-    ),
-    detailDescription: cleanTraitDescriptionText(
-      firstNonEmpty(trait.description, trait.shortDescription),
-    ),
-    source: trait.source,
-    type: trait.type,
-    environment: trait.environment,
-    career: trait.career,
-  })),
+  (result.value?.traits ?? []).map((trait: Trait) =>
+    mapPersonalTraitToBrowserItem(trait),
+  ),
 );
 </script>
 

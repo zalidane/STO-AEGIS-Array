@@ -9,8 +9,7 @@ import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import TraitBrowserLayout from "@/components/traits/TraitBrowserLayout.vue";
 import { useKeepAliveScrollRestore } from "@/composables/useKeepAliveScrollRestore";
 import {
-  cleanTraitDescriptionText,
-  firstNonEmpty,
+  mapStarshipTraitToBrowserItem,
   type TraitBrowserItem,
 } from "@/logic/traitBrowser";
 
@@ -23,21 +22,9 @@ type StarshipTrait = StarshipTraitsQuery["starshipTraits"][number];
 const { result, loading, error } = useQuery(StarshipTraitsDocument);
 
 const items = computed<TraitBrowserItem[]>(() =>
-  (result.value?.starshipTraits ?? []).map((trait: StarshipTrait) => ({
-    id: trait.id,
-    name: trait.name,
-    listDescription: cleanTraitDescriptionText(
-      firstNonEmpty(trait.short, trait.basic, trait.detailed),
-    ),
-    detailDescription: cleanTraitDescriptionText(
-      firstNonEmpty(trait.detailed, trait.basic, trait.short),
-    ),
-    source: trait.obtained,
-    type: trait.type,
-    environment: null,
-    career: null,
-    ships: trait.ships,
-  })),
+  (result.value?.starshipTraits ?? []).map((trait: StarshipTrait) =>
+    mapStarshipTraitToBrowserItem(trait),
+  ),
 );
 </script>
 
