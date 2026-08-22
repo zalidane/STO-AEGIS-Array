@@ -4,17 +4,15 @@ import { useQuery } from "@vue/apollo-composable";
 import {
   InfoboxesDocument,
   ShipsDocument,
-  type InfoboxesQuery,
 } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import TraitBrowserLayout from "@/components/traits/TraitBrowserLayout.vue";
 import { useKeepAliveScrollRestore } from "@/composables/useKeepAliveScrollRestore";
+import type { TraitBrowserItem } from "@/logic/traitBrowser";
 import {
-  cleanTraitDescriptionText,
-  firstNonEmpty,
-  type TraitBrowserItem,
-} from "@/logic/traitBrowser";
-import { filterEquipmentInfoboxes } from "@/logic/collection/itemBrowser";
+  filterEquipmentInfoboxes,
+  mapEquipmentInfoboxToBrowserItem,
+} from "@/logic/collection/itemBrowser";
 import {
   allowsAccountUnlockFromCatalog,
   bindScopeFromCatalog,
@@ -24,8 +22,6 @@ import type { BindScope } from "@/logic/collection/types";
 defineOptions({ name: "Items" });
 
 useKeepAliveScrollRestore();
-
-type Infobox = InfoboxesQuery["infoboxes"][number];
 
 const { result, loading, error } = useQuery(InfoboxesDocument);
 const { result: shipsResult } = useQuery(ShipsDocument);
@@ -48,26 +44,7 @@ const bindById = computed(() => {
 });
 
 const items = computed<TraitBrowserItem[]>(() =>
-  equipment.value.map((item: Infobox) => {
-    const description = cleanTraitDescriptionText(
-      firstNonEmpty(item.text1, item.type),
-    );
-    return {
-      id: item.id,
-      name: item.name,
-      listDescription: description,
-      detailDescription: description,
-      source: item.who,
-      type: item.type,
-      environment: item.boundto,
-      career: item.rarity,
-      meta: [
-        { label: "Type", value: item.type ?? "" },
-        { label: "Rarity", value: item.rarity ?? "" },
-        { label: "Bound", value: item.boundto ?? "" },
-      ],
-    };
-  }),
+  equipment.value.map(mapEquipmentInfoboxToBrowserItem),
 );
 
 function collectBindFor(item: TraitBrowserItem): BindScope {
