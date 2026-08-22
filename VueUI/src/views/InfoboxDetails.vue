@@ -102,11 +102,7 @@ const fields = computed(() => {
       <v-card class="mb-4">
         <v-card-title>Ground Lock Boxes</v-card-title>
         <v-list>
-          <v-list-item
-            v-for="box in item.gwLockBoxes"
-            :key="box.id"
-            @click="router.push(`/gw-obtains/${box.id}`)"
-          >
+          <v-list-item v-for="box in item.gwLockBoxes" :key="box.id">
             <v-list-item-title>{{ box.flavor }}</v-list-item-title>
             <v-list-item-subtitle>
               {{ box.cat }} • {{ box.type }}
@@ -119,11 +115,7 @@ const fields = computed(() => {
       <v-card>
         <v-card-title>Space Lock Boxes</v-card-title>
         <v-list>
-          <v-list-item
-            v-for="box in item.swLockBoxes"
-            :key="box.id"
-            @click="router.push(`/sw-obtains/${box.id}`)"
-          >
+          <v-list-item v-for="box in item.swLockBoxes" :key="box.id">
             <v-list-item-title>{{ box.flavor }}</v-list-item-title>
             <v-list-item-subtitle>
               {{ box.cat }} • {{ box.type }}

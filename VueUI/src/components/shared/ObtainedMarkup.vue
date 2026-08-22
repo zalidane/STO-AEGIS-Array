@@ -140,12 +140,6 @@ function toPath(
         return `/starship-traits/${id}`;
       case "reputation-details":
         return `/reputations/${id}`;
-      case "sw-obtain-details":
-        return `/sw-obtains/${id}`;
-      case "gw-obtain-details":
-        return `/gw-obtains/${id}`;
-      case "set-bonus-details":
-        return `/set-bonuses/${id}`;
       case "mastery-details":
         return `/masteries/${id}`;
       case "tray-skill-details":

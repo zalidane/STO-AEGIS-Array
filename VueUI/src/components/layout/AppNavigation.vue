@@ -10,14 +10,7 @@ const items = [
   { title: "Tray Skills", icon: "mdi-lightning-bolt", to: "/tray-skills" },
   { title: "Masteries", icon: "mdi-trophy", to: "/masteries" },
   { title: "Reputations", icon: "mdi-medal", to: "/reputations" },
-  {
-    title: "Set Bonuses",
-    icon: "mdi-chart-bell-curve-cumulative",
-    to: "/set-bonuses",
-  },
   { title: "Modifiers", icon: "mdi-delta", to: "/modifiers" },
-  { title: "Ground Obtains", icon: "mdi-treasure-chest", to: "/gw-obtains" },
-  { title: "Space Obtains", icon: "mdi-rocket", to: "/sw-obtains" },
 ];
 </script>
 
