@@ -3,6 +3,8 @@ import {
   cleanTraitDescriptionText,
   filterTraitBrowserItems,
   firstNonEmpty,
+  mapPersonalTraitToBrowserItem,
+  mapStarshipTraitToBrowserItem,
   resolveSelectedTrait,
   traitBrowserMetaChips,
   type TraitBrowserItem,
@@ -70,5 +72,38 @@ describe("traitBrowser", () => {
         ],
       }),
     ).toEqual([{ label: "Region", value: "Space" }]);
+  });
+
+  it("maps personal traits onto browser items", () => {
+    const mapped = mapPersonalTraitToBrowserItem({
+      id: 9,
+      name: "Arrest",
+      description: "* Holds the target",
+      shortDescription: "Hold",
+      source: "Constable",
+      type: "char",
+      environment: "ground",
+      career: null,
+    });
+    expect(mapped.listDescription).toBe("Holds the target");
+    expect(mapped.detailDescription).toBe("Holds the target");
+    expect(mapped.source).toBe("Constable");
+  });
+
+  it("maps starship traits with obtained ships onto browser items", () => {
+    const mapped = mapStarshipTraitToBrowserItem({
+      id: 4,
+      name: "Go for the Kill",
+      short: "Damage boost",
+      basic: "Basic kill",
+      detailed: "Detailed kill text",
+      obtained: "Jem'Hadar ships",
+      type: "starship",
+      ships: [{ id: 2, name: "Jem'Hadar Attack Ship" }],
+    });
+    expect(mapped.listDescription).toBe("Damage boost");
+    expect(mapped.detailDescription).toBe("Detailed kill text");
+    expect(mapped.source).toBe("Jem'Hadar ships");
+    expect(mapped.ships).toEqual([{ id: 2, name: "Jem'Hadar Attack Ship" }]);
   });
 });

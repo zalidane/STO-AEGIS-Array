@@ -117,3 +117,63 @@ export function resolveSelectedTrait(
   }
   return items[0] ?? null;
 }
+
+export type PersonalTraitSource = {
+  id: number;
+  name: string;
+  description: string | null;
+  shortDescription: string | null;
+  source: string | null;
+  type: string | null;
+  environment: string | null;
+  career: string | null;
+};
+
+export type StarshipTraitSource = {
+  id: number;
+  name: string;
+  short: string | null;
+  basic: string | null;
+  detailed: string | null;
+  obtained: string | null;
+  type: string | null;
+  ships?: ReadonlyArray<TraitBrowserShip>;
+};
+
+export function mapPersonalTraitToBrowserItem(
+  trait: PersonalTraitSource,
+): TraitBrowserItem {
+  const description = cleanTraitDescriptionText(
+    firstNonEmpty(trait.description, trait.shortDescription),
+  );
+  return {
+    id: trait.id,
+    name: trait.name,
+    listDescription: description,
+    detailDescription: description,
+    source: trait.source,
+    type: trait.type,
+    environment: trait.environment,
+    career: trait.career,
+  };
+}
+
+export function mapStarshipTraitToBrowserItem(
+  trait: StarshipTraitSource,
+): TraitBrowserItem {
+  return {
+    id: trait.id,
+    name: trait.name,
+    listDescription: cleanTraitDescriptionText(
+      firstNonEmpty(trait.short, trait.basic, trait.detailed),
+    ),
+    detailDescription: cleanTraitDescriptionText(
+      firstNonEmpty(trait.detailed, trait.basic, trait.short),
+    ),
+    source: trait.obtained,
+    type: trait.type,
+    environment: null,
+    career: null,
+    ships: trait.ships,
+  };
+}

@@ -1,6 +1,28 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
+import { useQuery } from "@vue/apollo-composable";
+import {
+  ShipsDocument,
+  StarshipTraitsDocument,
+  TraitsDocument,
+  type ShipsQuery,
+  type StarshipTraitsQuery,
+  type TraitsQuery,
+} from "@/graphql/generated/graphql";
+import HomeSectionCard from "@/components/home/HomeSectionCard.vue";
+import FeaturedShipCard from "@/components/home/FeaturedShipCard.vue";
+import TraitDetailCard from "@/components/traits/TraitDetailCard.vue";
+import LoadingPanel from "@/components/shared/LoadingPanel.vue";
+import {
+  buildHomeSectionCards,
+  keepOrPickRandom,
+} from "@/logic/homeFeatured";
+import {
+  mapPersonalTraitToBrowserItem,
+  mapStarshipTraitToBrowserItem,
+  type TraitBrowserItem,
+} from "@/logic/traitBrowser";
 
 const router = useRouter();
 const searchText = ref("");
@@ -13,50 +35,360 @@ function search() {
     },
   });
 }
+
+const {
+  result: shipsResult,
+  loading: shipsLoading,
+  error: shipsError,
+} = useQuery(ShipsDocument);
+const {
+  result: traitsResult,
+  loading: traitsLoading,
+  error: traitsError,
+} = useQuery(TraitsDocument);
+const {
+  result: starshipTraitsResult,
+  loading: starshipTraitsLoading,
+  error: starshipTraitsError,
+} = useQuery(StarshipTraitsDocument);
+
+type Ship = ShipsQuery["ships"][number];
+type Trait = TraitsQuery["traits"][number];
+type StarshipTrait = StarshipTraitsQuery["starshipTraits"][number];
+
+const ships = computed<Ship[]>(() => shipsResult.value?.ships ?? []);
+const traits = computed<Trait[]>(() => traitsResult.value?.traits ?? []);
+const starshipTraits = computed<StarshipTrait[]>(
+  () => starshipTraitsResult.value?.starshipTraits ?? [],
+);
+
+const featuredShip = ref<Ship | null>(null);
+const featuredTraitSource = ref<Trait | null>(null);
+const featuredStarshipTraitSource = ref<StarshipTrait | null>(null);
+
+watch(
+  ships,
+  (items) => {
+    featuredShip.value = keepOrPickRandom(featuredShip.value, items);
+  },
+  { immediate: true },
+);
+
+watch(
+  traits,
+  (items) => {
+    featuredTraitSource.value = keepOrPickRandom(
+      featuredTraitSource.value,
+      items,
+    );
+  },
+  { immediate: true },
+);
+
+watch(
+  starshipTraits,
+  (items) => {
+    featuredStarshipTraitSource.value = keepOrPickRandom(
+      featuredStarshipTraitSource.value,
+      items,
+    );
+  },
+  { immediate: true },
+);
+
+const featuredTrait = computed<TraitBrowserItem | null>(() =>
+  featuredTraitSource.value
+    ? mapPersonalTraitToBrowserItem(featuredTraitSource.value)
+    : null,
+);
+
+const featuredStarshipTrait = computed<TraitBrowserItem | null>(() =>
+  featuredStarshipTraitSource.value
+    ? mapStarshipTraitToBrowserItem(featuredStarshipTraitSource.value)
+    : null,
+);
+
+const sectionCards = computed(() =>
+  buildHomeSectionCards({
+    ships: shipsLoading.value ? null : ships.value.length,
+    traits: traitsLoading.value ? null : traits.value.length,
+    starshipTraits: starshipTraitsLoading.value
+      ? null
+      : starshipTraits.value.length,
+  }),
+);
+
+const queryError = computed(
+  () =>
+    shipsError.value ?? traitsError.value ?? starshipTraitsError.value ?? null,
+);
 </script>
 
 <template>
-  <v-sheet class="hero-section pa-10 mb-8" rounded="x1">
-    <h1 class="text-h2 font-weight-bold">STO-AEGIS Array</h1>
+  <v-container class="home-page" fluid>
+    <header class="registry-header">
+      <div class="registry-header__eyebrow">
+        STO-AEGIS Array // Command Deck
+      </div>
+      <div class="registry-header__row">
+        <div>
+          <h1 class="registry-header__title">STO-AEGIS Array</h1>
+          <p class="registry-header__lede">
+            Explore ships, traits, consoles, and more for Star Trek Online.
+          </p>
+        </div>
+      </div>
 
-    <p class="text-h6 text-medium-emphasis">
-      Explore ships, traits, consoles, abd more for the game Star Trek Online
-    </p>
+      <label class="registry-search">
+        <v-icon size="18" icon="mdi-magnify" />
+        <input
+          v-model="searchText"
+          type="search"
+          placeholder="Search STO-AEGIS..."
+          @keydown.enter="search"
+        />
+      </label>
+    </header>
 
-    <v-text-field
-      v-model="searchText"
-      prepend-inner-icon="mdi-magnify"
-      label="Search STO-AEGIS"
-      @keydown.enter="search"
-    />
-  </v-sheet>
+    <v-alert v-if="queryError" type="error" class="mb-4">
+      {{ queryError.message }}
+    </v-alert>
 
-  <v-row>
-    <v-col cols="12" md="4">
-      <v-card height="200" to="/ships" hover>
-        <v-card-title>Ships</v-card-title>
-        <v-card-text>Browse all available ships and their details</v-card-text>
-      </v-card>
-    </v-col>
+    <section class="home-board" aria-label="Featured catalog">
+      <div class="featured-block">
+        <loading-panel
+          v-if="shipsLoading && !featuredShip"
+          message="Featured Ship"
+        />
+        <FeaturedShipCard v-else-if="featuredShip" :ship="featuredShip" />
+        <div v-else class="empty-featured">
+          No ships are available to feature.
+        </div>
+      </div>
 
-    <v-col cols="12" md="4">
-      <v-card height="200" to="/traits" hover>
-        <v-card-title>Traits</v-card-title>
-        <v-card-text>Explore Personal Space and Ground traits</v-card-text>
-      </v-card>
-    </v-col>
+      <nav class="catalog-stack" aria-label="Catalog sections">
+        <HomeSectionCard
+          v-for="section in sectionCards"
+          :key="section.key"
+          dense
+          :title="section.title"
+          :to="section.to"
+          :description="section.description"
+          :icon="section.icon"
+          :count-label="section.countLabel"
+        />
+      </nav>
 
-    <v-col cols="12" md="4">
-      <v-card height="200" to="/starship-traits" hover>
-        <v-card-title>Starship Traits</v-card-title>
-        <v-card-text>Browse Starship Traits</v-card-text>
-      </v-card>
-    </v-col>
-  </v-row>
+      <div class="featured-traits">
+        <div class="featured-traits__item">
+          <div class="featured-heading">Featured Trait</div>
+          <loading-panel
+            v-if="traitsLoading && !featuredTrait"
+            message="Featured Trait"
+          />
+          <TraitDetailCard
+            v-else-if="featuredTrait"
+            :item="featuredTrait"
+            compact
+            :details-path="(id) => `/traits/${id}`"
+          />
+          <div v-else class="empty-featured">
+            No traits are available to feature.
+          </div>
+        </div>
+
+        <div class="featured-traits__item">
+          <div class="featured-heading">Featured Starship Trait</div>
+          <loading-panel
+            v-if="starshipTraitsLoading && !featuredStarshipTrait"
+            message="Featured Starship Trait"
+          />
+          <TraitDetailCard
+            v-else-if="featuredStarshipTrait"
+            :item="featuredStarshipTrait"
+            compact
+            source-label="Obtained"
+            :details-path="(id) => `/starship-traits/${id}`"
+          />
+          <div v-else class="empty-featured">
+            No starship traits are available to feature.
+          </div>
+        </div>
+      </div>
+    </section>
+  </v-container>
 </template>
 
 <style scoped>
-.hero-section {
-  background: linear-gradient(135deg, #182235, #0f252b);
+.home-page {
+  max-width: 1480px;
+}
+
+.registry-header {
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(125, 211, 252, 0.55);
+  background-image:
+    linear-gradient(rgba(125, 211, 252, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125, 211, 252, 0.03) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.registry-header__eyebrow {
+  color: #7dd3fc;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.registry-header__row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.registry-header__title {
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.registry-header__title::before {
+  content: "";
+  width: 6px;
+  height: 1.1em;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #7dd3fc, #a78bfa);
+}
+
+.registry-header__lede {
+  margin: 0;
+  max-width: 42rem;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.registry-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: min(520px, 100%);
+  padding: 10px 12px;
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  color: #7dd3fc;
+  background: rgba(8, 18, 30, 0.9);
+}
+
+.registry-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #e8f7ff;
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
+}
+
+.registry-search input::placeholder {
+  color: rgba(125, 211, 252, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.home-board {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.featured-block {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  display: flex;
+}
+
+.featured-block > * {
+  flex: 1;
+  width: 100%;
+}
+
+.catalog-stack {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.catalog-stack > * {
+  flex: 1;
+}
+
+.featured-traits {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.featured-traits__item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.featured-traits__item > :last-child {
+  flex: 1;
+}
+
+.featured-heading {
+  color: #7dd3fc;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 0.65rem;
+}
+
+.empty-featured {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 14px;
+}
+
+@media (max-width: 1100px) {
+  .home-board {
+    grid-template-columns: 1fr;
+  }
+
+  .featured-block,
+  .catalog-stack,
+  .featured-traits {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 800px) {
+  .featured-traits {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
