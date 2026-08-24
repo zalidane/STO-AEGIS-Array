@@ -1,4 +1,5 @@
 import type { FactionIdentity } from "@/logic/resolvePrimaryFaction";
+import { normalizeWikiPlainText } from "@/logic/wikiPlainText";
 import {
   getStarshipTraitImageUrl,
   getTraitImageUrl,
@@ -51,13 +52,14 @@ export function firstNonEmpty(
 
 /**
  * Strip wiki list markers (`*`, `**`, `:`) and light wiki emphasis from trait body text.
+ * HTML `<br>` tags become line breaks; leftover tags are removed.
  */
 export function cleanTraitDescriptionText(
   raw: string | null | undefined,
 ): string | null {
   if (!raw?.trim()) return null;
 
-  const cleaned = raw
+  const cleaned = normalizeWikiPlainText(raw)
     .replace(/\r\n/g, "\n")
     .split("\n")
     .map((line) =>

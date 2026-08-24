@@ -47,6 +47,13 @@ describe("parseInfoboxTextField", () => {
     });
   });
 
+  it("turns HTML line breaks into real newlines", () => {
+    expect(parseInfoboxTextField("First<br>Second")).toEqual({
+      text: "First\nSecond",
+      subscript: null,
+    });
+  });
+
   it("strips quotation marks around parenthetical notes", () => {
     expect(
       parseInfoboxTextField('+15.3 Starship Damage Control\n:"(Improves Passive Hull Regeneration)"'),

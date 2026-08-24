@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
 import { storeToRefs } from "pinia";
 import {
@@ -185,21 +185,39 @@ function removeAll(group: SearchGroup) {
         <v-list-item
           v-for="hit in group.hits"
           :key="`${group.type}-${hit.id}`"
-          :to="getSearchResultRoute(hit.type, hit.id) ?? undefined"
         >
-          <v-list-item-title>{{ hit.name }}</v-list-item-title>
+          <v-list-item-title>
+            <RouterLink
+              v-if="getSearchResultRoute(hit.type, hit.id)"
+              :to="getSearchResultRoute(hit.type, hit.id)!"
+              class="search-hit-link"
+            >
+              {{ hit.name }}
+            </RouterLink>
+            <span v-else>{{ hit.name }}</span>
+          </v-list-item-title>
           <template v-if="group.kind" #append>
-            <div @click.prevent.stop>
-              <CollectToggle
-                :kind="group.kind"
-                :catalog-id="hit.id"
-                :bind="bindFor(group.kind, hit.id)"
-                :allow-account-unlock="allowUnlockFor(group.kind, hit.id)"
-              />
-            </div>
+            <CollectToggle
+              compact
+              :kind="group.kind"
+              :catalog-id="hit.id"
+              :bind="bindFor(group.kind, hit.id)"
+              :allow-account-unlock="allowUnlockFor(group.kind, hit.id)"
+            />
           </template>
         </v-list-item>
       </v-list>
     </v-card>
   </v-container>
 </template>
+
+<style scoped>
+.search-hit-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.search-hit-link:hover {
+  text-decoration: underline;
+}
+</style>

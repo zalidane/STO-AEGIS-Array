@@ -8,6 +8,11 @@ import {
   resolvePrimaryFaction,
   factionMarkKey,
 } from "@/logic/resolvePrimaryFaction";
+import CollectToggle from "@/components/collection/CollectToggle.vue";
+import {
+  allowsAccountUnlockFromCost,
+  bindScopeForKind,
+} from "@/logic/collection/bind";
 
 const props = defineProps<{
   ship: ShipListItem & {
@@ -28,6 +33,14 @@ const imageUrl = computed(() => {
   }
   return getShipImageUrl(props.ship.image);
 });
+
+const collectBind = computed(() =>
+  bindScopeForKind({ kind: "ship", shipCost: props.ship.cost }),
+);
+
+const allowAccountUnlock = computed(() =>
+  allowsAccountUnlockFromCost(props.ship.cost),
+);
 
 const primaryFaction = computed(() =>
   resolvePrimaryFaction({
@@ -68,12 +81,15 @@ watch(
 </script>
 
 <template>
-  <button
-    type="button"
+  <div
     class="ship-card"
     :style="{ '--faction-accent': factionAccent }"
-    @click="emit('select', ship.id)"
   >
+    <button
+      type="button"
+      class="ship-card__select"
+      @click="emit('select', ship.id)"
+    >
     <div class="ship-card__frame">
       <div class="ship-card__art">
         <span
@@ -126,11 +142,36 @@ watch(
         </v-chip>
       </div>
     </div>
-  </button>
+    </button>
+    <div class="ship-card__collect">
+      <CollectToggle
+        compact
+        kind="ship"
+        :catalog-id="ship.id"
+        :bind="collectBind"
+        :allow-account-unlock="allowAccountUnlock"
+      />
+    </div>
+  </div>
 </template>
 
 <style scoped>
 .ship-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  z-index: 1;
+  transition: transform 160ms ease, z-index 0s;
+}
+
+.ship-card:hover,
+.ship-card:focus-within {
+  transform: scale(1.08);
+  z-index: 5;
+}
+
+.ship-card__select {
   appearance: none;
   border: 0;
   background: transparent;
@@ -140,17 +181,17 @@ watch(
   text-align: left;
   cursor: pointer;
   color: inherit;
-  transition: transform 160ms ease, z-index 0s;
-  transform-origin: center center;
-  position: relative;
-  z-index: 1;
 }
 
-.ship-card:hover,
-.ship-card:focus-visible {
-  transform: scale(1.08);
-  z-index: 5;
+.ship-card__select:focus-visible {
   outline: none;
+}
+
+.ship-card__collect {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 6;
 }
 
 .ship-card__frame {
@@ -170,7 +211,7 @@ watch(
 }
 
 .ship-card:hover .ship-card__frame,
-.ship-card:focus-visible .ship-card__frame {
+.ship-card:focus-within .ship-card__frame {
   border-color: color-mix(in srgb, var(--faction-accent) 70%, white);
   box-shadow:
     0 14px 28px rgba(0, 0, 0, 0.45),

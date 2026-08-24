@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@sto-aegis/database";
 import { formatShipResolvedName } from "../logic/formatShipResolvedName.js";
+import { equipmentInfoboxTypeWhere } from "../logic/equipmentInfobox.js";
 
 type ContainsFilter = {
   contains: string;
@@ -77,6 +78,31 @@ export const SEARCH_FIELDS = {
   ],
   reputation: ["name", "description", "link", "environment"],
   setBonus: ["name", "setPage", "passives", "traySkills", "procs", "abilities"],
+  infobox: [
+    "name",
+    "type",
+    "rarity",
+    "who",
+    "boundto",
+    "text1",
+    "text2",
+    "text3",
+    "text4",
+    "text5",
+    "text6",
+    "text7",
+    "text8",
+    "text9",
+    "head1",
+    "head2",
+    "head3",
+    "head4",
+    "head5",
+    "head6",
+    "head7",
+    "head8",
+    "head9",
+  ],
 } as const;
 
 const SEARCH_TAKE = 20;
@@ -95,6 +121,7 @@ export function createSearchResolver(prisma: PrismaClient) {
           traySkills,
           reputations,
           setBonuses,
+          infoboxes,
         ] = await Promise.all([
           prisma.ship.findMany({
             where: orTextFields(text, SEARCH_FIELDS.ship),
@@ -126,6 +153,16 @@ export function createSearchResolver(prisma: PrismaClient) {
             take: SEARCH_TAKE,
             orderBy: { name: "asc" },
           }),
+          prisma.infobox.findMany({
+            where: {
+              AND: [
+                orTextFields(text, SEARCH_FIELDS.infobox),
+                equipmentInfoboxTypeWhere(),
+              ],
+            },
+            take: SEARCH_TAKE,
+            orderBy: { name: "asc" },
+          }),
         ]);
 
         return [
@@ -154,6 +191,11 @@ export function createSearchResolver(prisma: PrismaClient) {
             type: "SetBonus",
             name: s.name,
             id: s.id,
+          })),
+          ...infoboxes.map((item) => ({
+            type: "Infobox",
+            name: item.name,
+            id: item.id,
           })),
         ];
       },

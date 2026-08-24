@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import TraitDetailCard from "@/components/traits/TraitDetailCard.vue";
+import CollectToggle from "@/components/collection/CollectToggle.vue";
 import {
   filterTraitBrowserItems,
   resolveSelectedTrait,
@@ -57,20 +58,30 @@ function selectItem(id: number) {
   selectedId.value = id;
 }
 
-const selectedCollectBind = computed<BindScope | undefined>(() => {
-  if (!props.collectKind || !selected.value) return undefined;
+function collectBindFor(item: TraitBrowserItem): BindScope {
+  if (!props.collectKind) return defaultBindForKind("trait");
   if (typeof props.collectBind === "function") {
-    return props.collectBind(selected.value);
+    return props.collectBind(item);
   }
   return props.collectBind ?? defaultBindForKind(props.collectKind);
+}
+
+function collectAccountUnlockFor(item: TraitBrowserItem): boolean {
+  if (!props.collectKind) return false;
+  if (typeof props.collectAccountUnlock === "function") {
+    return props.collectAccountUnlock(item);
+  }
+  return Boolean(props.collectAccountUnlock);
+}
+
+const selectedCollectBind = computed<BindScope | undefined>(() => {
+  if (!props.collectKind || !selected.value) return undefined;
+  return collectBindFor(selected.value);
 });
 
 const selectedCollectAccountUnlock = computed(() => {
   if (!props.collectKind || !selected.value) return false;
-  if (typeof props.collectAccountUnlock === "function") {
-    return props.collectAccountUnlock(selected.value);
-  }
-  return Boolean(props.collectAccountUnlock);
+  return collectAccountUnlockFor(selected.value);
 });
 </script>
 
@@ -99,15 +110,17 @@ const selectedCollectAccountUnlock = computed(() => {
             No results match your search.
           </div>
 
-          <button
+          <div
             v-for="item in filteredItems"
             :key="item.id"
-            type="button"
+            role="button"
+            tabindex="0"
             class="trait-browser__list-item"
             :class="{
               'trait-browser__list-item--active': selected?.id === item.id,
             }"
             @click="selectItem(item.id)"
+            @keydown.enter.prevent="selectItem(item.id)"
           >
             <WikiIcon :src="item.imageSrc" :alt="item.name" :size="36" />
             <div class="trait-browser__list-copy">
@@ -116,7 +129,20 @@ const selectedCollectAccountUnlock = computed(() => {
               {{ item.listDescription || "No description available." }}
             </div>
             </div>
-          </button>
+            <div
+              v-if="collectKind"
+              class="trait-browser__list-collect"
+              @click.stop
+            >
+              <CollectToggle
+                compact
+                :kind="collectKind"
+                :catalog-id="item.id"
+                :bind="collectBindFor(item)"
+                :allow-account-unlock="collectAccountUnlockFor(item)"
+              />
+            </div>
+          </div>
         </aside>
 
         <section class="trait-browser__card-pane">
@@ -181,6 +207,12 @@ const selectedCollectAccountUnlock = computed(() => {
 
 .trait-browser__list-copy {
   min-width: 0;
+  flex: 1;
+}
+
+.trait-browser__list-collect {
+  flex-shrink: 0;
+  align-self: center;
 }
 
 .trait-browser__list-item:hover,

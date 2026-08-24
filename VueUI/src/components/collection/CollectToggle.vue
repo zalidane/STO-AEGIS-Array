@@ -11,6 +11,8 @@ const props = defineProps<{
   bind: BindScope;
   /** Phoenix / Anniversary pack hulls (and their grants) can be marked account-unlocked. */
   allowAccountUnlock?: boolean;
+  /** Icon-sized control for cards and list rows; hides bind caption. */
+  compact?: boolean;
 }>();
 
 const store = useCollectionStore();
@@ -87,9 +89,14 @@ function openBindPicker() {
 </script>
 
 <template>
-  <div class="collect-toggle" @click.stop>
+  <div
+    class="collect-toggle"
+    :class="{ 'collect-toggle--compact': compact }"
+    @click.stop
+    @mousedown.stop
+  >
     <v-btn
-      size="small"
+      :size="compact ? 'x-small' : 'small'"
       :variant="status.ownedByActive ? 'flat' : 'outlined'"
       :color="status.ownedByActive ? 'primary' : undefined"
       :prepend-icon="status.ownedByActive ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
@@ -97,7 +104,7 @@ function openBindPicker() {
     >
       {{ status.ownedByActive ? "Collected" : "Collect" }}
     </v-btn>
-    <div class="collect-toggle__meta">
+    <div v-if="!compact" class="collect-toggle__meta">
       <button
         v-if="allowAccountUnlock"
         type="button"
@@ -170,6 +177,10 @@ function openBindPicker() {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.25rem;
+}
+
+.collect-toggle--compact {
+  align-items: stretch;
 }
 
 .collect-toggle__meta {

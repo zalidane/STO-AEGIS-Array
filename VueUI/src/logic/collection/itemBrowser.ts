@@ -39,6 +39,7 @@ function displayInfoboxTypePart(part: string): string {
   return INFOBOX_TYPE_DISPLAY_LABELS[part.toLowerCase()] ?? part;
 }
 
+/** Keep in sync with GraphQL/src/logic/equipmentInfobox.ts */
 const EQUIPMENT_INFOBOX_TYPES = new Set([
   "universal console",
   "ship engineering console",

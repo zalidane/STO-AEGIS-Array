@@ -24,6 +24,11 @@ import {
   type TraitBrowserItem,
 } from "@/logic/traitBrowser";
 import {
+  allowsAccountUnlockFromGrantingShips,
+  bindScopeForKind,
+} from "@/logic/collection/bind";
+import type { BindScope } from "@/logic/collection/types";
+import {
   FALLBACK_STARSHIP_TRAIT_IMAGE,
   FALLBACK_TRAIT_IMAGE,
 } from "@/utils/traitImage";
@@ -112,6 +117,20 @@ const featuredStarshipTrait = computed<TraitBrowserItem | null>(() =>
     : null,
 );
 
+function featuredStarshipBind(): BindScope {
+  return bindScopeForKind({
+    kind: "starshipTrait",
+    grantingShipCosts:
+      featuredStarshipTraitSource.value?.ships.map((ship) => ship.cost) ?? [],
+  });
+}
+
+function featuredStarshipUnlock(): boolean {
+  return allowsAccountUnlockFromGrantingShips(
+    featuredStarshipTraitSource.value?.ships.map((ship) => ship.cost) ?? [],
+  );
+}
+
 const sectionCards = computed(() =>
   buildHomeSectionCards({
     ships: shipsLoading.value ? null : ships.value.length,
@@ -194,6 +213,8 @@ const queryError = computed(
             v-else-if="featuredTrait"
             :item="featuredTrait"
             compact
+            collect-kind="trait"
+            collect-bind="character"
             :art-src="FALLBACK_TRAIT_IMAGE"
             :details-path="(id) => `/traits/${id}`"
           />
@@ -212,6 +233,9 @@ const queryError = computed(
             v-else-if="featuredStarshipTrait"
             :item="featuredStarshipTrait"
             compact
+            collect-kind="starshipTrait"
+            :collect-bind="featuredStarshipBind()"
+            :collect-account-unlock="featuredStarshipUnlock()"
             :art-src="FALLBACK_STARSHIP_TRAIT_IMAGE"
             source-label="Obtained"
             :details-path="(id) => `/starship-traits/${id}`"

@@ -47,6 +47,17 @@ describe("normalizeWikiFileTitle", () => {
       "phaser_beam_array_icon.png",
     );
   });
+
+  it("decodes HTML apostrophes in local filenames", () => {
+    assert.equal(
+      localFilename("File:Amarie Smuggler&#039;s Heavy Escort.jpg"),
+      "Amarie_Smuggler's_Heavy_Escort.jpg",
+    );
+    assert.equal(
+      localFilename("File:Rom Ship T'liss Temporal.png"),
+      "Rom_Ship_T'liss_Temporal.png",
+    );
+  });
 });
 
 describe("catalogImageTargets", () => {
