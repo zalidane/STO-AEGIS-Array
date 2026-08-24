@@ -141,6 +141,21 @@ export function collectItem(
   };
 }
 
+export function collectMany(
+  state: CollectionState,
+  items: ReadonlyArray<{
+    kind: CatalogKind;
+    catalogId: number;
+    bind?: BindScope;
+  }>,
+  clock: CollectionClock = defaultCollectionClock(),
+): CollectionState {
+  return items.reduce(
+    (next, item) => collectItem(next, item, clock),
+    state,
+  );
+}
+
 export function setEntryBind(
   state: CollectionState,
   input: { kind: CatalogKind; catalogId: number; bind: BindScope },
@@ -199,6 +214,16 @@ export function uncollectItem(
         ),
     ),
   };
+}
+
+export function uncollectMany(
+  state: CollectionState,
+  items: ReadonlyArray<{ kind: CatalogKind; catalogId: number }>,
+): CollectionState {
+  return items.reduce(
+    (next, item) => uncollectItem(next, item),
+    state,
+  );
 }
 
 export function collectionStatus(

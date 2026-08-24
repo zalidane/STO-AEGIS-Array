@@ -12,13 +12,19 @@ import { bindScopeFromCatalog } from "@/logic/collection/catalogBind";
 import { filterEquipmentInfoboxes } from "@/logic/collection/itemBrowser";
 import {
   collectItem,
+  collectMany,
   collectionStatus,
   createCharacter,
   deleteCharacter,
   setEntryBind,
   uncollectItem,
+  uncollectMany,
   visibleEntriesForActiveCharacter,
 } from "@/logic/collection/state";
+import {
+  catalogKindFromSearchType,
+  splitHitsByOwnership,
+} from "@/logic/collection/searchCatalog";
 import {
   createEmptyCollectionState,
   type CollectionClock,
@@ -251,6 +257,34 @@ describe("collection state", () => {
     expect(state.entries[0]?.characterId).toBe("id-2");
   });
 
+  it("collects and uncollects a batch for the active captain", () => {
+    let state = withCaptains();
+    state = collectMany(
+      state,
+      [
+        { kind: "ship", catalogId: 1, bind: "account" },
+        { kind: "ship", catalogId: 2 },
+        { kind: "item", catalogId: 9 },
+      ],
+      clock,
+    );
+    expect(
+      state.entries
+        .filter((entry) => entry.characterId === "id-2")
+        .map((entry) => entry.catalogId),
+    ).toEqual([1, 2, 9]);
+
+    state = uncollectMany(state, [
+      { kind: "ship", catalogId: 1 },
+      { kind: "item", catalogId: 9 },
+    ]);
+    expect(
+      state.entries
+        .filter((entry) => entry.characterId === "id-2")
+        .map((entry) => entry.catalogId),
+    ).toEqual([2]);
+  });
+
   it("drops a captain's entries when the folder is deleted", () => {
     let state = withCaptains();
     state = collectItem(state, { kind: "ship", catalogId: 1 }, clock);
@@ -258,6 +292,26 @@ describe("collection state", () => {
     expect(state.characters.map((c) => c.name)).toEqual(["Alice"]);
     expect(state.activeCharacterId).toBe("id-1");
     expect(state.entries).toEqual([]);
+  });
+});
+
+describe("search catalog collection mapping", () => {
+  it("maps collectible search types and ignores the rest", () => {
+    expect(catalogKindFromSearchType("Ship")).toBe("ship");
+    expect(catalogKindFromSearchType("Trait")).toBe("trait");
+    expect(catalogKindFromSearchType("StarshipTrait")).toBe("starshipTrait");
+    expect(catalogKindFromSearchType("Infobox")).toBe("item");
+    expect(catalogKindFromSearchType("TraySkill")).toBeNull();
+    expect(catalogKindFromSearchType("Reputation")).toBeNull();
+  });
+
+  it("splits hits into missing vs already collected", () => {
+    expect(
+      splitHitsByOwnership(
+        [{ id: 1 }, { id: 2 }, { id: 3 }],
+        new Set([2]),
+      ),
+    ).toEqual({ missingIds: [1, 3], collectedIds: [2] });
   });
 });
 

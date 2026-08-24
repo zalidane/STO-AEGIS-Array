@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import {
   collectItem,
+  collectMany as collectManyItems,
   collectionStatus,
   createCharacter,
   deleteCharacter,
@@ -11,6 +12,7 @@ import {
   setActiveCharacter,
   setEntryBind,
   uncollectItem,
+  uncollectMany as uncollectManyItems,
 } from "@/logic/collection/state";
 import {
   createEmptyCollectionState,
@@ -69,6 +71,20 @@ export const useCollectionStore = defineStore("collection", () => {
     persist();
   }
 
+  function collectMany(
+    items: Array<{ kind: CatalogKind; catalogId: number; bind?: BindScope }>,
+  ) {
+    state.value = collectManyItems(state.value, items);
+    persist();
+  }
+
+  function uncollectMany(
+    items: Array<{ kind: CatalogKind; catalogId: number }>,
+  ) {
+    state.value = uncollectManyItems(state.value, items);
+    persist();
+  }
+
   function setBind(kind: CatalogKind, catalogId: number, bind: BindScope) {
     state.value = setEntryBind(state.value, { kind, catalogId, bind });
     persist();
@@ -109,6 +125,8 @@ export const useCollectionStore = defineStore("collection", () => {
     selectCharacter,
     collect,
     uncollect,
+    collectMany,
+    uncollectMany,
     setBind,
     bindForActive,
     statusFor,

@@ -13,7 +13,8 @@ watchPatterns = [
 ]
 
 [deploy]
-startCommand = "npm run start -w @sto-aegis/graphql"
+# Migrate on start so a restart (no release phase) cannot boot against a stale schema.
+startCommand = "npm run migrate:deploy -w @sto-aegis/database && npm run start -w @sto-aegis/graphql"
 # Import can take several minutes — keep release from being cut off early.
 releaseCommand = "npm run migrate:deploy -w @sto-aegis/database && npm run import:force -w @sto-aegis/extractor"
 healthcheckPath = "/graphql"

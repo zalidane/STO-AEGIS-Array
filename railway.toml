@@ -15,7 +15,7 @@ watchPatterns = [
 ]
 
 [deploy]
-startCommand = "npm run start -w @sto-aegis/graphql"
+startCommand = "npm run migrate:deploy -w @sto-aegis/database && npm run start -w @sto-aegis/graphql"
 releaseCommand = "npm run migrate:deploy -w @sto-aegis/database && npm run import:force -w @sto-aegis/extractor"
 healthcheckPath = "/graphql"
 healthcheckTimeout = 300
