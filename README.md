@@ -91,6 +91,8 @@ Both **Extractor** and future **GraphQL** should depend on this package instead 
 5. **Networking** → Generate domain
 6. Redeploy
 
+GraphQL **start** runs `prisma migrate deploy` before the API. **Release** runs migrate again, then `import:force`. Railway does not migrate on its own — if Config as Code is unset, those commands never run.
+
 Rename the service to `GraphQL` if you want.
 
 ### Add VueUI
