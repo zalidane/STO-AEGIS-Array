@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { mapEquipmentInfoboxToBrowserItem } from "@/logic/collection/itemBrowser";
+import {
+  displayInfoboxType,
+  mapEquipmentInfoboxToBrowserItem,
+} from "@/logic/collection/itemBrowser";
 import {
   infoboxTextBlocks,
   parseInfoboxTextField,
@@ -91,6 +94,7 @@ describe("mapEquipmentInfoboxToBrowserItem", () => {
       text6: "Slipstream drive recharges 100% faster",
     });
     expect(mapped.listDescription).toBe("+7.5 Additional Auxiliary Power");
+    expect(mapped.type).toBe("Warp Core");
     expect(mapped.textBlocks).toEqual([
       {
         text: "+7.5 Additional Auxiliary Power",
@@ -98,5 +102,38 @@ describe("mapEquipmentInfoboxToBrowserItem", () => {
       },
       { text: "Slipstream drive recharges 100% faster", subscript: null },
     ]);
+    expect(mapped.imageSrc).toBe(
+      "/images/items/Obelisk_Subspace_Rift_Warp_Core_icon.png",
+    );
+  });
+
+  it("prefers a stored infobox image filename over the name guess", () => {
+    const mapped = mapEquipmentInfoboxToBrowserItem({
+      id: 1,
+      name: "Phaser Beam Array",
+      type: "Ship Fore Weapon",
+      image: "Custom_Phaser_icon.png",
+    });
+    expect(mapped.imageSrc).toBe("/images/items/Custom_Phaser_icon.png");
+  });
+});
+
+describe("displayInfoboxType", () => {
+  it("renames warp and singularity engines to cores", () => {
+    expect(displayInfoboxType("Warp Engine")).toBe("Warp Core");
+    expect(displayInfoboxType("Singularity Engine")).toBe("Singularity Core");
+  });
+
+  it("leaves impulse engines and other types unchanged", () => {
+    expect(displayInfoboxType("Impulse Engine")).toBe("Impulse Engine");
+    expect(displayInfoboxType("Ship Engineering Console")).toBe(
+      "Ship Engineering Console",
+    );
+  });
+
+  it("renames each part of a combined type", () => {
+    expect(displayInfoboxType("Warp Engine,Singularity Engine")).toBe(
+      "Warp Core, Singularity Core",
+    );
   });
 });

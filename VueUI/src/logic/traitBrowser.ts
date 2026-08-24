@@ -1,4 +1,8 @@
 import type { FactionIdentity } from "@/logic/resolvePrimaryFaction";
+import {
+  getStarshipTraitImageUrl,
+  getTraitImageUrl,
+} from "@/utils/wikiImage";
 
 export type TraitBrowserShip = {
   id: number;
@@ -27,6 +31,8 @@ export type TraitBrowserItem = {
   meta?: TraitBrowserMetaChip[];
   /** Infobox Text 1–9 rows for item preview cards. */
   textBlocks?: Array<{ text: string; subscript: string | null }>;
+  /** Local public path from wiki extract, if the file was downloaded. */
+  imageSrc?: string | null;
   type: string | null;
   environment: string | null;
   career: string | null;
@@ -133,6 +139,7 @@ export type PersonalTraitSource = {
   type: string | null;
   environment: string | null;
   career: string | null;
+  iconName?: string | null;
 };
 
 export type StarshipTraitSource = {
@@ -143,6 +150,7 @@ export type StarshipTraitSource = {
   detailed: string | null;
   obtained: string | null;
   type: string | null;
+  iconName?: string | null;
   ships?: ReadonlyArray<TraitBrowserShip>;
 };
 
@@ -161,6 +169,7 @@ export function mapPersonalTraitToBrowserItem(
     type: trait.type,
     environment: trait.environment,
     career: trait.career,
+    imageSrc: getTraitImageUrl(trait.name, trait.iconName),
   };
 }
 
@@ -181,5 +190,6 @@ export function mapStarshipTraitToBrowserItem(
     environment: null,
     career: null,
     ships: trait.ships,
+    imageSrc: getStarshipTraitImageUrl(trait.name, trait.iconName),
   };
 }

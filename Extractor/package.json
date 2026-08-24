@@ -9,6 +9,7 @@
     "dev": "tsx watch src/main.ts extract",
     "extract": "tsx src/main.ts extract",
     "extract:force": "tsx src/main.ts extract --force-refresh",
+    "extract:images": "tsx src/main.ts extract --images-only",
     "import": "tsx src/main.ts import",
     "import:force": "tsx src/main.ts import --force-import",
     "import:prod": "tsx src/main.ts import --prod --force-import",

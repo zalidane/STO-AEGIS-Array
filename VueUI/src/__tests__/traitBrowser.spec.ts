@@ -88,6 +88,7 @@ describe("traitBrowser", () => {
     expect(mapped.listDescription).toBe("Holds the target");
     expect(mapped.detailDescription).toBe("Holds the target");
     expect(mapped.source).toBe("Constable");
+    expect(mapped.imageSrc).toBe("/images/traits/Arrest_icon.png");
   });
 
   it("maps starship traits with obtained ships onto browser items", () => {

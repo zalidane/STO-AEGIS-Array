@@ -10,10 +10,13 @@ import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import DetailFieldList from "@/components/shared/DetailFieldList.vue";
 import CollectToggle from "@/components/collection/CollectToggle.vue";
+import WikiIcon from "@/components/shared/WikiIcon.vue";
+import { getItemImageUrl } from "@/utils/wikiImage";
 import {
   allowsAccountUnlockFromGrantingShips,
   bindScopeForKind,
 } from "@/logic/collection/bind";
+import { displayInfoboxType } from "@/logic/collection/itemBrowser";
 
 const route = useRoute();
 const router = useRouter();
@@ -48,7 +51,7 @@ const fields = computed(() => {
   ]);
   return [
     { label: "Rarity", value: i.rarity },
-    { label: "Type", value: i.type },
+    { label: "Type", value: displayInfoboxType(i.type) },
     { label: "Bound To", value: i.boundto },
     { label: "Bound When", value: i.boundwhen },
     { label: "Who", value: i.who },
@@ -67,9 +70,12 @@ const fields = computed(() => {
     <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
     <template v-else-if="item">
       <div class="d-flex align-start justify-space-between ga-4 mb-4">
-        <div>
-          <h3>{{ item.name }}</h3>
-          <h5>{{ item.rarity }} • {{ item.type }}</h5>
+        <div class="d-flex align-start ga-4">
+          <WikiIcon :src="getItemImageUrl(item.image, item.name)" :alt="item.name" :size="64" />
+          <div>
+            <h3>{{ item.name }}</h3>
+            <h5>{{ item.rarity }} • {{ displayInfoboxType(item.type) }}</h5>
+          </div>
         </div>
         <CollectToggle
           kind="item"

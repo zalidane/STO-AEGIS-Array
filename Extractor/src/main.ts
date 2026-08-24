@@ -6,8 +6,11 @@ import {
   extractTable,
   tryGetFields,
 } from "./extractors/extractTable.js";
+import { extractImages } from "./extractors/extractImages.js";
 import { shouldRefresh } from "./extractors/cache.js";
 import { tableSchemas } from "./extractors/schemas/schemaList.js";
+import { WikiClient } from "./wiki/client.js";
+import { loadWikiConfig, WikiConfigError } from "./wiki/config.js";
 
 type Command = "extract" | "import";
 
@@ -24,6 +27,9 @@ function parseArgs(argv: string[]) {
     command,
     forceRefresh: argv.includes("--force-refresh"),
     forceImport: argv.includes("--force-import"),
+    forceImages: argv.includes("--force-images"),
+    skipImages: argv.includes("--skip-images"),
+    imagesOnly: argv.includes("--images-only"),
     prod: argv.includes("--prod"),
   };
 }
@@ -70,31 +76,62 @@ function loadEnv(prod: boolean) {
   }
 }
 
-async function runExtract(forceRefresh: boolean) {
-  for (const table of tableSchemas) {
-    const outputFile = `output/${table}.json`;
+async function runExtract(options: {
+  forceRefresh: boolean;
+  forceImages: boolean;
+  skipImages: boolean;
+  imagesOnly: boolean;
+}) {
+  const wiki = new WikiClient(loadWikiConfig(process.env, "output"));
+  let loggedIn = false;
+  const ensureLogin = async () => {
+    if (loggedIn) return;
+    await wiki.login();
+    loggedIn = true;
+  };
 
-    if (!forceRefresh && !(await shouldRefresh(outputFile))) {
-      console.log(`${table}: cache is fresh, skipping...`);
-      continue;
+  if (!options.imagesOnly) {
+    for (const table of tableSchemas) {
+      const outputFile = `output/${table}.json`;
+
+      if (!options.forceRefresh && !(await shouldRefresh(outputFile))) {
+        console.log(`${table}: cache is fresh, skipping...`);
+        continue;
+      }
+
+      console.log(`${table} is stale or missing, extracting...`);
+      await ensureLogin();
+
+      const fields = await tryGetFields(wiki, table);
+
+      if (fields === null) {
+        console.log(
+          `${table}: unable to reach STOWiki, using local data if available`,
+        );
+        continue;
+      }
+
+      await extractTable(wiki, table, fields);
     }
 
-    console.log(`${table} is stale or missing, extracting...`);
-
-    const fields = await tryGetFields(table);
-
-    if (fields === null) {
-      console.log(
-        `${table}: unable to reach STOWiki, using local data if available`,
-      );
-      continue;
-    }
-
-    await extractTable(table, fields);
+    console.log(
+      "Cargo extract complete. Commit Extractor/output/*.json when ready for production import.",
+    );
   }
 
+  if (options.skipImages) {
+    console.log("Images: skipped (--skip-images)");
+    return;
+  }
+
+  const root = monorepoRoot();
+  await extractImages(wiki, {
+    cargoDir: resolve(process.cwd(), "output"),
+    imagesDir: resolve(root, "VueUI/public/images"),
+    force: options.forceImages,
+  });
   console.log(
-    "Extract complete. Commit Extractor/output/*.json when ready for production import.",
+    "Image extract complete. Files land in VueUI/public/images/{items,ships,traits,starship-traits}/.",
   );
 }
 
@@ -105,9 +142,15 @@ async function runImport(forceImport: boolean) {
 }
 
 async function main() {
-  const { command, forceRefresh, forceImport, prod } = parseArgs(
-    process.argv.slice(2),
-  );
+  const {
+    command,
+    forceRefresh,
+    forceImport,
+    forceImages,
+    skipImages,
+    imagesOnly,
+    prod,
+  } = parseArgs(process.argv.slice(2));
 
   loadEnv(prod);
 
@@ -117,7 +160,7 @@ async function main() {
         "Note: extract is a manual/local operation; --prod only affects which .env file is loaded (not used for wiki fetch).",
       );
     }
-    await runExtract(forceRefresh);
+    await runExtract({ forceRefresh, forceImages, skipImages, imagesOnly });
     return;
   }
 
@@ -139,6 +182,10 @@ async function main() {
 }
 
 main().catch((err) => {
+  if (err instanceof WikiConfigError) {
+    console.error(err.message);
+    process.exit(1);
+  }
   console.error(err);
   process.exit(1);
 });

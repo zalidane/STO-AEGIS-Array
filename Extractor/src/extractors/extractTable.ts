@@ -1,8 +1,12 @@
 import { writeFile } from "node:fs/promises";
-import { cargoQuery } from "../cargoClient";
+import type { WikiClient } from "../wiki/client";
 
-export async function extractTable(table: string, fields: string[]) {
-  const results: any[] = [];
+export async function extractTable(
+  wiki: WikiClient,
+  table: string,
+  fields: string[],
+) {
+  const results: unknown[] = [];
   const fieldList = fields.join(",");
 
   let offset = 0;
@@ -11,14 +15,15 @@ export async function extractTable(table: string, fields: string[]) {
   while (true) {
     console.log(`Loading ${table} (offset: ${offset})`);
 
-    const response = await cargoQuery(table, fieldList, offset, pageSize);
-
-    const rows = response?.cargoquery ?? [];
+    const response = await wiki.cargoQuery(table, fieldList, offset, pageSize);
+    const rows = Array.isArray(response.cargoquery) ? response.cargoquery : [];
 
     if (rows.length === 0) break;
 
     for (const row of rows) {
-      results.push(row.title);
+      if (row && typeof row === "object" && "title" in row) {
+        results.push((row as { title: unknown }).title);
+      }
     }
 
     offset += pageSize;
@@ -29,27 +34,19 @@ export async function extractTable(table: string, fields: string[]) {
   console.log(`${table}: saved ${results.length} records`);
 }
 
-export async function getFields(table: string): Promise<string[]> {
-  const response = await fetch(
-    `https://stowiki.net/w/api.php?action=cargofields&table=${table}&format=json`,
-  );
-
-  const data = await response.json();
-
-  if (!data?.cargofields) {
-    console.error(`Failed loading schema for ${table}`);
-    console.error(JSON.stringify(data, null, 2));
-    return [];
-  }
-
-  return Object.keys(data.cargofields);
+export async function getFields(wiki: WikiClient, table: string): Promise<string[]> {
+  return wiki.cargoFields(table);
 }
 
-export async function tryGetFields(table: string): Promise<string[] | null> {
+export async function tryGetFields(
+  wiki: WikiClient,
+  table: string,
+): Promise<string[] | null> {
   try {
-    return await getFields(table);
+    return await getFields(wiki, table);
   } catch (error) {
-    console.warn(`${table}: failed to load schema, assuming Cloudflare block`);
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`${table}: failed to load schema (${message})`);
   }
 
   return null;

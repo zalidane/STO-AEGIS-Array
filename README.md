@@ -19,7 +19,7 @@ STO-AEGIS-Array/
 
 ```bash
 npm install
-cp .env.example .env   # if present; otherwise create .env with DATABASE_URL
+cp .env.example .env
 npm run db:generate
 npm run db:migrate
 ```
@@ -28,7 +28,8 @@ npm run db:migrate
 
 | Command | Description |
 |---------|-------------|
-| `npm run extract` / `extract:force` | Manual STOWiki extract → `Extractor/output/*.json` |
+| `npm run extract` / `extract:force` | Manual STOWiki extract → `Extractor/output/*.json` + images |
+| `npm run extract:images` | Download wiki images only (uses existing Cargo JSON) |
 | `npm run import` / `import:force` | Import committed JSON into local DB |
 | `npm run import:prod` | Import committed JSON into production DB |
 | `npm run db:generate` | Generate Prisma client in `packages/database` |
@@ -47,9 +48,13 @@ Extract/import flags (pass after `--`):
 
 ```bash
 npm run extract -- --force-refresh
+npm run extract -- --skip-images
+npm run extract -- --images-only
 npm run import -- --force-import
 npm run import:prod
 ```
+
+Copy `.env.example` to `.env` and set `STOWIKI_CONTACT` so extract identifies itself. Bot passwords are optional on STOWiki (Special:BotPasswords is restricted). See [Extractor/README.md](Extractor/README.md).
 
 Commit updated `Extractor/output/*.json` after extracting so production can import without hitting the wiki.
 

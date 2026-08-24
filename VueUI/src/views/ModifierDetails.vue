@@ -9,6 +9,7 @@ import {
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import DetailFieldList from "@/components/shared/DetailFieldList.vue";
+import { displayInfoboxType } from "@/logic/collection/itemBrowser";
 
 const route = useRoute();
 const router = useRouter();
@@ -24,7 +25,7 @@ const fields = computed(() => {
   if (!item.value) return [];
   const m = item.value;
   return [
-    { label: "Type", value: m.type },
+    { label: "Type", value: displayInfoboxType(m.type) ?? m.type },
     { label: "Stats", value: m.stats },
     { label: "Available", value: m.available },
     { label: "Unique", value: m.isunique },
@@ -43,7 +44,7 @@ const fields = computed(() => {
     <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
     <template v-else-if="item">
       <h3>{{ item.modifier }}</h3>
-      <h5>{{ item.type }}</h5>
+      <h5>{{ displayInfoboxType(item.type) }}</h5>
       <v-card class="mt-4 mb-4">
         <v-card-title>Details</v-card-title>
         <DetailFieldList :items="fields" />
@@ -58,7 +59,7 @@ const fields = computed(() => {
           >
             <v-list-item-title>{{ infobox.name }}</v-list-item-title>
             <v-list-item-subtitle>
-              {{ infobox.rarity }} • {{ infobox.type }}
+              {{ infobox.rarity }} • {{ displayInfoboxType(infobox.type) }}
             </v-list-item-subtitle>
           </v-list-item>
           <v-list-item v-if="!item.items.length">None</v-list-item>

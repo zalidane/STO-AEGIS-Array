@@ -136,6 +136,8 @@ export interface RawInfobox {
   text8: string | null;
   text9: string | null;
   equiplimit: string | null;
+  /** Stamped after image extract — not a Cargo column. */
+  image?: string | null;
 }
 
 export interface RawMastery {
