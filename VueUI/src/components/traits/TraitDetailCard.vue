@@ -90,6 +90,7 @@ const resolvedBind = computed(
       <div class="trait-browser__card-actions">
         <CollectToggle
           v-if="collectKind"
+          :compact="compact"
           :kind="collectKind"
           :catalog-id="item.id"
           :bind="resolvedBind"

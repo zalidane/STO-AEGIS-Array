@@ -39,6 +39,17 @@ describe("traitBrowser", () => {
     expect(firstNonEmpty(null, undefined, "")).toBeNull();
   });
 
+  it("turns HTML line breaks into real newlines", () => {
+    expect(
+      cleanTraitDescriptionText(
+        "When controlled, remove Control effects&lt;br&gt;+100% Exploit Damage",
+      ),
+    ).toBe("When controlled, remove Control effects\n+100% Exploit Damage");
+    expect(
+      cleanTraitDescriptionText("First line<br/>Second line<br />Third"),
+    ).toBe("First line\nSecond line\nThird");
+  });
+
   it("strips leading wiki asterisks and colons from description lines", () => {
     expect(
       cleanTraitDescriptionText(

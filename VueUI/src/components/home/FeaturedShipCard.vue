@@ -9,6 +9,11 @@ import {
   resolvePrimaryFaction,
   factionMarkKey,
 } from "@/logic/resolvePrimaryFaction";
+import CollectToggle from "@/components/collection/CollectToggle.vue";
+import {
+  allowsAccountUnlockFromCost,
+  bindScopeForKind,
+} from "@/logic/collection/bind";
 
 const props = defineProps<{
   ship: ShipListItem & {
@@ -66,6 +71,14 @@ const classLine = computed(() => {
     .join(" ");
   return rest ? `${className}-class ${rest}` : `${className}-class`;
 });
+
+const collectBind = computed(() =>
+  bindScopeForKind({ kind: "ship", shipCost: props.ship.cost }),
+);
+
+const allowAccountUnlock = computed(() =>
+  allowsAccountUnlockFromCost(props.ship.cost),
+);
 
 watch(
   () => props.ship.image,
@@ -133,7 +146,18 @@ watch(
         </v-chip>
       </div>
 
-      <div class="featured-ship__cta">View ship details</div>
+      <div class="featured-ship__cta-row">
+        <div class="featured-ship__cta">View ship details</div>
+        <div @click.prevent.stop @mousedown.prevent.stop>
+          <CollectToggle
+            compact
+            kind="ship"
+            :catalog-id="ship.id"
+            :bind="collectBind"
+            :allow-account-unlock="allowAccountUnlock"
+          />
+        </div>
+      </div>
     </div>
   </RouterLink>
 </template>
@@ -243,9 +267,16 @@ watch(
   margin-top: 4px;
 }
 
-.featured-ship__cta {
+.featured-ship__cta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-top: auto;
   padding-top: 12px;
+}
+
+.featured-ship__cta {
   font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;

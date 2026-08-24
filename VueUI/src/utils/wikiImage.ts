@@ -1,26 +1,37 @@
 /** Shared wiki filename → local public path rules. Keep in sync with Extractor/src/wiki/filenames.ts */
 
+import { decodeHtmlEntities } from "@/utils/decodeHtmlEntities";
+
 const INVISIBLE_CHARS = /[\u200e\u200f\u200b\ufeff]/g;
 
 export type WikiImageKind = "items" | "ships" | "traits" | "starship-traits";
 
+/** Decode wiki/HTML noise and return a canonical `Name with spaces.ext` stem. */
+function normalizedFileStem(raw: string): string {
+  const decoded = decodeHtmlEntities(raw).replace(INVISIBLE_CHARS, "").trim();
+  const withoutPrefix = decoded.replace(/^File:/i, "").trim();
+  return withoutPrefix.replaceAll("_", " ").replace(/\s+/g, " ").trim();
+}
+
 export function wikiLocalFilename(fileField: string): string {
-  return fileField
-    .replace(INVISIBLE_CHARS, "")
-    .replace(/^File:/i, "")
-    .trim()
-    .replace(/ /g, "_");
+  return normalizedFileStem(fileField).replaceAll(" ", "_");
 }
 
 export function wikiIconFilename(nameOrFile: string): string {
-  const stripped = nameOrFile
-    .replace(INVISIBLE_CHARS, "")
-    .replace(/^File:/i, "")
-    .trim();
-  if (/\sicon\.[a-z0-9]+$/i.test(stripped) || /icon\.[a-z0-9]+$/i.test(stripped)) {
-    return wikiLocalFilename(stripped);
+  const title = normalizedFileStem(nameOrFile);
+  if (/\sicon\.[a-z0-9]+$/i.test(title) || /icon\.[a-z0-9]+$/i.test(title)) {
+    return wikiLocalFilename(title);
   }
-  return wikiLocalFilename(`${stripped} icon.png`);
+  return wikiLocalFilename(`${title} icon.png`);
+}
+
+/** encodeURIComponent leaves `'` unescaped; percent-encode it so img src cannot truncate. */
+function encodeWikiFilename(filename: string): string {
+  return encodeURIComponent(filename).replaceAll("'", "%27");
+}
+
+function wikiPublicUrl(kind: WikiImageKind, filename: string): string {
+  return `/images/${kind}/${encodeWikiFilename(filename)}`;
 }
 
 export function getWikiImageUrl(
@@ -29,7 +40,7 @@ export function getWikiImageUrl(
   fallback: string,
 ): string {
   if (!fileField?.trim()) return fallback;
-  return `/images/${kind}/${wikiLocalFilename(fileField)}`;
+  return wikiPublicUrl(kind, wikiLocalFilename(fileField));
 }
 
 export function getItemImageUrl(
@@ -37,10 +48,10 @@ export function getItemImageUrl(
   name?: string | null,
 ): string | null {
   if (image?.trim()) {
-    return `/images/items/${wikiLocalFilename(image)}`;
+    return wikiPublicUrl("items", wikiLocalFilename(image));
   }
   if (name?.trim()) {
-    return `/images/items/${wikiIconFilename(name)}`;
+    return wikiPublicUrl("items", wikiIconFilename(name));
   }
   return null;
 }
@@ -51,7 +62,7 @@ export function getTraitImageUrl(
 ): string | null {
   const stem = iconName?.trim() || name?.trim();
   if (!stem) return null;
-  return `/images/traits/${wikiIconFilename(stem)}`;
+  return wikiPublicUrl("traits", wikiIconFilename(stem));
 }
 
 export function getStarshipTraitImageUrl(
@@ -60,5 +71,5 @@ export function getStarshipTraitImageUrl(
 ): string | null {
   const stem = iconName?.trim() || name?.trim();
   if (!stem) return null;
-  return `/images/starship-traits/${wikiIconFilename(stem)}`;
+  return wikiPublicUrl("starship-traits", wikiIconFilename(stem));
 }

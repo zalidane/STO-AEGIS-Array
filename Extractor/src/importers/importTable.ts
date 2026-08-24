@@ -47,6 +47,12 @@ export async function importTable<
 
   const count = await model.count();
 
+  if (count !== rows.length) {
+    console.warn(
+      `${table}: JSON has ${rows.length} rows but database has ${count} after import`,
+    );
+  }
+
   console.log(
     `${table}: imported ${rows.length} records (${count} total in database)`,
   );
