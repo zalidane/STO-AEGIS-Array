@@ -25,6 +25,14 @@ import type {
   CatalogKind,
   CollectionEntry,
 } from "@/logic/collection/types";
+import { displayInfoboxType } from "@/logic/collection/itemBrowser";
+import { getShipImageUrl } from "@/utils/shipImage";
+import {
+  getItemImageUrl,
+  getStarshipTraitImageUrl,
+  getTraitImageUrl,
+} from "@/utils/wikiImage";
+import WikiIcon from "@/components/shared/WikiIcon.vue";
 
 const store = useCollectionStore();
 const { activeCharacter, state } = storeToRefs(store);
@@ -39,6 +47,7 @@ type Row = {
   name: string;
   subtitle: string;
   to: string;
+  imageSrc: string | null;
   bind: BindScope;
   allowAccountUnlock: boolean;
   ownedByActive: boolean;
@@ -62,7 +71,7 @@ const KIND_LABEL: Record<CatalogKind, string> = {
 function lookupName(
   kind: CatalogKind,
   id: number,
-): { name: string; subtitle: string; boundto?: string | null } {
+): { name: string; subtitle: string; boundto?: string | null; imageSrc: string | null } {
   if (kind === "ship") {
     const ship = shipsResult.value?.ships.find((row) => row.id === id);
     return {
@@ -70,6 +79,7 @@ function lookupName(
       subtitle: [ship?.type, ship?.tier != null ? `Tier ${ship.tier}` : null]
         .filter(Boolean)
         .join(" · "),
+      imageSrc: getShipImageUrl(ship?.image),
     };
   }
   if (kind === "trait") {
@@ -77,6 +87,7 @@ function lookupName(
     return {
       name: trait?.name ?? `Trait #${id}`,
       subtitle: [trait?.type, trait?.environment].filter(Boolean).join(" · "),
+      imageSrc: getTraitImageUrl(trait?.name, trait?.iconName),
     };
   }
   if (kind === "starshipTrait") {
@@ -86,13 +97,17 @@ function lookupName(
     return {
       name: trait?.name ?? `Starship trait #${id}`,
       subtitle: trait?.type ?? "",
+      imageSrc: getStarshipTraitImageUrl(trait?.name, trait?.iconName),
     };
   }
   const item = itemsResult.value?.infoboxes.find((row) => row.id === id);
   return {
     name: item?.name ?? `Item #${id}`,
-    subtitle: [item?.type, item?.rarity].filter(Boolean).join(" · "),
+    subtitle: [displayInfoboxType(item?.type), item?.rarity]
+      .filter(Boolean)
+      .join(" · "),
     boundto: item?.boundto,
+    imageSrc: getItemImageUrl(item?.image, item?.name),
   };
 }
 
@@ -133,6 +148,7 @@ const rows = computed<Row[]>(() => {
       name: info.name,
       subtitle: info.subtitle,
       to: detailsPath(entry.kind, entry.catalogId),
+      imageSrc: info.imageSrc,
       bind: resolvedBindForEntry(entry, catalogBind),
       allowAccountUnlock: allowsAccountUnlockFromCatalog(
         sources,
@@ -186,11 +202,14 @@ const grouped = computed(() =>
           :to="row.to"
           class="collection-row"
         >
-          <div>
+          <div class="collection-row__main">
+            <WikiIcon :src="row.imageSrc" :alt="row.name" :size="40" />
+            <div>
             <div class="collection-row__name">{{ row.name }}</div>
             <div class="collection-row__meta">
               {{ row.subtitle }}
               <span v-if="!row.ownedByActive"> · On {{ row.ownerName }}</span>
+            </div>
             </div>
           </div>
           <CollectToggle
@@ -265,6 +284,13 @@ const grouped = computed(() =>
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(13, 22, 36, 0.72);
+}
+
+.collection-row__main {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
 }
 
 .collection-row__name {

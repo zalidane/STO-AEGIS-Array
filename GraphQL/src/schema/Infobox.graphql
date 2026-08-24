@@ -34,6 +34,7 @@ type Infobox {
   text8: String
   text9: String
   equiplimit: Int
+  image: String
   rawData: JSON!
   createdAt: DateTime!
   updatedAt: DateTime!

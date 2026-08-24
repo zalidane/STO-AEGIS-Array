@@ -8,6 +8,7 @@ import {
 } from "@/logic/traitBrowser";
 import type { BindScope, CatalogKind } from "@/logic/collection/types";
 import { defaultBindForKind } from "@/logic/collection/bind";
+import WikiIcon from "@/components/shared/WikiIcon.vue";
 
 const props = defineProps<{
   item: TraitBrowserItem;
@@ -62,6 +63,13 @@ const resolvedBind = computed(
 
     <div class="trait-browser__content">
       <header class="trait-browser__card-header">
+      <div class="trait-browser__card-title-row">
+        <WikiIcon
+          v-if="!compact"
+          :src="item.imageSrc"
+          :alt="item.name"
+          :size="56"
+        />
       <div>
         <h2 class="trait-browser__card-title">{{ item.name }}</h2>
         <div v-if="metaChips.length" class="trait-browser__meta">
@@ -76,6 +84,7 @@ const resolvedBind = computed(
             {{ chip.value }}
           </v-chip>
         </div>
+      </div>
       </div>
 
       <div class="trait-browser__card-actions">
@@ -189,6 +198,13 @@ const resolvedBind = computed(
   margin-bottom: 1rem;
   padding-bottom: 0.85rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trait-browser__card-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  min-width: 0;
 }
 
 .trait-browser__card-actions {

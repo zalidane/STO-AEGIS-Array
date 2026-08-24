@@ -9,6 +9,7 @@ import {
 } from "@/logic/traitBrowser";
 import type { BindScope, CatalogKind } from "@/logic/collection/types";
 import { defaultBindForKind } from "@/logic/collection/bind";
+import WikiIcon from "@/components/shared/WikiIcon.vue";
 
 const props = defineProps<{
   title: string;
@@ -108,9 +109,12 @@ const selectedCollectAccountUnlock = computed(() => {
             }"
             @click="selectItem(item.id)"
           >
+            <WikiIcon :src="item.imageSrc" :alt="item.name" :size="36" />
+            <div class="trait-browser__list-copy">
             <div class="trait-browser__list-name">{{ item.name }}</div>
             <div class="trait-browser__list-desc">
               {{ item.listDescription || "No description available." }}
+            </div>
             </div>
           </button>
         </aside>
@@ -167,9 +171,16 @@ const selectedCollectAccountUnlock = computed(() => {
   border-radius: 10px;
   padding: 0.7rem 0.8rem;
   cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
   transition:
     border-color 140ms ease,
     background 140ms ease;
+}
+
+.trait-browser__list-copy {
+  min-width: 0;
 }
 
 .trait-browser__list-item:hover,

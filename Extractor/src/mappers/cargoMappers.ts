@@ -197,6 +197,7 @@ export function mapInfobox(row: RawInfobox) {
     text8: decodeHtmlEntitiesOrNull(row.text8),
     text9: decodeHtmlEntitiesOrNull(row.text9),
     equiplimit: parseIntOrNull(row.equiplimit),
+    image: decodeHtmlEntitiesOrNull(row.image ?? null),
     rawData: row,
   };
 }
