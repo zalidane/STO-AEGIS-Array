@@ -82,6 +82,9 @@ Catalog rows map to wiki files (`File:{Name} icon.png` for items/traits, Cargo `
 
 Ship renders can be large; files over 8MB are skipped. Item/trait icons are tiny. Commit whichever images you want in git — binaries are not required for the DB import.
 
+Third-party licensing for extracted text and images is documented in
+[`ATTRIBUTION.md`](../ATTRIBUTION.md) and [`VueUI/public/images/NOTICE`](../VueUI/public/images/NOTICE).
+
 ## Output in git
 
 `Extractor/output/*.json` **is tracked** so production deploys can import without extracting.

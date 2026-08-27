@@ -23,6 +23,7 @@ import InfoboxDetails from "@/views/InfoboxDetails.vue";
 import Items from "@/views/Items.vue";
 import ShipTypes from "@/views/ShipTypes.vue";
 import ShipTypeDetails from "@/views/ShipTypeDetails.vue";
+import Attributions from "@/views/Attributions.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -173,6 +174,12 @@ const router = createRouter({
       name: "ship-type-details",
       component: ShipTypeDetails,
       meta: { breadcrumb: "Ship Type Details", parent: "/ship-types" },
+    },
+    {
+      path: "/attributions",
+      name: "attributions",
+      component: Attributions,
+      meta: { breadcrumb: "Attributions" },
     },
   ],
 });

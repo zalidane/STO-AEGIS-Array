@@ -118,4 +118,10 @@ Add Railway Postgres to the project if it is not already there, then reference i
 
 ## License
 
-MIT
+Original project source code is MIT — see [`LICENSE`](LICENSE).
+
+Wiki-derived text and Cargo data are used under STOWiki’s
+[CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) terms where
+the wiki may lawfully license them. Game images under `VueUI/public/images/` are
+Cryptic / DECA / Paramount assets obtained via STOWiki and are **not** MIT.
+Full details: [`ATTRIBUTION.md`](ATTRIBUTION.md).
