@@ -1,4 +1,6 @@
-export const COLLECTION_STATE_VERSION = 1 as const;
+import type { CollectionLoadout } from "@/logic/loadout/types";
+
+export const COLLECTION_STATE_VERSION = 2 as const;
 
 export type CatalogKind = "ship" | "trait" | "starshipTrait" | "item";
 
@@ -25,6 +27,7 @@ export type CollectionState = {
   activeCharacterId: string | null;
   characters: CollectionCharacter[];
   entries: CollectionEntry[];
+  loadouts: CollectionLoadout[];
 };
 
 export type CollectionCopy = {
@@ -50,6 +53,7 @@ export function createEmptyCollectionState(): CollectionState {
     activeCharacterId: null,
     characters: [],
     entries: [],
+    loadouts: [],
   };
 }
 

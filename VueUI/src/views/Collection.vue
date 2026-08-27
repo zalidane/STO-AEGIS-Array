@@ -212,12 +212,24 @@ const grouped = computed(() =>
             </div>
             </div>
           </div>
-          <CollectToggle
-            :kind="row.entry.kind"
-            :catalog-id="row.entry.catalogId"
-            :bind="row.bind"
-            :allow-account-unlock="row.allowAccountUnlock"
-          />
+          <div class="collection-row__actions">
+            <v-btn
+              v-if="row.entry.kind === 'ship'"
+              :to="`/ships/${row.entry.catalogId}/loadout`"
+              size="small"
+              variant="text"
+              color="primary"
+              @click.stop
+            >
+              Loadout
+            </v-btn>
+            <CollectToggle
+              :kind="row.entry.kind"
+              :catalog-id="row.entry.catalogId"
+              :bind="row.bind"
+              :allow-account-unlock="row.allowAccountUnlock"
+            />
+          </div>
         </RouterLink>
       </div>
     </section>
@@ -291,6 +303,13 @@ const grouped = computed(() =>
   align-items: center;
   gap: 0.85rem;
   min-width: 0;
+}
+
+.collection-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
 }
 
 .collection-row__name {

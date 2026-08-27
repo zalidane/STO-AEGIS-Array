@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import ObtainedMarkup from "@/components/shared/ObtainedMarkup.vue";
 import CollectToggle from "@/components/collection/CollectToggle.vue";
 import {
@@ -8,6 +8,11 @@ import {
 } from "@/logic/traitBrowser";
 import type { BindScope, CatalogKind } from "@/logic/collection/types";
 import { defaultBindForKind } from "@/logic/collection/bind";
+import {
+  TRAIT_ICON_FEATURED_HEIGHT,
+  TRAIT_ICON_FEATURED_WIDTH,
+  resolveTraitArtSrc,
+} from "@/utils/traitImage";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
 
 const props = defineProps<{
@@ -20,9 +25,30 @@ const props = defineProps<{
   collectKind?: CatalogKind;
   collectBind?: BindScope;
   collectAccountUnlock?: boolean;
-  /** Compact featured cards: art panel beside the copy. */
+  /** Compact featured cards: placeholder if `item.imageSrc` is missing or fails. */
   artSrc?: string | null;
 }>();
+
+const artFailed = ref(false);
+
+watch(
+  () => [props.item.imageSrc, props.artSrc],
+  () => {
+    artFailed.value = false;
+  },
+);
+
+const resolvedArtSrc = computed(() =>
+  resolveTraitArtSrc(props.item.imageSrc, props.artSrc, artFailed.value),
+);
+const showingPlaceholder = computed(() => {
+  const icon = props.item.imageSrc?.trim();
+  return !icon || artFailed.value;
+});
+const featuredIconStyle = {
+  width: `${TRAIT_ICON_FEATURED_WIDTH}px`,
+  height: `${TRAIT_ICON_FEATURED_HEIGHT}px`,
+};
 
 const resolvedSourceLabel = computed(() => props.sourceLabel ?? "Source");
 const resolvedDescriptionLabel = computed(
@@ -54,11 +80,30 @@ const resolvedBind = computed(
     class="trait-browser__card"
     :class="{
       'trait-browser__card--compact': compact,
-      'trait-browser__card--with-art': compact && artSrc,
+      'trait-browser__card--with-art': compact && resolvedArtSrc,
     }"
   >
-    <div v-if="compact && artSrc" class="trait-browser__art">
-      <v-img :src="artSrc" :alt="item.name" cover class="trait-browser__art-image" />
+    <div
+      v-if="compact && resolvedArtSrc"
+      class="trait-browser__art"
+      :class="{ 'trait-browser__art--placeholder': showingPlaceholder }"
+    >
+      <v-img
+        v-if="showingPlaceholder"
+        :src="resolvedArtSrc"
+        :alt="item.name"
+        cover
+        class="trait-browser__art-image"
+        @error="artFailed = true"
+      />
+      <img
+        v-else
+        :src="resolvedArtSrc"
+        :alt="item.name"
+        class="trait-browser__art-icon"
+        :style="featuredIconStyle"
+        @error="artFailed = true"
+      />
     </div>
 
     <div class="trait-browser__content">
@@ -171,18 +216,35 @@ const resolvedBind = computed(
 
 .trait-browser__card--with-art {
   display: grid;
-  grid-template-columns: minmax(8.5rem, 0.46fr) minmax(0, 1fr);
+  grid-template-columns: 8.5rem minmax(0, 1fr);
   padding: 0;
   overflow: hidden;
 }
 
 .trait-browser__art {
-  min-height: 11rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 1.15rem 0.85rem;
   background: linear-gradient(135deg, #102338, #162e4c, #0d1625);
 }
 
 .trait-browser__art-image {
   height: 100%;
+}
+
+.trait-browser__art-icon {
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+  image-rendering: auto;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.45));
+}
+
+.trait-browser__art--placeholder {
+  display: block;
+  padding: 0;
 }
 
 .trait-browser__card--with-art .trait-browser__content {
@@ -302,7 +364,8 @@ const resolvedBind = computed(
   }
 
   .trait-browser__art {
-    min-height: 8.5rem;
+    min-height: 0;
+    padding: 1rem;
   }
 }
 </style>

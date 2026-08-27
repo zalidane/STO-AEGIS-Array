@@ -8,6 +8,11 @@ import type {
 } from "./types";
 import { createEmptyCollectionState, defaultCollectionClock } from "./types";
 import type { BindScope } from "./types";
+import type { CollectionLoadout } from "@/logic/loadout/types";
+import {
+  stripItemFromCharacterLoadouts,
+  stripLoadoutsForCharacter,
+} from "@/logic/loadout/state";
 
 function characterName(
   state: CollectionState,
@@ -80,13 +85,17 @@ export function deleteCharacter(
   const entries = state.entries.filter(
     (entry) => entry.characterId !== characterId,
   );
+  const withoutLoadouts = stripLoadoutsForCharacter(
+    { ...state, characters, entries },
+    characterId,
+  );
   const activeCharacterId =
     state.activeCharacterId === characterId
       ? (characters[0]?.id ?? null)
       : state.activeCharacterId;
 
   return {
-    ...state,
+    ...withoutLoadouts,
     characters,
     entries,
     activeCharacterId,
@@ -203,7 +212,7 @@ export function uncollectItem(
   const characterId = state.activeCharacterId;
   if (!characterId) return state;
 
-  return {
+  const next = {
     ...state,
     entries: state.entries.filter(
       (entry) =>
@@ -214,6 +223,8 @@ export function uncollectItem(
         ),
     ),
   };
+  if (input.kind !== "item") return next;
+  return stripItemFromCharacterLoadouts(next, characterId, input.catalogId);
 }
 
 export function uncollectMany(
@@ -265,25 +276,54 @@ export function visibleEntriesForActiveCharacter(
   });
 }
 
+export function visibleCatalogIds(
+  state: CollectionState,
+  kind: CatalogKind,
+  bindForEntry: (entry: CollectionEntry) => BindScope,
+): Set<number> {
+  return new Set(
+    visibleEntriesForActiveCharacter(state, bindForEntry)
+      .filter((entry) => entry.kind === kind)
+      .map((entry) => entry.catalogId),
+  );
+}
+
 export function hydrateCollectionState(
   raw: unknown,
 ): CollectionState {
   if (!raw || typeof raw !== "object") {
     return createEmptyCollectionState();
   }
-  const value = raw as Partial<CollectionState>;
-  if (value.version !== 1 || !Array.isArray(value.characters) || !Array.isArray(value.entries)) {
+  const value = raw as {
+    version?: unknown;
+    activeCharacterId?: unknown;
+    characters?: unknown;
+    entries?: unknown;
+    loadouts?: unknown;
+  };
+  const version = value.version;
+  if (
+    (version !== 1 && version !== 2) ||
+    !Array.isArray(value.characters) ||
+    !Array.isArray(value.entries)
+  ) {
     return createEmptyCollectionState();
   }
   return {
-    version: 1,
+    version: 2,
     activeCharacterId:
       typeof value.activeCharacterId === "string" ||
       value.activeCharacterId === null
         ? value.activeCharacterId
         : null,
-    characters: value.characters.filter(isCharacter),
-    entries: value.entries.filter(isEntry),
+    characters: Array.isArray(value.characters)
+      ? value.characters.filter(isCharacter)
+      : [],
+    entries: Array.isArray(value.entries) ? value.entries.filter(isEntry) : [],
+    loadouts:
+      version === 2 && Array.isArray(value.loadouts)
+        ? value.loadouts.filter(isLoadout)
+        : [],
   };
 }
 
@@ -295,6 +335,27 @@ function isCharacter(value: unknown): value is CollectionCharacter {
     typeof character.name === "string" &&
     typeof character.createdAt === "string"
   );
+}
+
+function isLoadout(value: unknown): value is CollectionLoadout {
+  if (!value || typeof value !== "object") return false;
+  const loadout = value as CollectionLoadout;
+  return (
+    typeof loadout.id === "string" &&
+    typeof loadout.characterId === "string" &&
+    typeof loadout.shipId === "number" &&
+    typeof loadout.name === "string" &&
+    typeof loadout.createdAt === "string" &&
+    typeof loadout.updatedAt === "string" &&
+    Array.isArray(loadout.slots) &&
+    loadout.slots.every(isSlotFill)
+  );
+}
+
+function isSlotFill(value: unknown): value is CollectionLoadout["slots"][number] {
+  if (!value || typeof value !== "object") return false;
+  const fill = value as CollectionLoadout["slots"][number];
+  return typeof fill.slotId === "string" && typeof fill.itemId === "number";
 }
 
 function isEntry(value: unknown): value is CollectionEntry {

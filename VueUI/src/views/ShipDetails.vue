@@ -113,12 +113,23 @@ watch(
                   sm="4"
                   class="d-flex flex-column justify-space-between align-sm-end ga-3"
                 >
-                  <CollectToggle
-                    kind="ship"
-                    :catalog-id="ship.id"
-                    :bind="collectBind"
-                    :allow-account-unlock="allowAccountUnlock"
-                  />
+                  <div class="d-flex flex-column align-sm-end ga-2">
+                    <CollectToggle
+                      kind="ship"
+                      :catalog-id="ship.id"
+                      :bind="collectBind"
+                      :allow-account-unlock="allowAccountUnlock"
+                    />
+                    <v-btn
+                      :to="`/ships/${ship.id}/loadout`"
+                      color="primary"
+                      variant="outlined"
+                      size="small"
+                      prepend-icon="mdi-view-dashboard-outline"
+                    >
+                      Loadout
+                    </v-btn>
+                  </div>
                   <div class="d-flex justify-sm-end flex-wrap ga-1">
                     <v-chip
                       v-for="faction in formattedFactions"

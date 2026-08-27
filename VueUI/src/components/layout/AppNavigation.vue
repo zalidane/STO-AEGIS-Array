@@ -2,6 +2,7 @@
 const items = [
   { title: "Home", icon: "mdi-home", to: "/" },
   { title: "Collection", icon: "mdi-bookmark", to: "/collection" },
+  { title: "Loadouts", icon: "mdi-view-dashboard-outline", to: "/loadouts" },
   { title: "Ships", icon: "mdi-ferry", to: "/ships" },
   { title: "Ship Types", icon: "mdi-shape", to: "/ship-types" },
   { title: "Traits", icon: "mdi-star-outline", to: "/traits" },

@@ -10,11 +10,11 @@ export type WikiImageKind = "items" | "ships" | "traits" | "starship-traits";
 function normalizedFileStem(raw: string): string {
   const decoded = decodeHtmlEntities(raw).replace(INVISIBLE_CHARS, "").trim();
   const withoutPrefix = decoded.replace(/^File:/i, "").trim();
-  return withoutPrefix.replaceAll("_", " ").replace(/\s+/g, " ").trim();
+  return withoutPrefix.replace(/_/g, " ").replace(/\s+/g, " ").trim();
 }
 
 export function wikiLocalFilename(fileField: string): string {
-  return normalizedFileStem(fileField).replaceAll(" ", "_");
+  return normalizedFileStem(fileField).replace(/ /g, "_");
 }
 
 export function wikiIconFilename(nameOrFile: string): string {
@@ -27,7 +27,7 @@ export function wikiIconFilename(nameOrFile: string): string {
 
 /** encodeURIComponent leaves `'` unescaped; percent-encode it so img src cannot truncate. */
 function encodeWikiFilename(filename: string): string {
-  return encodeURIComponent(filename).replaceAll("'", "%27");
+  return encodeURIComponent(filename).replace(/'/g, "%27");
 }
 
 function wikiPublicUrl(kind: WikiImageKind, filename: string): string {
