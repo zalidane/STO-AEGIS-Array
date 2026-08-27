@@ -1,35 +1,31 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createRouter, createMemoryHistory } from "vue-router";
-import { createVuetify } from "vuetify";
-import * as components from "vuetify/components";
-import * as directives from "vuetify/directives";
 
-import App from "../App.vue";
+import AppFooter from "../components/layout/AppFooter.vue";
 import { FOOTER_SUMMARY } from "@/logic/attribution";
 
-describe("App", () => {
-  it("renders the brand and wiki attribution footer", async () => {
+describe("AppFooter", () => {
+  it("renders wiki attribution summary and license links", async () => {
     const router = createRouter({
       history: createMemoryHistory(),
-      routes: [{ path: "/", component: { template: "<div />" } }],
+      routes: [{ path: "/attributions", component: { template: "<div />" } }],
     });
     await router.push("/");
     await router.isReady();
 
-    const vuetify = createVuetify({ components, directives });
-    const wrapper = mount(App, {
-      global: {
-        plugins: [router, vuetify],
-        stubs: {
-          AppNavigation: true,
-          CharacterSwitcher: true,
-        },
-      },
+    const wrapper = mount(AppFooter, {
+      global: { plugins: [router] },
     });
 
-    expect(wrapper.text()).toContain("STO-AEGIS Array");
     expect(wrapper.text()).toContain(FOOTER_SUMMARY);
     expect(wrapper.text()).toContain("Full attributions");
+    expect(wrapper.find('a[href="https://stowiki.net/"]').exists()).toBe(true);
+    expect(
+      wrapper
+        .find('a[href="https://creativecommons.org/licenses/by-nc-sa/3.0/"]')
+        .exists(),
+    ).toBe(true);
+    expect(wrapper.find('a[href="/attributions"]').exists()).toBe(true);
   });
 });
