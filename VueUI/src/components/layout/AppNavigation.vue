@@ -11,6 +11,7 @@ const items = [
   { title: "Masteries", icon: "mdi-trophy", to: "/masteries" },
   { title: "Reputations", icon: "mdi-medal", to: "/reputations" },
   { title: "Modifiers", icon: "mdi-delta", to: "/modifiers" },
+  { title: "Attributions", icon: "mdi-scale-balance", to: "/attributions" },
 ];
 </script>
 
