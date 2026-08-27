@@ -15,6 +15,16 @@ import {
   uncollectMany as uncollectManyItems,
 } from "@/logic/collection/state";
 import {
+  applyLoadout,
+  createLoadout,
+  deleteLoadout,
+  equipLoadoutSlot,
+  loadoutsForCharacter,
+  renameLoadout,
+  unequipLoadoutSlot,
+} from "@/logic/loadout/state";
+import type { LoadoutEquipContext } from "@/logic/loadout/types";
+import {
   createEmptyCollectionState,
   type CatalogKind,
   type CollectionState,
@@ -113,11 +123,48 @@ export const useCollectionStore = defineStore("collection", () => {
     );
   }
 
+  const loadouts = computed(() =>
+    loadoutsForCharacter(state.value, state.value.activeCharacterId),
+  );
+
+  function addLoadout(shipId: number, name?: string) {
+    state.value = createLoadout(state.value, { shipId, name });
+    persist();
+    return state.value.loadouts[state.value.loadouts.length - 1] ?? null;
+  }
+
+  function updateLoadoutName(loadoutId: string, name: string) {
+    state.value = renameLoadout(state.value, loadoutId, name);
+    persist();
+  }
+
+  function removeLoadout(loadoutId: string) {
+    state.value = deleteLoadout(state.value, loadoutId);
+    persist();
+  }
+
+  function equipSlot(
+    input: { loadoutId: string; slotId: string; itemId: number },
+    context: LoadoutEquipContext,
+  ) {
+    const result = equipLoadoutSlot(state.value, input, context);
+    if (!result.ok) return result;
+    state.value = applyLoadout(state.value, result.loadout);
+    persist();
+    return result;
+  }
+
+  function unequipSlot(loadoutId: string, slotId: string) {
+    state.value = unequipLoadoutSlot(state.value, { loadoutId, slotId });
+    persist();
+  }
+
   return {
     state,
     characters,
     activeCharacter,
     activeCharacterId,
+    loadouts,
     load,
     addCharacter,
     updateCharacterName,
@@ -131,5 +178,10 @@ export const useCollectionStore = defineStore("collection", () => {
     bindForActive,
     statusFor,
     isOwnedByActive,
+    addLoadout,
+    updateLoadoutName,
+    removeLoadout,
+    equipSlot,
+    unequipSlot,
   };
 });

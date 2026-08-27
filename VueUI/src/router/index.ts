@@ -3,8 +3,10 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from "@/views/Home.vue";
 import Search from "@/views/Search.vue";
 import Collection from "@/views/Collection.vue";
+import Loadouts from "@/views/Loadouts.vue";
 import Ships from "@/views/Ships.vue";
 import ShipDetails from "@/views/ShipDetails.vue";
+import LoadoutBuilder from "@/views/LoadoutBuilder.vue";
 import Traits from "@/views/Traits.vue";
 import TraitDetails from "@/views/TraitDetails.vue";
 import StarshipTraits from "@/views/StarshipTraits.vue";
@@ -38,6 +40,12 @@ const router = createRouter({
       meta: { breadcrumb: "Collection" },
     },
     {
+      path: "/loadouts",
+      name: "loadouts",
+      component: Loadouts,
+      meta: { breadcrumb: "Loadouts" },
+    },
+    {
       path: "/search",
       component: Search,
       meta: { breadcrumb: "Search" },
@@ -53,6 +61,12 @@ const router = createRouter({
       name: "ship-details",
       component: ShipDetails,
       meta: { breadcrumb: "Ship Details", parent: "/ships" },
+    },
+    {
+      path: "/ships/:id/loadout",
+      name: "ship-loadout",
+      component: LoadoutBuilder,
+      meta: { breadcrumb: "Loadout", parent: "/ships" },
     },
     {
       path: "/traits",

@@ -25,6 +25,8 @@ query Ships {
     scienceSlots
     secondaryDeflector
     hangars
+    devices
+    experimental
     uniconsole
     uniconsoleId
     cost
