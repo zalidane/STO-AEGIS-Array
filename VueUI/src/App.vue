@@ -2,6 +2,7 @@
 import { RouterLink } from "vue-router";
 
 import AppNavigation from "./components/layout/AppNavigation.vue";
+import AppFooter from "./components/layout/AppFooter.vue";
 import CharacterSwitcher from "./components/collection/CharacterSwitcher.vue";
 </script>
 
@@ -29,6 +30,8 @@ import CharacterSwitcher from "./components/collection/CharacterSwitcher.vue";
         </keep-alive>
       </router-view>
     </v-main>
+
+    <AppFooter />
   </v-app>
 </template>
 
