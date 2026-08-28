@@ -15,6 +15,7 @@ import {
 } from "@/logic/collection/itemBrowser";
 import {
   allowsAccountUnlockFromCatalog,
+  bindChoicePromptFromCatalog,
   bindScopeFromCatalog,
 } from "@/logic/collection/catalogBind";
 import type { BindScope } from "@/logic/collection/types";
@@ -62,6 +63,18 @@ function collectAccountUnlockFor(item: TraitBrowserItem): boolean {
     item.id,
   );
 }
+
+function collectBindChoicePromptFor(item: TraitBrowserItem): string {
+  return bindChoicePromptFromCatalog(
+    {
+      ships: shipsResult.value?.ships ?? [],
+      starshipTraits: [],
+      items: equipment.value,
+    },
+    "item",
+    item.id,
+  );
+}
 </script>
 
 <template>
@@ -77,6 +90,7 @@ function collectAccountUnlockFor(item: TraitBrowserItem): boolean {
       collect-kind="item"
       :collect-bind="collectBindFor"
       :collect-account-unlock="collectAccountUnlockFor"
+      :collect-bind-choice-prompt="collectBindChoicePromptFor"
     />
   </v-container>
 </template>

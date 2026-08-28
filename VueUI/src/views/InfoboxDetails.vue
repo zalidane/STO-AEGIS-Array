@@ -16,6 +16,7 @@ import {
   allowsAccountUnlockFromGrantingShips,
   bindScopeForKind,
 } from "@/logic/collection/bind";
+import { bindChoiceFromGrantingShips } from "@/logic/collection/bindChoice";
 import { displayInfoboxType } from "@/logic/collection/itemBrowser";
 
 const route = useRoute();
@@ -36,9 +37,10 @@ const bind = computed(() =>
   }),
 );
 const allowAccountUnlock = computed(() =>
-  allowsAccountUnlockFromGrantingShips(
-    item.value?.shipsWithConsole.map((ship) => ship.cost) ?? [],
-  ),
+  allowsAccountUnlockFromGrantingShips(item.value?.shipsWithConsole ?? []),
+);
+const bindChoicePrompt = computed(() =>
+  bindChoiceFromGrantingShips(item.value?.shipsWithConsole ?? []).prompt,
 );
 
 const fields = computed(() => {
@@ -82,6 +84,7 @@ const fields = computed(() => {
           :catalog-id="item.id"
           :bind="bind"
           :allow-account-unlock="allowAccountUnlock"
+          :bind-choice-prompt="bindChoicePrompt"
         />
       </div>
 

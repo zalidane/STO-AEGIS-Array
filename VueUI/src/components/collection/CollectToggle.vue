@@ -4,13 +4,23 @@ import { storeToRefs } from "pinia";
 import { useCollectionStore } from "@/stores/collection";
 import type { BindScope, CatalogKind } from "@/logic/collection/types";
 import { bindScopeLabel } from "@/logic/collection/bind";
+import {
+  bindChoiceFromCost,
+  FALLBACK_BIND_CHOICE_PROMPT,
+} from "@/logic/collection/bindChoice";
 
 const props = defineProps<{
   kind: CatalogKind;
   catalogId: number;
   bind: BindScope;
-  /** Phoenix / Anniversary pack hulls (and their grants) can be marked account-unlocked. */
+  /** Dual-path / expensive Zen / Phoenix hulls (and their grants) offer a bind choice. */
   allowAccountUnlock?: boolean;
+  /** Wiki cost string; used to compose the bind-choice dialog from matching conditions. */
+  cost?: string | null;
+  displayPrefix?: string | null;
+  hullName?: string | null;
+  /** Override dialog copy when cost is not available (catalog lists, grants). */
+  bindChoicePrompt?: string;
   /** Icon-sized control for cards and list rows; hides bind caption. */
   compact?: boolean;
 }>();
@@ -86,6 +96,16 @@ function chooseBind(bind: BindScope) {
 function openBindPicker() {
   bindOpen.value = true;
 }
+
+const dialogPrompt = computed(() => {
+  if (props.bindChoicePrompt?.trim()) return props.bindChoicePrompt.trim();
+  const fromCost = bindChoiceFromCost(props.cost, {
+    displayPrefix: props.displayPrefix,
+    name: props.hullName,
+  }).prompt;
+  if (fromCost) return fromCost;
+  return FALLBACK_BIND_CHOICE_PROMPT;
+});
 </script>
 
 <template>
@@ -149,11 +169,7 @@ function openBindPicker() {
     <v-dialog v-model="bindOpen" max-width="460">
       <v-card>
         <v-card-title>How did you unlock this?</v-card-title>
-        <v-card-text>
-          Phoenix Token and Anniversary Prize Pack ships were originally
-          account unlocks. Mark this copy as unlocked for the account if you
-          reclaimed it from Events; otherwise it stays bound to this captain.
-        </v-card-text>
+        <v-card-text>{{ dialogPrompt }}</v-card-text>
         <v-card-actions class="flex-wrap ga-2 pa-4">
           <v-btn
             color="primary"

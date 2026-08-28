@@ -17,6 +17,7 @@ import CollectToggle from "@/components/collection/CollectToggle.vue";
 import { useCollectionStore } from "@/stores/collection";
 import {
   allowsAccountUnlockFromCatalog,
+  bindChoicePromptFromCatalog,
   bindScopeFromCatalog,
   type CatalogBindSources,
 } from "@/logic/collection/catalogBind";
@@ -104,6 +105,14 @@ function bindFor(kind: CatalogKind, catalogId: number) {
 
 function allowUnlockFor(kind: CatalogKind, catalogId: number) {
   return allowsAccountUnlockFromCatalog(
+    catalogSources.value,
+    kind,
+    catalogId,
+  );
+}
+
+function bindChoicePromptFor(kind: CatalogKind, catalogId: number) {
+  return bindChoicePromptFromCatalog(
     catalogSources.value,
     kind,
     catalogId,
@@ -203,6 +212,7 @@ function removeAll(group: SearchGroup) {
               :catalog-id="hit.id"
               :bind="bindFor(group.kind, hit.id)"
               :allow-account-unlock="allowUnlockFor(group.kind, hit.id)"
+              :bind-choice-prompt="bindChoicePromptFor(group.kind, hit.id)"
             />
           </template>
         </v-list-item>

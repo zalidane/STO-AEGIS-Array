@@ -19,6 +19,7 @@ import {
   bindScopeFromShipCost,
 } from "@/logic/collection/bind";
 import { shipsListQueryForAcquisition } from "@/logic/shipsBinder";
+import { extraHullSlotSummary } from "@/logic/loadout/hullExtras";
 import {
   densityFromWidth,
   getShipDetailLabels,
@@ -55,11 +56,18 @@ const factionGlow = computed(() => getFactionGlow(formattedFactions.value[0]));
 
 const boffSeats = computed(() => parseBoffSeats(ship.value?.boffs));
 
+const extraSlots = computed(() =>
+  extraHullSlotSummary({
+    tier: ship.value?.tier,
+    boffs: ship.value?.boffs,
+  }),
+);
+
 const parsedCosts = computed<ShipCost[]>(() => parseShipCost(ship.value?.cost));
 
 const collectBind = computed(() => bindScopeFromShipCost(ship.value?.cost));
 const allowAccountUnlock = computed(() =>
-  allowsAccountUnlockFromCost(ship.value?.cost),
+  allowsAccountUnlockFromCost(ship.value?.cost, ship.value),
 );
 
 const powerDisplay = computed(() => {
@@ -119,6 +127,9 @@ watch(
                       :catalog-id="ship.id"
                       :bind="collectBind"
                       :allow-account-unlock="allowAccountUnlock"
+                      :cost="ship.cost"
+                      :display-prefix="ship.displayPrefix"
+                      :hull-name="ship.name"
                     />
                     <v-btn
                       :to="`/ships/${ship.id}/loadout`"
@@ -381,7 +392,26 @@ watch(
                 <v-chip size="small" color="tactical">
                   TAC {{ ship.tacticalSlots }}
                 </v-chip>
+                <v-chip
+                  v-if="extraSlots.universalConsoles > 0"
+                  size="small"
+                  color="universal"
+                  :title="SHIP_DETAIL_FULL_LABELS.universalConsoles"
+                >
+                  UNI {{ extraSlots.universalConsoles }}
+                </v-chip>
               </div>
+              <ul v-if="extraSlots.rules.length" class="extra-slot-list">
+                <li v-for="rule in extraSlots.rules" :key="rule.id">
+                  {{ rule.detailLabel }}
+                  <span v-if="rule.universalConsoles">
+                    · +{{ rule.universalConsoles }} universal
+                  </span>
+                  <span v-if="rule.starshipTraits">
+                    · +{{ rule.starshipTraits }} trait slot
+                  </span>
+                </li>
+              </ul>
             </div>
           </v-card>
         </v-col>
@@ -518,6 +548,17 @@ watch(
                   :title="trait.short"
                 >
                   {{ trait.short }}
+                </div>
+              </div>
+              <div
+                v-for="rule in extraSlots.rules.filter((row) => row.starshipTraits > 0)"
+                :key="rule.id"
+                class="trait-block trait-block--empty"
+                :title="SHIP_DETAIL_FULL_LABELS.emptyTraitSlots"
+              >
+                <div class="trait-block__name">Empty slot</div>
+                <div class="trait-block__short text-medium-emphasis">
+                  {{ rule.detailLabel }}
                 </div>
               </div>
             </div>
@@ -760,6 +801,15 @@ watch(
     inset -3px 0 0 var(--boff-spec);
 }
 
+.extra-slot-list {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.62);
+}
+
 .ability-line,
 .trait-block__name,
 .trait-block__short {
@@ -775,6 +825,11 @@ watch(
 
 .trait-block + .trait-block {
   margin-top: 10px;
+}
+
+.trait-block--empty .trait-block__name {
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 500;
 }
 
 .trait-block__name {

@@ -25,6 +25,7 @@ const props = defineProps<{
   collectKind?: CatalogKind;
   collectBind?: BindScope;
   collectAccountUnlock?: boolean;
+  collectBindChoicePrompt?: string;
   /** Compact featured cards: placeholder if `item.imageSrc` is missing or fails. */
   artSrc?: string | null;
 }>();
@@ -140,6 +141,7 @@ const resolvedBind = computed(
           :catalog-id="item.id"
           :bind="resolvedBind"
           :allow-account-unlock="collectAccountUnlock"
+          :bind-choice-prompt="collectBindChoicePrompt"
         />
         <v-btn
           v-if="detailsPath"

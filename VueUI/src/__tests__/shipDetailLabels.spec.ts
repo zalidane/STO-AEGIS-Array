@@ -35,5 +35,8 @@ describe("getShipDetailLabels", () => {
       "Bridge Officers and Consoles",
     );
     expect(SHIP_DETAIL_FULL_LABELS.engineering).toBe("Engineering");
+    expect(SHIP_DETAIL_FULL_LABELS.universalConsoles).toBe(
+      "Universal Console Slots",
+    );
   });
 });

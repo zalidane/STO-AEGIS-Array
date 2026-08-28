@@ -144,7 +144,12 @@ export const useCollectionStore = defineStore("collection", () => {
   }
 
   function equipSlot(
-    input: { loadoutId: string; slotId: string; itemId: number },
+    input: {
+      loadoutId: string;
+      slotId: string;
+      itemId: number;
+      catalogKind?: "item" | "starshipTrait";
+    },
     context: LoadoutEquipContext,
   ) {
     const result = equipLoadoutSlot(state.value, input, context);

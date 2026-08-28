@@ -1,6 +1,12 @@
 import {
   shipCostCurrencyCodes,
 } from "@/utils/parsers/shipCost";
+import {
+  ACCOUNT_UNLOCK_CURRENCIES,
+  bindChoiceFromCost,
+  bindChoiceFromGrantingShips,
+  type BindChoiceInput,
+} from "./bindChoice";
 import type { BindScope, CatalogKind } from "./types";
 
 /** Infobox.boundto values observed in wiki cargo: account, character, yes, null. */
@@ -28,13 +34,6 @@ const ACCOUNT_CURRENCIES = new Set([
   "r&d",
 ]);
 
-/**
- * Former event / promo hulls. Wiki cost is the later character-bound claim
- * (Phoenix token or Anniversary Prize Pack), but every one of these was once
- * obtainable account-wide (event reclaim).
- */
-const ACCOUNT_UNLOCK_CURRENCIES = new Set(["app", "ppp5", "ppps"]);
-
 /** Character-bound acquisition: lock box, lobi, mission reward. */
 const CHARACTER_CURRENCIES = new Set(["lb", "lc", "mr"]);
 
@@ -51,22 +50,22 @@ function isAccountUnlockCurrency(code: string): boolean {
 
 export function allowsAccountUnlockFromCost(
   cost: string | null | undefined,
+  hull?: { displayPrefix?: string | null; name?: string | null },
 ): boolean {
-  return shipCostCurrencyCodes(cost).some((code) =>
-    isAccountUnlockCurrency(code.toLowerCase()),
-  );
+  return bindChoiceFromCost(cost, hull).requiresChoice;
 }
 
 export function allowsAccountUnlockFromGrantingShips(
-  costs: Array<string | null | undefined>,
+  ships: BindChoiceInput[],
 ): boolean {
-  return costs.some((cost) => allowsAccountUnlockFromCost(cost));
+  return bindChoiceFromGrantingShips(ships).requiresChoice;
 }
 
 /**
  * Hull bind from wiki `cost`.
- * Phoenix / Anniversary pack costs default to character-bound; the player can
- * mark a copy as account-unlocked when collecting.
+ * Phoenix / Anniversary pack costs default to character-bound. Dual-path and
+ * expensive Zen hulls default to account; SHIP_BIND_CHOICE_CONDITIONS still
+ * offers a single-captain choice when collecting.
  */
 export function bindScopeFromShipCost(
   cost: string | null | undefined,

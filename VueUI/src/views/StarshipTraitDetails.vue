@@ -15,6 +15,7 @@ import {
   allowsAccountUnlockFromGrantingShips,
   bindScopeForKind,
 } from "@/logic/collection/bind";
+import { bindChoiceFromGrantingShips } from "@/logic/collection/bindChoice";
 
 const route = useRoute();
 const id = computed(() => Number(route.params.id));
@@ -32,9 +33,10 @@ const collectBind = computed(() =>
   }),
 );
 const allowAccountUnlock = computed(() =>
-  allowsAccountUnlockFromGrantingShips(
-    trait.value?.ships.map((ship) => ship.cost) ?? [],
-  ),
+  allowsAccountUnlockFromGrantingShips(trait.value?.ships ?? []),
+);
+const bindChoicePrompt = computed(() =>
+  bindChoiceFromGrantingShips(trait.value?.ships ?? []).prompt,
 );
 
 const fields = computed(() => {
@@ -62,6 +64,7 @@ const fields = computed(() => {
           :catalog-id="trait.id"
           :bind="collectBind"
           :allow-account-unlock="allowAccountUnlock"
+          :bind-choice-prompt="bindChoicePrompt"
         />
       </div>
 

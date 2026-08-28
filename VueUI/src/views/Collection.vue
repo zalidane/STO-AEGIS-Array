@@ -18,6 +18,7 @@ import {
 } from "@/logic/collection/state";
 import {
   allowsAccountUnlockFromCatalog,
+  bindChoicePromptFromCatalog,
   bindScopeFromCatalog,
 } from "@/logic/collection/catalogBind";
 import type {
@@ -50,6 +51,7 @@ type Row = {
   imageSrc: string | null;
   bind: BindScope;
   allowAccountUnlock: boolean;
+  bindChoicePrompt: string;
   ownedByActive: boolean;
   ownerName: string;
 };
@@ -155,6 +157,11 @@ const rows = computed<Row[]>(() => {
         entry.kind,
         entry.catalogId,
       ),
+      bindChoicePrompt: bindChoicePromptFromCatalog(
+        sources,
+        entry.kind,
+        entry.catalogId,
+      ),
       ownedByActive: entry.characterId === state.value.activeCharacterId,
       ownerName: owner?.name ?? "Unknown captain",
     };
@@ -228,6 +235,7 @@ const grouped = computed(() =>
               :catalog-id="row.entry.catalogId"
               :bind="row.bind"
               :allow-account-unlock="row.allowAccountUnlock"
+              :bind-choice-prompt="row.bindChoicePrompt"
             />
           </div>
         </RouterLink>

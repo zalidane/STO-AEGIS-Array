@@ -18,6 +18,7 @@ const props = defineProps<{
   ship: ShipListItem & {
     image?: string | null;
     facSort?: string | null;
+    displayPrefix?: string | null;
   };
 }>();
 
@@ -39,7 +40,7 @@ const collectBind = computed(() =>
 );
 
 const allowAccountUnlock = computed(() =>
-  allowsAccountUnlockFromCost(props.ship.cost),
+  allowsAccountUnlockFromCost(props.ship.cost, props.ship),
 );
 
 const primaryFaction = computed(() =>
@@ -150,6 +151,9 @@ watch(
         :catalog-id="ship.id"
         :bind="collectBind"
         :allow-account-unlock="allowAccountUnlock"
+        :cost="ship.cost"
+        :display-prefix="ship.displayPrefix"
+        :hull-name="ship.name"
       />
     </div>
   </div>

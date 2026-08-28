@@ -8,7 +8,10 @@ import {
   inheritBindFromGrantingShips,
   resolveBindScope,
 } from "@/logic/collection/bind";
-import { bindScopeFromCatalog } from "@/logic/collection/catalogBind";
+import {
+  allowsAccountUnlockFromCatalog,
+  bindScopeFromCatalog,
+} from "@/logic/collection/catalogBind";
 import { filterEquipmentInfoboxes } from "@/logic/collection/itemBrowser";
 import {
   collectItem,
@@ -90,6 +93,22 @@ describe("bindScope", () => {
     expect(allowsAccountUnlockFromCost("3000;Zen")).toBe(false);
   });
 
+  it("offers a bind choice when a Zen hull also has a non-Zen path or costs more than 10,000 Zen", () => {
+    expect(allowsAccountUnlockFromCost("1;LB / 3000;Zen")).toBe(true);
+    expect(allowsAccountUnlockFromCost("1;LB / 29500;Zen")).toBe(true);
+    expect(allowsAccountUnlockFromCost("20000;Zen")).toBe(true);
+    expect(allowsAccountUnlockFromCost("10000;Zen")).toBe(false);
+    expect(allowsAccountUnlockFromCost("10001;Zen")).toBe(true);
+    expect(
+      allowsAccountUnlockFromCost("12000;Zen", { displayPrefix: "Legendary" }),
+    ).toBe(false);
+    expect(
+      allowsAccountUnlockFromCost("12000;Zen", {
+        name: "Legendary Akira Multi-Mission Command Cruiser",
+      }),
+    ).toBe(false);
+  });
+
   it("treats lockbox and lobi-only ships as BtC", () => {
     expect(bindScopeFromShipCost("1;LB")).toBe("character");
     expect(bindScopeFromShipCost("800;LC")).toBe("character");
@@ -136,6 +155,31 @@ describe("bindScope", () => {
     expect(bindScopeFromCatalog(sources, "item", 10)).toBe("account");
     expect(bindScopeFromCatalog(sources, "item", 11)).toBe("character");
     expect(bindScopeFromCatalog(sources, "item", 12)).toBe("character");
+  });
+
+  it("offers a catalog bind choice for dual-path and expensive Zen ships", () => {
+    const sources = {
+      ships: [
+        { id: 1, cost: "3000;Zen" },
+        { id: 2, cost: "1;LB / 29500;Zen" },
+        { id: 3, cost: "20000;Zen" },
+        {
+          id: 4,
+          cost: "12000;Zen",
+          displayPrefix: "Legendary",
+          name: "Legendary Akira Multi-Mission Command Cruiser",
+        },
+      ],
+      starshipTraits: [{ id: 5, ships: [{ cost: "1;LB / 29500;Zen" }] }],
+      items: [],
+    };
+    expect(allowsAccountUnlockFromCatalog(sources, "ship", 1)).toBe(false);
+    expect(allowsAccountUnlockFromCatalog(sources, "ship", 2)).toBe(true);
+    expect(allowsAccountUnlockFromCatalog(sources, "ship", 3)).toBe(true);
+    expect(allowsAccountUnlockFromCatalog(sources, "ship", 4)).toBe(false);
+    expect(allowsAccountUnlockFromCatalog(sources, "starshipTrait", 5)).toBe(
+      true,
+    );
   });
 });
 

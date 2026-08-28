@@ -77,7 +77,7 @@ const collectBind = computed(() =>
 );
 
 const allowAccountUnlock = computed(() =>
-  allowsAccountUnlockFromCost(props.ship.cost),
+  allowsAccountUnlockFromCost(props.ship.cost, props.ship),
 );
 
 watch(
@@ -155,6 +155,9 @@ watch(
             :catalog-id="ship.id"
             :bind="collectBind"
             :allow-account-unlock="allowAccountUnlock"
+            :cost="ship.cost"
+            :display-prefix="ship.displayPrefix"
+            :hull-name="ship.name"
           />
         </div>
       </div>

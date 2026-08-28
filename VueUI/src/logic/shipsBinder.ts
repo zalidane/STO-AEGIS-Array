@@ -13,6 +13,7 @@ export type ShipListItem = {
   factionLede: string | null;
   facSort?: string | null;
   displayClass?: string | null;
+  displayPrefix?: string | null;
   displayType?: string | null;
   cost?: string | null;
 };

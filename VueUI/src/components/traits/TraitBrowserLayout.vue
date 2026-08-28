@@ -24,6 +24,7 @@ const props = defineProps<{
   collectKind?: CatalogKind;
   collectBind?: BindScope | ((item: TraitBrowserItem) => BindScope);
   collectAccountUnlock?: boolean | ((item: TraitBrowserItem) => boolean);
+  collectBindChoicePrompt?: string | ((item: TraitBrowserItem) => string);
 }>();
 
 const search = ref("");
@@ -74,6 +75,14 @@ function collectAccountUnlockFor(item: TraitBrowserItem): boolean {
   return Boolean(props.collectAccountUnlock);
 }
 
+function collectBindChoicePromptFor(item: TraitBrowserItem): string {
+  if (!props.collectKind) return "";
+  if (typeof props.collectBindChoicePrompt === "function") {
+    return props.collectBindChoicePrompt(item);
+  }
+  return props.collectBindChoicePrompt ?? "";
+}
+
 const selectedCollectBind = computed<BindScope | undefined>(() => {
   if (!props.collectKind || !selected.value) return undefined;
   return collectBindFor(selected.value);
@@ -82,6 +91,11 @@ const selectedCollectBind = computed<BindScope | undefined>(() => {
 const selectedCollectAccountUnlock = computed(() => {
   if (!props.collectKind || !selected.value) return false;
   return collectAccountUnlockFor(selected.value);
+});
+
+const selectedCollectBindChoicePrompt = computed(() => {
+  if (!props.collectKind || !selected.value) return "";
+  return collectBindChoicePromptFor(selected.value);
 });
 </script>
 
@@ -140,6 +154,7 @@ const selectedCollectAccountUnlock = computed(() => {
                 :catalog-id="item.id"
                 :bind="collectBindFor(item)"
                 :allow-account-unlock="collectAccountUnlockFor(item)"
+                :bind-choice-prompt="collectBindChoicePromptFor(item)"
               />
             </div>
           </div>
@@ -155,6 +170,7 @@ const selectedCollectAccountUnlock = computed(() => {
             :collect-kind="collectKind"
             :collect-bind="selectedCollectBind"
             :collect-account-unlock="selectedCollectAccountUnlock"
+            :collect-bind-choice-prompt="selectedCollectBindChoicePrompt"
           />
 
           <div v-else class="trait-browser__empty trait-browser__card">
