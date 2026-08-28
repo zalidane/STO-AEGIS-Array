@@ -1,13 +1,22 @@
 import { itemFitsSlot, type HullSlotKind } from "./slotClass";
 import { extraHullSlotSummary } from "./hullExtras";
 
+/** One row on the in-game ship equipment panel (plus extras not on that panel). */
 export type HullSlotGroup =
-  | "weapons"
-  | "consoles"
-  | "traits"
-  | "systems"
+  | "foreWeapons"
+  | "experimental"
+  | "deflector"
+  | "impulse"
+  | "core"
+  | "shields"
+  | "aftWeapons"
   | "devices"
-  | "hangars";
+  | "universalConsoles"
+  | "engineeringConsoles"
+  | "scienceConsoles"
+  | "tacticalConsoles"
+  | "hangars"
+  | "traits";
 
 export type HullSlot = {
   id: string;
@@ -74,7 +83,7 @@ export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
       extraConsoleSlots.push({
         id: `universalConsole-${universalIndex}`,
         kind: "universalConsole",
-        group: "consoles",
+        group: "universalConsoles",
         label: rule.consoleLabel,
         index: universalIndex,
       });
@@ -93,38 +102,40 @@ export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
   }
 
   return [
-    ...numbered("foreWeapon", "weapons", "Fore", count(ship.foreWeapons)),
-    ...numbered("aftWeapon", "weapons", "Aft", count(ship.aftWeapons)),
-    ...(ship.experimental ? [single("experimental", "weapons", "Experimental")] : []),
-    ...numbered(
-      "tacticalConsole",
-      "consoles",
-      "Tactical",
-      count(ship.tacticalSlots),
-    ),
+    ...numbered("foreWeapon", "foreWeapons", "Fore", count(ship.foreWeapons)),
+    ...(ship.experimental
+      ? [single("experimental", "experimental", "Experimental")]
+      : []),
+    single("deflector", "deflector", "Deflector"),
+    ...(ship.secondaryDeflector
+      ? [single("secondaryDeflector", "deflector", "Secondary Deflector")]
+      : []),
+    single("impulse", "impulse", "Impulse"),
+    single("core", "core", "Warp / Singularity Core"),
+    single("shields", "shields", "Shields"),
+    ...numbered("aftWeapon", "aftWeapons", "Aft", count(ship.aftWeapons)),
+    ...numbered("device", "devices", "Device", count(ship.devices)),
+    ...extraConsoleSlots,
     ...numbered(
       "engineeringConsole",
-      "consoles",
+      "engineeringConsoles",
       "Engineering",
       count(ship.engineeringSlots),
     ),
     ...numbered(
       "scienceConsole",
-      "consoles",
+      "scienceConsoles",
       "Science",
       count(ship.scienceSlots),
     ),
-    ...extraConsoleSlots,
-    ...extraTraitSlots,
-    single("deflector", "systems", "Deflector"),
-    ...(ship.secondaryDeflector
-      ? [single("secondaryDeflector", "systems", "Secondary Deflector")]
-      : []),
-    single("impulse", "systems", "Impulse"),
-    single("core", "systems", "Warp / Singularity Core"),
-    single("shields", "systems", "Shields"),
-    ...numbered("device", "devices", "Device", count(ship.devices)),
+    ...numbered(
+      "tacticalConsole",
+      "tacticalConsoles",
+      "Tactical",
+      count(ship.tacticalSlots),
+    ),
     ...numbered("hangar", "hangars", "Hangar", count(ship.hangars)),
+    ...extraTraitSlots,
   ];
 }
 
@@ -152,30 +163,46 @@ export function slotForGrantedConsole(
 }
 
 export const HULL_SLOT_GROUP_LABEL: Record<HullSlotGroup, string> = {
-  weapons: "Weapons",
-  consoles: "Consoles",
-  traits: "Starship Traits",
-  systems: "Systems",
+  foreWeapons: "Fore Weapons",
+  experimental: "Experimental",
+  deflector: "Deflector",
+  impulse: "Impulse",
+  core: "Warp",
+  shields: "Shields",
+  aftWeapons: "Aft Weapons",
   devices: "Devices",
-  hangars: "Hangars",
+  universalConsoles: "Universal Consoles",
+  engineeringConsoles: "Engineering Consoles",
+  scienceConsoles: "Science Consoles",
+  tacticalConsoles: "Tactical Consoles",
+  hangars: "Hangar",
+  traits: "Starship Traits",
 };
+
+/** Same top-to-bottom order as the in-game ship equipment panel. */
+export const HULL_SLOT_GROUP_ORDER: readonly HullSlotGroup[] = [
+  "foreWeapons",
+  "experimental",
+  "deflector",
+  "impulse",
+  "core",
+  "shields",
+  "aftWeapons",
+  "devices",
+  "universalConsoles",
+  "engineeringConsoles",
+  "scienceConsoles",
+  "tacticalConsoles",
+  "hangars",
+  "traits",
+];
 
 export function groupHullSlots(
   slots: readonly HullSlot[],
 ): Array<{ group: HullSlotGroup; label: string; slots: HullSlot[] }> {
-  const order: HullSlotGroup[] = [
-    "weapons",
-    "consoles",
-    "traits",
-    "systems",
-    "devices",
-    "hangars",
-  ];
-  return order
-    .map((group) => ({
-      group,
-      label: HULL_SLOT_GROUP_LABEL[group],
-      slots: slots.filter((slot) => slot.group === group),
-    }))
-    .filter((section) => section.slots.length > 0);
+  return HULL_SLOT_GROUP_ORDER.map((group) => ({
+    group,
+    label: HULL_SLOT_GROUP_LABEL[group],
+    slots: slots.filter((slot) => slot.group === group),
+  })).filter((section) => section.slots.length > 0);
 }

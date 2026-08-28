@@ -67,7 +67,7 @@ const parsedCosts = computed<ShipCost[]>(() => parseShipCost(ship.value?.cost));
 
 const collectBind = computed(() => bindScopeFromShipCost(ship.value?.cost));
 const allowAccountUnlock = computed(() =>
-  allowsAccountUnlockFromCost(ship.value?.cost, ship.value),
+  allowsAccountUnlockFromCost(ship.value?.cost, ship.value ?? undefined),
 );
 
 const powerDisplay = computed(() => {
