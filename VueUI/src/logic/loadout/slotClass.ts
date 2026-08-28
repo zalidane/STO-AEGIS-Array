@@ -7,6 +7,7 @@ export type ItemSlotClass =
   | "engineeringConsole"
   | "scienceConsole"
   | "universalConsole"
+  | "starshipTrait"
   | "deflector"
   | "secondaryDeflector"
   | "impulse"
@@ -25,6 +26,8 @@ export type HullSlotKind =
   | "tacticalConsole"
   | "engineeringConsole"
   | "scienceConsole"
+  | "universalConsole"
+  | "starshipTrait"
   | "deflector"
   | "secondaryDeflector"
   | "impulse"
@@ -42,6 +45,7 @@ const INFOBOX_TYPE_TO_CLASSES: Record<string, readonly ItemSlotClass[]> = {
   "ship engineering console": ["engineeringConsole"],
   "ship science console": ["scienceConsole"],
   "universal console": ["universalConsole"],
+  "starship trait": ["starshipTrait"],
   "ship deflector dish": ["deflector"],
   "ship secondary deflector": ["secondaryDeflector"],
   "impulse engine": ["impulse"],
@@ -61,6 +65,8 @@ const SLOT_ACCEPTS: Record<HullSlotKind, readonly ItemSlotClass[]> = {
   tacticalConsole: ["tacticalConsole", "universalConsole"],
   engineeringConsole: ["engineeringConsole", "universalConsole"],
   scienceConsole: ["scienceConsole", "universalConsole"],
+  universalConsole: ["universalConsole"],
+  starshipTrait: ["starshipTrait"],
   deflector: ["deflector"],
   secondaryDeflector: ["secondaryDeflector"],
   impulse: ["impulse"],

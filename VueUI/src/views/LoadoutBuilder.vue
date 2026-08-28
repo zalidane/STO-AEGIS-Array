@@ -7,7 +7,9 @@ import {
   InfoboxesDocument,
   SetBonusesDocument,
   ShipDocument,
+  StarshipTraitsDocument,
   type InfoboxesQuery,
+  type StarshipTraitsQuery,
 } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
@@ -18,24 +20,27 @@ import {
   visibleCatalogIds,
 } from "@/logic/collection/state";
 import { bindScopeFromCatalog } from "@/logic/collection/catalogBind";
+import type { CollectionEntry } from "@/logic/collection/types";
 import { displayInfoboxType } from "@/logic/collection/itemBrowser";
 import {
   buildHullSlots,
   groupHullSlots,
+  slotForGrantedConsole,
   type HullSlot,
 } from "@/logic/loadout/hullSlots";
 import {
-  filledSlotMap,
+  fillForSlot,
   loadoutsForCharacter,
   orphanedFills,
 } from "@/logic/loadout/state";
 import {
   equippedItemsForLoadout,
   itemFitsHullSlot,
+  loadoutOwnershipKey,
   matchSetBonuses,
 } from "@/logic/loadout/setBonus";
 import type { EquipFailure, LoadoutItem } from "@/logic/loadout/types";
-import { getItemImageUrl } from "@/utils/wikiImage";
+import { getItemImageUrl, getStarshipTraitImageUrl } from "@/utils/wikiImage";
 
 const EQUIP_ERROR: Record<EquipFailure, string> = {
   "no-character": "Create a captain first.",
@@ -62,38 +67,59 @@ const { result: shipResult, loading: shipLoading, error: shipError } = useQuery(
   () => ({ id: shipId.value }),
 );
 const { result: itemsResult, loading: itemsLoading } = useQuery(InfoboxesDocument);
+const { result: traitsResult, loading: traitsLoading } = useQuery(
+  StarshipTraitsDocument,
+);
 const { result: setsResult } = useQuery(SetBonusesDocument);
 
 const ship = computed(() => shipResult.value?.ship ?? null);
 const hullSlots = computed(() => (ship.value ? buildHullSlots(ship.value) : []));
 const slotSections = computed(() => groupHullSlots(hullSlots.value));
 
-const catalogItems = computed<LoadoutItem[]>(() =>
-  (itemsResult.value?.infoboxes ?? []).map(toLoadoutItem),
-);
+const catalogItems = computed<LoadoutItem[]>(() => [
+  ...(itemsResult.value?.infoboxes ?? []).map(toLoadoutItem),
+  ...(traitsResult.value?.starshipTraits ?? []).map(toLoadoutTrait),
+]);
 
-const itemById = computed(() => {
-  const map = new Map<number, LoadoutItem>();
-  for (const item of catalogItems.value) map.set(item.id, item);
+const itemByKey = computed(() => {
+  const map = new Map<string, LoadoutItem>();
+  for (const item of catalogItems.value) {
+    map.set(loadoutOwnershipKey(item.catalogKind, item.id), item);
+  }
   return map;
 });
 
-const ownedItemIds = computed(() =>
-  visibleCatalogIds(state.value, "item", (entry) =>
+const catalogBindSources = computed(() => ({
+  ships: ship.value ? [ship.value] : [],
+  starshipTraits: traitsResult.value?.starshipTraits ?? [],
+  items: itemsResult.value?.infoboxes ?? [],
+}));
+
+const ownedKeys = computed(() => {
+  const keys = new Set<string>();
+  const bindFor = (entry: CollectionEntry) =>
     resolvedBindForEntry(
       entry,
       bindScopeFromCatalog(
-        {
-          ships: ship.value ? [ship.value] : [],
-          starshipTraits: [],
-          items: itemsResult.value?.infoboxes ?? [],
-        },
+        catalogBindSources.value,
         entry.kind,
         entry.catalogId,
       ),
-    ),
-  ),
-);
+    );
+  for (const id of visibleCatalogIds(state.value, "item", bindFor)) {
+    keys.add(loadoutOwnershipKey("item", id));
+  }
+  for (const id of visibleCatalogIds(state.value, "starshipTrait", bindFor)) {
+    keys.add(loadoutOwnershipKey("starshipTrait", id));
+  }
+  const shipOwned = visibleCatalogIds(state.value, "ship", bindFor).has(
+    shipId.value,
+  );
+  if (shipOwned && ship.value?.uniconsoleId) {
+    keys.add(loadoutOwnershipKey("item", ship.value.uniconsoleId));
+  }
+  return keys;
+});
 
 const shipLoadouts = computed(() =>
   loadoutsForCharacter(state.value, state.value.activeCharacterId, shipId.value),
@@ -105,8 +131,6 @@ const activeLoadout = computed(
     shipLoadouts.value[0] ??
     null,
 );
-
-const fills = computed(() => filledSlotMap(activeLoadout.value));
 
 const equippedItems = computed(() =>
   equippedItemsForLoadout(activeLoadout.value, catalogItems.value),
@@ -122,7 +146,7 @@ const warnings = computed(() => {
   return orphanedFills(
     loadout,
     new Set(hullSlots.value.map((slot) => slot.id)),
-    ownedItemIds.value,
+    ownedKeys.value,
   );
 });
 
@@ -131,13 +155,16 @@ const pickerSlot = ref<HullSlot | null>(null);
 const pickerSearch = ref("");
 const pickerError = ref("");
 const draftName = ref("");
+const pendingUniqueSeatId = ref<string | null>(null);
 
 const pickerCandidates = computed(() => {
   const slot = pickerSlot.value;
   if (!slot) return [];
   const query = pickerSearch.value.trim().toLowerCase();
   return catalogItems.value
-    .filter((item) => ownedItemIds.value.has(item.id))
+    .filter((item) =>
+      ownedKeys.value.has(loadoutOwnershipKey(item.catalogKind, item.id)),
+    )
     .filter((item) => itemFitsHullSlot(item, slot.kind))
     .filter((item) =>
       query ? item.name.toLowerCase().includes(query) : true,
@@ -150,7 +177,10 @@ watch(
     if (!ship.value || !activeCharacter.value) return;
     if (shipLoadouts.value.length === 0) {
       const created = store.addLoadout(ship.value.id);
-      if (created) selectedId.value = created.id;
+      if (created) {
+        selectedId.value = created.id;
+        pendingUniqueSeatId.value = created.id;
+      }
       return;
     }
     if (
@@ -177,14 +207,82 @@ function toLoadoutItem(row: InfoboxesQuery["infoboxes"][number]): LoadoutItem {
     rarity: row.rarity,
     image: getItemImageUrl(row.image, row.name),
     equiplimit: row.equiplimit,
+    catalogKind: "item",
+  };
+}
+
+function toLoadoutTrait(
+  row: StarshipTraitsQuery["starshipTraits"][number],
+): LoadoutItem {
+  return {
+    id: row.id,
+    name: row.name,
+    type: "starship trait",
+    image: getStarshipTraitImageUrl(row.name, row.iconName),
+    equiplimit: 1,
+    catalogKind: "starshipTrait",
   };
 }
 
 function itemInSlot(slotId: string): LoadoutItem | null {
-  const itemId = fills.value.get(slotId);
-  if (itemId == null) return null;
-  return itemById.value.get(itemId) ?? null;
+  const fill = fillForSlot(activeLoadout.value, slotId);
+  if (!fill) return null;
+  return (
+    itemByKey.value.get(
+      loadoutOwnershipKey(fill.catalogKind, fill.itemId),
+    ) ?? null
+  );
 }
+
+function equipContext() {
+  return {
+    hullSlots: hullSlots.value,
+    items: catalogItems.value,
+    ownedKeys: ownedKeys.value,
+  };
+}
+
+function trySeatPendingUniqueConsole() {
+  const loadoutId = pendingUniqueSeatId.value;
+  if (!loadoutId) return;
+  const loadout = shipLoadouts.value.find((row) => row.id === loadoutId);
+  if (!loadout) return;
+  if (loadout.slots.length > 0) {
+    pendingUniqueSeatId.value = null;
+    return;
+  }
+  const consoleId = ship.value?.uniconsoleId;
+  if (consoleId == null) {
+    pendingUniqueSeatId.value = null;
+    return;
+  }
+  const unique = catalogItems.value.find(
+    (item) => item.id === consoleId && (item.catalogKind ?? "item") === "item",
+  );
+  if (!unique) return;
+  const slot = slotForGrantedConsole(hullSlots.value, unique.type);
+  if (!slot) {
+    pendingUniqueSeatId.value = null;
+    return;
+  }
+  const result = store.equipSlot(
+    { loadoutId, slotId: slot.id, itemId: consoleId, catalogKind: "item" },
+    equipContext(),
+  );
+  if (result.ok) {
+    pendingUniqueSeatId.value = null;
+    return;
+  }
+  if (result.reason === "unknown-item" || result.reason === "not-owned") {
+    return;
+  }
+  pendingUniqueSeatId.value = null;
+}
+
+watch(
+  [pendingUniqueSeatId, catalogItems, ownedKeys, hullSlots, shipLoadouts],
+  trySeatPendingUniqueConsole,
+);
 
 function openPicker(slot: HullSlot) {
   pickerSlot.value = slot;
@@ -198,12 +296,13 @@ function chooseItem(item: LoadoutItem) {
   const slot = pickerSlot.value;
   if (!loadout || !slot) return;
   const result = store.equipSlot(
-    { loadoutId: loadout.id, slotId: slot.id, itemId: item.id },
     {
-      hullSlots: hullSlots.value,
-      items: catalogItems.value,
-      ownedItemIds: ownedItemIds.value,
+      loadoutId: loadout.id,
+      slotId: slot.id,
+      itemId: item.id,
+      catalogKind: item.catalogKind,
     },
+    equipContext(),
   );
   if (!result.ok) {
     pickerError.value = EQUIP_ERROR[result.reason];
@@ -221,7 +320,10 @@ function clearSlot(slotId: string) {
 function createAnother() {
   if (!ship.value) return;
   const created = store.addLoadout(ship.value.id);
-  if (created) selectedId.value = created.id;
+  if (created) {
+    selectedId.value = created.id;
+    pendingUniqueSeatId.value = created.id;
+  }
 }
 
 function renameActive() {
@@ -242,7 +344,9 @@ watch(activeLoadout, (loadout) => {
   draftName.value = loadout?.name ?? "";
 });
 
-const loading = computed(() => shipLoading.value || itemsLoading.value);
+const loading = computed(
+  () => shipLoading.value || itemsLoading.value || traitsLoading.value,
+);
 </script>
 
 <template>
@@ -360,7 +464,8 @@ const loading = computed(() => shipLoading.value || itemsLoading.value);
                 </span>
               </p>
               <p class="side-card__hint">
-                Granted with the hull — not a player-fillable slot.
+                Granted with this hull. Seat it in a console slot — it can be
+                removed and replaced.
               </p>
             </section>
 
@@ -408,7 +513,7 @@ const loading = computed(() => shipLoading.value || itemsLoading.value);
           </div>
           <button
             v-for="item in pickerCandidates"
-            :key="item.id"
+            :key="loadoutOwnershipKey(item.catalogKind, item.id)"
             type="button"
             class="picker-row"
             @click="chooseItem(item)"

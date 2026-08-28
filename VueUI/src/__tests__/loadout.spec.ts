@@ -6,7 +6,11 @@ import {
   type CollectionClock,
   type CollectionState,
 } from "@/logic/collection/types";
-import { buildHullSlots, groupHullSlots } from "@/logic/loadout/hullSlots";
+import { buildHullSlots, groupHullSlots, slotForGrantedConsole } from "@/logic/loadout/hullSlots";
+import {
+  extraHullSlotSummary,
+  hasCommanderMiracleWorkerSeat,
+} from "@/logic/loadout/hullExtras";
 import {
   applyLoadout,
   createLoadout,
@@ -75,12 +79,57 @@ describe("slotClass", () => {
   it("lets universal consoles sit in any console slot", () => {
     expect(itemFitsSlot("universal console", "tacticalConsole")).toBe(true);
     expect(itemFitsSlot("universal console", "scienceConsole")).toBe(true);
+    expect(itemFitsSlot("universal console", "universalConsole")).toBe(true);
+    expect(itemFitsSlot("ship tactical console", "universalConsole")).toBe(
+      false,
+    );
+    expect(itemFitsSlot("starship trait", "starshipTrait")).toBe(true);
     expect(itemFitsSlot("ship tactical console", "engineeringConsole")).toBe(
       false,
     );
     expect(itemFitsSlot("ship fore weapon", "aftWeapon")).toBe(false);
     expect(itemFitsSlot("warp engine", "core")).toBe(true);
     expect(itemFitsSlot("ground armor", "deflector")).toBe(false);
+  });
+});
+
+describe("hull extras", () => {
+  it("adds two T6-X upgrades and a Miracle Worker universal slot", () => {
+    expect(
+      extraHullSlotSummary({
+        tier: 6,
+        boffs: "Commander Tactical-Miracle Worker,Lieutenant Science",
+      }),
+    ).toMatchObject({
+      universalConsoles: 3,
+      starshipTraits: 2,
+    });
+    expect(
+      hasCommanderMiracleWorkerSeat(
+        "Lieutenant Commander Engineering-Miracle Worker",
+      ),
+    ).toBe(false);
+    expect(
+      extraHullSlotSummary({
+        tier: 6,
+        boffs: "Commander Universal-Miracle Worker,Lieutenant Science",
+      }).universalConsoles,
+    ).toBe(3);
+    expect(
+      extraHullSlotSummary({
+        tier: 6,
+        boffs: "Commander Tactical,Lieutenant Commander Science-Miracle Worker",
+      }),
+    ).toMatchObject({
+      universalConsoles: 2,
+      starshipTraits: 2,
+    });
+    expect(
+      extraHullSlotSummary({ tier: 5, boffs: "Commander Tactical" }),
+    ).toMatchObject({
+      universalConsoles: 0,
+      starshipTraits: 0,
+    });
   });
 });
 
@@ -98,12 +147,30 @@ describe("buildHullSlots", () => {
       "devices",
     ]);
   });
+
+  it("adds T6 upgrade and Miracle Worker sockets", () => {
+    const slots = buildHullSlots({
+      ...escort,
+      tier: 6,
+      boffs: "Commander Engineering-Miracle Worker",
+    });
+    expect(slots.filter((slot) => slot.kind === "universalConsole")).toHaveLength(
+      3,
+    );
+    expect(slots.filter((slot) => slot.kind === "starshipTrait")).toHaveLength(2);
+    expect(groupHullSlots(slots).map((section) => section.group)).toContain(
+      "traits",
+    );
+    expect(
+      slotForGrantedConsole(slots, "universal console")?.kind,
+    ).toBe("universalConsole");
+  });
 });
 
 describe("loadout equip", () => {
   const hullSlots = buildHullSlots(escort);
-  const ownedItemIds = new Set(items.map((item) => item.id));
-  const context = { hullSlots, items, ownedItemIds };
+  const ownedKeys = new Set(items.map((item) => `item:${item.id}`));
+  const context = { hullSlots, items, ownedKeys };
 
   function withLoadout(): CollectionState {
     return createLoadout(captainState(), { shipId: 10 }, clock);
@@ -157,10 +224,77 @@ describe("loadout equip", () => {
     const result = equipLoadoutSlot(
       state,
       { loadoutId: state.loadouts[0]!.id, slotId: "foreWeapon-0", itemId: 1 },
-      { ...context, ownedItemIds: new Set() },
+      { ...context, ownedKeys: new Set() },
       clock,
     );
     expect(result).toEqual({ ok: false, reason: "not-owned" });
+  });
+
+  it("seats a starship trait in an upgrade slot and allows removing it", () => {
+    const hullSlots = buildHullSlots({ ...escort, tier: 6 });
+    const trait: LoadoutItem = {
+      id: 90,
+      name: "Improved Gravity Well",
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+      equiplimit: 1,
+    };
+    const context = {
+      hullSlots,
+      items: [...items, trait],
+      ownedKeys: new Set([
+        ...items.map((item) => `item:${item.id}`),
+        "starshipTrait:90",
+      ]),
+    };
+    let state = createLoadout(captainState(), { shipId: 10 }, clock);
+    const loadoutId = state.loadouts[0]!.id;
+    const seated = equipLoadoutSlot(
+      state,
+      {
+        loadoutId,
+        slotId: "starshipTrait-0",
+        itemId: 90,
+        catalogKind: "starshipTrait",
+      },
+      context,
+      clock,
+    );
+    expect(seated.ok).toBe(true);
+    if (!seated.ok) return;
+    state = applyLoadout(state, seated.loadout);
+    state = unequipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "starshipTrait-0" },
+      clock,
+    );
+    expect(state.loadouts[0]!.slots).toEqual([]);
+  });
+
+  it("clears a granted unique console from a universal slot", () => {
+    const hullSlots = buildHullSlots({ ...escort, tier: 6 });
+    const context = {
+      hullSlots,
+      items,
+      ownedKeys: new Set(items.map((item) => `item:${item.id}`)),
+    };
+    let state = createLoadout(captainState(), { shipId: 10 }, clock);
+    const loadoutId = state.loadouts[0]!.id;
+    const equipped = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "universalConsole-0", itemId: 5 },
+      context,
+      clock,
+    );
+    expect(equipped.ok).toBe(true);
+    if (!equipped.ok) return;
+    state = applyLoadout(state, equipped.loadout);
+    state = unequipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "universalConsole-0" },
+      clock,
+    );
+    expect(state.loadouts[0]!.slots).toEqual([]);
   });
 
   it("clears a slot", () => {

@@ -1,5 +1,10 @@
 import { itemFitsSlot } from "./slotClass";
-import type { CollectionLoadout, LoadoutItem } from "./types";
+import type {
+  CollectionLoadout,
+  LoadoutCatalogKind,
+  LoadoutItem,
+  LoadoutSlotFill,
+} from "./types";
 
 export type SetBonusSource = {
   id: number;
@@ -24,9 +29,15 @@ export function equippedItemsForLoadout(
   items: ReadonlyArray<LoadoutItem>,
 ): LoadoutItem[] {
   if (!loadout) return [];
-  const byId = new Map(items.map((item) => [item.id, item]));
+  const byKey = new Map(
+    items.map((item) => [
+      loadoutOwnershipKey(item.catalogKind, item.id),
+      item,
+    ]),
+  );
   return loadout.slots
-    .map((fill) => byId.get(fill.itemId))
+    .filter((fill) => fillCatalogKind(fill) === "item")
+    .map((fill) => byKey.get(loadoutOwnershipKey(fill.catalogKind, fill.itemId)))
     .filter((item): item is LoadoutItem => item != null);
 }
 
@@ -69,6 +80,19 @@ export function isUniqueLimited(item: Pick<LoadoutItem, "equiplimit">): boolean 
   return item.equiplimit != null && item.equiplimit > 0;
 }
 
+export function loadoutOwnershipKey(
+  catalogKind: LoadoutCatalogKind | undefined,
+  itemId: number,
+): string {
+  return `${catalogKind ?? "item"}:${itemId}`;
+}
+
+export function fillCatalogKind(
+  fill: Pick<LoadoutSlotFill, "catalogKind">,
+): LoadoutCatalogKind {
+  return fill.catalogKind ?? "item";
+}
+
 export function copiesAllowed(item: Pick<LoadoutItem, "equiplimit">): number {
   if (!isUniqueLimited(item)) return Number.POSITIVE_INFINITY;
   return item.equiplimit!;
@@ -78,9 +102,13 @@ export function countCopiesInLoadout(
   loadout: CollectionLoadout,
   itemId: number,
   exceptSlotId?: string,
+  catalogKind: LoadoutCatalogKind = "item",
 ): number {
   return loadout.slots.filter(
-    (fill) => fill.itemId === itemId && fill.slotId !== exceptSlotId,
+    (fill) =>
+      fill.itemId === itemId &&
+      fillCatalogKind(fill) === catalogKind &&
+      fill.slotId !== exceptSlotId,
   ).length;
 }
 

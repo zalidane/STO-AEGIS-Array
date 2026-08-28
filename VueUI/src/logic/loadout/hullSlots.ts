@@ -1,8 +1,10 @@
-import type { HullSlotKind } from "./slotClass";
+import { itemFitsSlot, type HullSlotKind } from "./slotClass";
+import { extraHullSlotSummary } from "./hullExtras";
 
 export type HullSlotGroup =
   | "weapons"
   | "consoles"
+  | "traits"
   | "systems"
   | "devices"
   | "hangars";
@@ -25,6 +27,8 @@ export type HullSlotSource = {
   secondaryDeflector?: boolean | null;
   devices?: number | null;
   hangars?: number | null;
+  tier?: number | null;
+  boffs?: string | null;
 };
 
 function count(value: number | null | undefined): number {
@@ -56,10 +60,38 @@ function single(
 }
 
 /**
- * Empty sockets for a hull. Unique ship consoles are grants, not fillable slots.
- * Deflector / impulse / core / shields are always present on a space loadout.
+ * Empty sockets for a hull, including T6-X/X2 and Commander Miracle Worker extras.
+ * Unique ship consoles occupy a fillable console slot; they are not locked grants.
  */
 export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
+  const extras = extraHullSlotSummary(ship);
+  const extraConsoleSlots: HullSlot[] = [];
+  const extraTraitSlots: HullSlot[] = [];
+  let universalIndex = 0;
+  let traitIndex = 0;
+  for (const rule of extras.rules) {
+    for (let i = 0; i < rule.universalConsoles; i += 1) {
+      extraConsoleSlots.push({
+        id: `universalConsole-${universalIndex}`,
+        kind: "universalConsole",
+        group: "consoles",
+        label: rule.consoleLabel,
+        index: universalIndex,
+      });
+      universalIndex += 1;
+    }
+    for (let i = 0; i < rule.starshipTraits; i += 1) {
+      extraTraitSlots.push({
+        id: `starshipTrait-${traitIndex}`,
+        kind: "starshipTrait",
+        group: "traits",
+        label: rule.traitLabel ?? `Starship Trait (${rule.detailLabel})`,
+        index: traitIndex,
+      });
+      traitIndex += 1;
+    }
+  }
+
   return [
     ...numbered("foreWeapon", "weapons", "Fore", count(ship.foreWeapons)),
     ...numbered("aftWeapon", "weapons", "Aft", count(ship.aftWeapons)),
@@ -82,6 +114,8 @@ export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
       "Science",
       count(ship.scienceSlots),
     ),
+    ...extraConsoleSlots,
+    ...extraTraitSlots,
     single("deflector", "systems", "Deflector"),
     ...(ship.secondaryDeflector
       ? [single("secondaryDeflector", "systems", "Secondary Deflector")]
@@ -94,9 +128,33 @@ export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
   ];
 }
 
+const CONSOLE_KINDS: HullSlotKind[] = [
+  "universalConsole",
+  "tacticalConsole",
+  "engineeringConsole",
+  "scienceConsole",
+];
+
+/** First empty-capable console socket a granted unique console should occupy. */
+export function slotForGrantedConsole(
+  slots: readonly HullSlot[],
+  itemType: string | null | undefined,
+): HullSlot | null {
+  const consoles = slots.filter((slot) => CONSOLE_KINDS.includes(slot.kind));
+  const fitting = itemType
+    ? consoles.filter((slot) => itemFitsSlot(itemType, slot.kind))
+    : consoles;
+  return (
+    fitting.find((slot) => slot.kind === "universalConsole") ??
+    fitting[0] ??
+    null
+  );
+}
+
 export const HULL_SLOT_GROUP_LABEL: Record<HullSlotGroup, string> = {
   weapons: "Weapons",
   consoles: "Consoles",
+  traits: "Starship Traits",
   systems: "Systems",
   devices: "Devices",
   hangars: "Hangars",
@@ -108,6 +166,7 @@ export function groupHullSlots(
   const order: HullSlotGroup[] = [
     "weapons",
     "consoles",
+    "traits",
     "systems",
     "devices",
     "hangars",

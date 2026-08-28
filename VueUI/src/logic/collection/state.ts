@@ -223,8 +223,13 @@ export function uncollectItem(
         ),
     ),
   };
-  if (input.kind !== "item") return next;
-  return stripItemFromCharacterLoadouts(next, characterId, input.catalogId);
+  if (input.kind !== "item" && input.kind !== "starshipTrait") return next;
+  return stripItemFromCharacterLoadouts(
+    next,
+    characterId,
+    input.catalogId,
+    input.kind === "starshipTrait" ? "starshipTrait" : "item",
+  );
 }
 
 export function uncollectMany(

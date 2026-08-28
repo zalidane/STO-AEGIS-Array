@@ -16,6 +16,7 @@ import {
   allowsAccountUnlockFromGrantingShips,
   bindScopeForKind,
 } from "@/logic/collection/bind";
+import { bindChoiceFromGrantingShips } from "@/logic/collection/bindChoice";
 import type { BindScope } from "@/logic/collection/types";
 
 defineOptions({ name: "StarshipTraits" });
@@ -46,9 +47,14 @@ function collectAccountUnlockFor(item: TraitBrowserItem): boolean {
   const trait = (result.value?.starshipTraits ?? []).find(
     (row) => row.id === item.id,
   );
-  return allowsAccountUnlockFromGrantingShips(
-    trait?.ships.map((ship) => ship.cost) ?? [],
+  return allowsAccountUnlockFromGrantingShips(trait?.ships ?? []);
+}
+
+function collectBindChoicePromptFor(item: TraitBrowserItem): string {
+  const trait = (result.value?.starshipTraits ?? []).find(
+    (row) => row.id === item.id,
   );
+  return bindChoiceFromGrantingShips(trait?.ships ?? []).prompt;
 }
 </script>
 
@@ -65,6 +71,7 @@ function collectAccountUnlockFor(item: TraitBrowserItem): boolean {
       collect-kind="starshipTrait"
       :collect-bind="collectBindFor"
       :collect-account-unlock="collectAccountUnlockFor"
+      :collect-bind-choice-prompt="collectBindChoicePromptFor"
     />
   </v-container>
 </template>

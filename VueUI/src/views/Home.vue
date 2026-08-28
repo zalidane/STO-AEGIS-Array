@@ -27,6 +27,7 @@ import {
   allowsAccountUnlockFromGrantingShips,
   bindScopeForKind,
 } from "@/logic/collection/bind";
+import { bindChoiceFromGrantingShips } from "@/logic/collection/bindChoice";
 import type { BindScope } from "@/logic/collection/types";
 import {
   FALLBACK_STARSHIP_TRAIT_IMAGE,
@@ -127,8 +128,14 @@ function featuredStarshipBind(): BindScope {
 
 function featuredStarshipUnlock(): boolean {
   return allowsAccountUnlockFromGrantingShips(
-    featuredStarshipTraitSource.value?.ships.map((ship) => ship.cost) ?? [],
+    featuredStarshipTraitSource.value?.ships ?? [],
   );
+}
+
+function featuredStarshipBindChoicePrompt(): string {
+  return bindChoiceFromGrantingShips(
+    featuredStarshipTraitSource.value?.ships ?? [],
+  ).prompt;
 }
 
 const sectionCards = computed(() =>
@@ -236,6 +243,7 @@ const queryError = computed(
             collect-kind="starshipTrait"
             :collect-bind="featuredStarshipBind()"
             :collect-account-unlock="featuredStarshipUnlock()"
+            :collect-bind-choice-prompt="featuredStarshipBindChoicePrompt()"
             :art-src="FALLBACK_STARSHIP_TRAIT_IMAGE"
             source-label="Obtained"
             :details-path="(id) => `/starship-traits/${id}`"

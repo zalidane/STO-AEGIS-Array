@@ -20,6 +20,8 @@ export type ShipDetailLabels = {
   traitsTitle: string;
   admiraltyTitle: string;
   consolesHeader: string;
+  universalConsoles: string;
+  emptyTraitSlots: string;
   foreWeapons: string;
   aftWeapons: string;
   typeSpecificSlot: string;
@@ -53,6 +55,8 @@ const LABEL_SETS: Record<LabelDensity, ShipDetailLabels> = {
     traitsTitle: "Starship Traits",
     admiraltyTitle: "Admiralty",
     consolesHeader: "Consoles",
+    universalConsoles: "Uni",
+    emptyTraitSlots: "Trait slots",
     foreWeapons: "Fore",
     aftWeapons: "Aft",
     typeSpecificSlot: "Spec Slot",
@@ -84,6 +88,8 @@ const LABEL_SETS: Record<LabelDensity, ShipDetailLabels> = {
     traitsTitle: "Traits",
     admiraltyTitle: "Admiralty",
     consolesHeader: "Consoles",
+    universalConsoles: "Uni",
+    emptyTraitSlots: "Trait slots",
     foreWeapons: "Fore",
     aftWeapons: "Aft",
     typeSpecificSlot: "Spec",
@@ -115,6 +121,8 @@ const LABEL_SETS: Record<LabelDensity, ShipDetailLabels> = {
     traitsTitle: "Traits",
     admiraltyTitle: "Adm",
     consolesHeader: "Consoles",
+    universalConsoles: "U",
+    emptyTraitSlots: "Trait",
     foreWeapons: "F",
     aftWeapons: "A",
     typeSpecificSlot: "Spec",
@@ -146,6 +154,8 @@ export const SHIP_DETAIL_FULL_LABELS = {
   equipmentTitle: "Equipment and Abilities",
   traitsTitle: "Starship Traits",
   admiraltyTitle: "Admiralty",
+  universalConsoles: "Universal Console Slots",
+  emptyTraitSlots: "Starship Trait Slots",
   foreWeapons: "Fore Weapons",
   aftWeapons: "Aft Weapons",
   typeSpecificSlot: "Type-Specific Slot",

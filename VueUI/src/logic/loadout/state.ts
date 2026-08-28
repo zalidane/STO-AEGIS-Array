@@ -3,11 +3,14 @@ import { defaultCollectionClock } from "@/logic/collection/types";
 import {
   copiesAllowed,
   countCopiesInLoadout,
+  fillCatalogKind,
   itemFitsHullSlot,
+  loadoutOwnershipKey,
 } from "./setBonus";
 import type {
   CollectionLoadout,
   EquipResult,
+  LoadoutCatalogKind,
   LoadoutEquipContext,
   LoadoutSlotFill,
 } from "./types";
@@ -115,12 +118,16 @@ export function stripItemFromCharacterLoadouts(
   state: CollectionState,
   characterId: string,
   itemId: number,
+  catalogKind: LoadoutCatalogKind = "item",
 ): CollectionState {
   return {
     ...state,
     loadouts: state.loadouts.map((loadout) => {
       if (loadout.characterId !== characterId) return loadout;
-      const slots = loadout.slots.filter((fill) => fill.itemId !== itemId);
+      const slots = loadout.slots.filter(
+        (fill) =>
+          !(fill.itemId === itemId && fillCatalogKind(fill) === catalogKind),
+      );
       if (slots.length === loadout.slots.length) return loadout;
       return { ...loadout, slots };
     }),
@@ -141,7 +148,7 @@ export function stripLoadoutsForCharacter(
 
 export function equipLoadoutSlot(
   state: CollectionState,
-  input: { loadoutId: string; slotId: string; itemId: number },
+  input: { loadoutId: string; slotId: string; itemId: number; catalogKind?: LoadoutCatalogKind },
   context: LoadoutEquipContext,
   clock: CollectionClock = defaultCollectionClock(),
 ): EquipResult {
@@ -156,30 +163,43 @@ export function equipLoadoutSlot(
   const slot = context.hullSlots.find((row) => row.id === input.slotId);
   if (!slot) return { ok: false, reason: "unknown-slot" };
 
-  const item = context.items.find((row) => row.id === input.itemId);
+  const item = context.items.find(
+    (row) =>
+      row.id === input.itemId &&
+      (row.catalogKind ?? "item") === (input.catalogKind ?? "item"),
+  );
   if (!item) return { ok: false, reason: "unknown-item" };
-  if (!context.ownedItemIds.has(item.id)) {
+  if (!context.ownedKeys.has(loadoutOwnershipKey(item.catalogKind, item.id))) {
     return { ok: false, reason: "not-owned" };
   }
   if (!itemFitsHullSlot(item, slot.kind)) {
     return { ok: false, reason: "illegal-slot" };
   }
 
+  const catalogKind = item.catalogKind ?? "item";
   const alreadyHere = loadout.slots.find(
-    (fill) => fill.slotId === input.slotId && fill.itemId === input.itemId,
+    (fill) =>
+      fill.slotId === input.slotId &&
+      fill.itemId === input.itemId &&
+      fillCatalogKind(fill) === catalogKind,
   );
   if (alreadyHere) {
     return { ok: true, loadout };
   }
 
-  const copies = countCopiesInLoadout(loadout, item.id, input.slotId);
+  const copies = countCopiesInLoadout(
+    loadout,
+    item.id,
+    input.slotId,
+    catalogKind,
+  );
   if (copies >= copiesAllowed(item)) {
     return { ok: false, reason: "equip-limit" };
   }
 
   const nextSlots: LoadoutSlotFill[] = [
     ...loadout.slots.filter((fill) => fill.slotId !== input.slotId),
-    { slotId: input.slotId, itemId: item.id },
+    { slotId: input.slotId, itemId: item.id, catalogKind },
   ];
   const nextLoadout: CollectionLoadout = {
     ...loadout,
@@ -232,12 +252,22 @@ export function filledSlotMap(
   return map;
 }
 
+export function fillForSlot(
+  loadout: CollectionLoadout | null | undefined,
+  slotId: string,
+): LoadoutSlotFill | null {
+  if (!loadout) return null;
+  return loadout.slots.find((fill) => fill.slotId === slotId) ?? null;
+}
+
 export function orphanedFills(
   loadout: CollectionLoadout,
   hullSlotIds: ReadonlySet<string>,
-  knownItemIds: ReadonlySet<number>,
+  ownedKeys: ReadonlySet<string>,
 ): LoadoutSlotFill[] {
   return loadout.slots.filter(
-    (fill) => !hullSlotIds.has(fill.slotId) || !knownItemIds.has(fill.itemId),
+    (fill) =>
+      !hullSlotIds.has(fill.slotId) ||
+      !ownedKeys.has(loadoutOwnershipKey(fill.catalogKind, fill.itemId)),
   );
 }

@@ -3,17 +3,27 @@ import {
   allowsAccountUnlockFromGrantingShips,
   bindScopeForKind,
 } from "./bind";
+import {
+  bindChoiceFromHull,
+  bindChoiceFromGrantingShips,
+} from "./bindChoice";
 import type { BindScope, CatalogKind } from "./types";
 
 export type CatalogBindShip = {
   id: number;
   cost?: string | null;
+  name?: string | null;
+  displayPrefix?: string | null;
   uniconsoleId?: number | null;
 };
 
 export type CatalogBindStarshipTrait = {
   id: number;
-  ships?: Array<{ cost?: string | null }>;
+  ships?: Array<{
+    cost?: string | null;
+    name?: string | null;
+    displayPrefix?: string | null;
+  }>;
 };
 
 export type CatalogBindItem = {
@@ -27,25 +37,31 @@ export type CatalogBindSources = {
   items: CatalogBindItem[];
 };
 
+function grantingShipHulls(
+  sources: CatalogBindSources,
+  kind: CatalogKind,
+  catalogId: number,
+) {
+  if (kind === "ship") {
+    const ship = sources.ships.find((row) => row.id === catalogId);
+    return ship ? [ship] : [];
+  }
+  if (kind === "starshipTrait") {
+    const trait = sources.starshipTraits.find((row) => row.id === catalogId);
+    return trait?.ships ?? [];
+  }
+  if (kind === "item") {
+    return sources.ships.filter((ship) => ship.uniconsoleId === catalogId);
+  }
+  return [];
+}
+
 function grantingShipCosts(
   sources: CatalogBindSources,
   kind: CatalogKind,
   catalogId: number,
 ): Array<string | null | undefined> {
-  if (kind === "ship") {
-    const ship = sources.ships.find((row) => row.id === catalogId);
-    return ship ? [ship.cost] : [];
-  }
-  if (kind === "starshipTrait") {
-    const trait = sources.starshipTraits.find((row) => row.id === catalogId);
-    return trait?.ships?.map((ship) => ship.cost) ?? [];
-  }
-  if (kind === "item") {
-    return sources.ships
-      .filter((ship) => ship.uniconsoleId === catalogId)
-      .map((ship) => ship.cost);
-  }
-  return [];
+  return grantingShipHulls(sources, kind, catalogId).map((ship) => ship.cost);
 }
 
 export function bindScopeFromCatalog(
@@ -83,9 +99,24 @@ export function allowsAccountUnlockFromCatalog(
   if (kind === "trait") return false;
   if (kind === "ship") {
     const ship = sources.ships.find((row) => row.id === catalogId);
-    return allowsAccountUnlockFromCost(ship?.cost);
+    return allowsAccountUnlockFromCost(ship?.cost, ship);
   }
   return allowsAccountUnlockFromGrantingShips(
-    grantingShipCosts(sources, kind, catalogId),
+    grantingShipHulls(sources, kind, catalogId),
   );
+}
+
+export function bindChoicePromptFromCatalog(
+  sources: CatalogBindSources,
+  kind: CatalogKind,
+  catalogId: number,
+): string {
+  if (kind === "trait") return "";
+  if (kind === "ship") {
+    const ship = sources.ships.find((row) => row.id === catalogId);
+    return bindChoiceFromHull(ship ?? {}).prompt;
+  }
+  return bindChoiceFromGrantingShips(
+    grantingShipHulls(sources, kind, catalogId),
+  ).prompt;
 }
