@@ -21,6 +21,10 @@ import {
 } from "@/logic/loadout/state";
 import { itemFitsSlot, itemSlotClassesFromType } from "@/logic/loadout/slotClass";
 import { matchSetBonuses } from "@/logic/loadout/setBonus";
+import {
+  ownedKeysIncludingHullGrants,
+  uniqueConsoleIdsFromOwnedShips,
+} from "@/logic/loadout/hullGrants";
 import type { LoadoutItem } from "@/logic/loadout/types";
 
 const clock: CollectionClock = {
@@ -141,11 +145,49 @@ describe("buildHullSlots", () => {
     expect(slots.some((slot) => slot.id === "core")).toBe(true);
     expect(slots.some((slot) => slot.id === "secondaryDeflector")).toBe(false);
     expect(groupHullSlots(slots).map((section) => section.group)).toEqual([
-      "weapons",
-      "consoles",
-      "systems",
+      "foreWeapons",
+      "experimental",
+      "deflector",
+      "impulse",
+      "core",
+      "shields",
+      "aftWeapons",
       "devices",
+      "engineeringConsoles",
+      "scienceConsoles",
+      "tacticalConsoles",
     ]);
+  });
+
+  it("keeps rows in the in-game equipment panel order", () => {
+    const slots = buildHullSlots({
+      ...escort,
+      hangars: 1,
+      secondaryDeflector: true,
+      tier: 6,
+      boffs: "Commander Engineering-Miracle Worker",
+    });
+    expect(groupHullSlots(slots).map((section) => section.group)).toEqual([
+      "foreWeapons",
+      "experimental",
+      "deflector",
+      "impulse",
+      "core",
+      "shields",
+      "aftWeapons",
+      "devices",
+      "universalConsoles",
+      "engineeringConsoles",
+      "scienceConsoles",
+      "tacticalConsoles",
+      "hangars",
+      "traits",
+    ]);
+    expect(
+      groupHullSlots(slots)
+        .find((section) => section.group === "deflector")
+        ?.slots.map((slot) => slot.kind),
+    ).toEqual(["deflector", "secondaryDeflector"]);
   });
 
   it("adds T6 upgrade and Miracle Worker sockets", () => {
@@ -362,5 +404,52 @@ describe("hydrateCollectionState v1 to v2", () => {
     expect(migrated.version).toBe(2);
     expect(migrated.characters).toHaveLength(1);
     expect(migrated.loadouts).toEqual([]);
+  });
+});
+
+describe("hull grants", () => {
+  const fleet = [
+    { id: 1, uniconsoleId: 49852 },
+    { id: 2, uniconsoleId: 100 },
+    { id: 3, uniconsoleId: null },
+  ];
+
+  it("unlocks unique consoles from every collected hull, not only the seated ship", () => {
+    expect(
+      uniqueConsoleIdsFromOwnedShips(fleet, new Set([1, 3])),
+    ).toEqual([49852]);
+    expect(
+      ownedKeysIncludingHullGrants({
+        ownedItemIds: [],
+        ownedTraitIds: [],
+        ownedShipIds: new Set([1, 2]),
+        ships: fleet,
+        traits: [{ id: 90, ships: [{ id: 2 }] }],
+      }),
+    ).toEqual(
+      new Set(["item:49852", "item:100", "starshipTrait:90"]),
+    );
+  });
+
+  it("does not grant a hull console when that ship is not collected", () => {
+    expect(
+      uniqueConsoleIdsFromOwnedShips(fleet, new Set([3])),
+    ).toEqual([]);
+  });
+
+  it("matches a unique console by wiki name when the hull has no linked id", () => {
+    expect(
+      uniqueConsoleIdsFromOwnedShips(
+        [
+          {
+            id: 24,
+            uniconsoleId: null,
+            uniconsole: "Console - Universal -  Wing Torpedo Platforms",
+          },
+        ],
+        new Set([24]),
+        [{ id: 900, name: "Console - Universal - Wing Torpedo Platforms" }],
+      ),
+    ).toEqual([900]);
   });
 });

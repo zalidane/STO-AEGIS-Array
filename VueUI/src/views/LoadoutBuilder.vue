@@ -7,6 +7,7 @@ import {
   InfoboxesDocument,
   SetBonusesDocument,
   ShipDocument,
+  ShipsDocument,
   StarshipTraitsDocument,
   type InfoboxesQuery,
   type StarshipTraitsQuery,
@@ -39,6 +40,7 @@ import {
   loadoutOwnershipKey,
   matchSetBonuses,
 } from "@/logic/loadout/setBonus";
+import { ownedKeysIncludingHullGrants } from "@/logic/loadout/hullGrants";
 import type { EquipFailure, LoadoutItem } from "@/logic/loadout/types";
 import { getItemImageUrl, getStarshipTraitImageUrl } from "@/utils/wikiImage";
 
@@ -66,6 +68,7 @@ const { result: shipResult, loading: shipLoading, error: shipError } = useQuery(
   ShipDocument,
   () => ({ id: shipId.value }),
 );
+const { result: shipsResult } = useQuery(ShipsDocument);
 const { result: itemsResult, loading: itemsLoading } = useQuery(InfoboxesDocument);
 const { result: traitsResult, loading: traitsLoading } = useQuery(
   StarshipTraitsDocument,
@@ -73,6 +76,13 @@ const { result: traitsResult, loading: traitsLoading } = useQuery(
 const { result: setsResult } = useQuery(SetBonusesDocument);
 
 const ship = computed(() => shipResult.value?.ship ?? null);
+const fleetShips = computed(() => {
+  const byId = new Map(
+    (shipsResult.value?.ships ?? []).map((row) => [row.id, row]),
+  );
+  if (ship.value) byId.set(ship.value.id, ship.value);
+  return [...byId.values()];
+});
 const hullSlots = computed(() => (ship.value ? buildHullSlots(ship.value) : []));
 const slotSections = computed(() => groupHullSlots(hullSlots.value));
 
@@ -90,13 +100,12 @@ const itemByKey = computed(() => {
 });
 
 const catalogBindSources = computed(() => ({
-  ships: ship.value ? [ship.value] : [],
+  ships: fleetShips.value,
   starshipTraits: traitsResult.value?.starshipTraits ?? [],
   items: itemsResult.value?.infoboxes ?? [],
 }));
 
 const ownedKeys = computed(() => {
-  const keys = new Set<string>();
   const bindFor = (entry: CollectionEntry) =>
     resolvedBindForEntry(
       entry,
@@ -106,19 +115,14 @@ const ownedKeys = computed(() => {
         entry.catalogId,
       ),
     );
-  for (const id of visibleCatalogIds(state.value, "item", bindFor)) {
-    keys.add(loadoutOwnershipKey("item", id));
-  }
-  for (const id of visibleCatalogIds(state.value, "starshipTrait", bindFor)) {
-    keys.add(loadoutOwnershipKey("starshipTrait", id));
-  }
-  const shipOwned = visibleCatalogIds(state.value, "ship", bindFor).has(
-    shipId.value,
-  );
-  if (shipOwned && ship.value?.uniconsoleId) {
-    keys.add(loadoutOwnershipKey("item", ship.value.uniconsoleId));
-  }
-  return keys;
+  return ownedKeysIncludingHullGrants({
+    ownedItemIds: visibleCatalogIds(state.value, "item", bindFor),
+    ownedTraitIds: visibleCatalogIds(state.value, "starshipTrait", bindFor),
+    ownedShipIds: visibleCatalogIds(state.value, "ship", bindFor),
+    ships: fleetShips.value,
+    traits: traitsResult.value?.starshipTraits ?? [],
+    items: itemsResult.value?.infoboxes ?? [],
+  });
 });
 
 const shipLoadouts = computed(() =>
@@ -161,14 +165,9 @@ const pickerCandidates = computed(() => {
   const slot = pickerSlot.value;
   if (!slot) return [];
   const query = pickerSearch.value.trim().toLowerCase();
-  return catalogItems.value
-    .filter((item) =>
-      ownedKeys.value.has(loadoutOwnershipKey(item.catalogKind, item.id)),
-    )
-    .filter((item) => itemFitsHullSlot(item, slot.kind))
-    .filter((item) =>
-      query ? item.name.toLowerCase().includes(query) : true,
-    );
+  return ownedFittingItems(slot.kind).filter((item) =>
+    query ? item.name.toLowerCase().includes(query) : true,
+  );
 });
 
 watch(
@@ -224,6 +223,14 @@ function toLoadoutTrait(
   };
 }
 
+function ownedFittingItems(kind: HullSlot["kind"]): LoadoutItem[] {
+  return catalogItems.value.filter(
+    (item) =>
+      ownedKeys.value.has(loadoutOwnershipKey(item.catalogKind, item.id)) &&
+      itemFitsHullSlot(item, kind),
+  );
+}
+
 function itemInSlot(slotId: string): LoadoutItem | null {
   const fill = fillForSlot(activeLoadout.value, slotId);
   if (!fill) return null;
@@ -232,6 +239,14 @@ function itemInSlot(slotId: string): LoadoutItem | null {
       loadoutOwnershipKey(fill.catalogKind, fill.itemId),
     ) ?? null
   );
+}
+
+function slotTitle(slot: HullSlot): string {
+  const item = itemInSlot(slot.id);
+  if (item) return `${slot.label}: ${item.name}`;
+  const owned = ownedFittingItems(slot.kind).length;
+  if (owned === 0) return `Empty ${slot.label}`;
+  return `Empty ${slot.label} · ${owned} owned`;
 }
 
 function equipContext() {
@@ -251,7 +266,7 @@ function trySeatPendingUniqueConsole() {
     pendingUniqueSeatId.value = null;
     return;
   }
-  const consoleId = ship.value?.uniconsoleId;
+  const consoleId = ship.value?.uniconsoleId ?? ship.value?.uniConsole?.id;
   if (consoleId == null) {
     pendingUniqueSeatId.value = null;
     return;
@@ -315,6 +330,12 @@ function clearSlot(slotId: string) {
   const loadout = activeLoadout.value;
   if (!loadout) return;
   store.unequipSlot(loadout.id, slotId);
+}
+
+function clearPickerSlot() {
+  if (!pickerSlot.value) return;
+  clearSlot(pickerSlot.value.id);
+  pickerOpen.value = false;
 }
 
 function createAnother() {
@@ -414,41 +435,32 @@ const loading = computed(
             <section
               v-for="section in slotSections"
               :key="section.group"
-              class="slot-group"
+              class="equip-row"
             >
-              <h2 class="slot-group__title">{{ section.label }}</h2>
-              <div class="slot-grid">
+              <h2 class="equip-row__label">{{ section.label }}</h2>
+              <div class="equip-row__slots">
                 <button
                   v-for="slot in section.slots"
                   :key="slot.id"
                   type="button"
-                  class="slot-card"
-                  :class="{ 'slot-card--filled': itemInSlot(slot.id) }"
+                  class="equip-slot"
+                  :class="{ 'equip-slot--filled': itemInSlot(slot.id) }"
+                  :title="slotTitle(slot)"
+                  :aria-label="slotTitle(slot)"
                   @click="openPicker(slot)"
                 >
-                  <div class="slot-card__label">{{ slot.label }}</div>
-                  <div v-if="itemInSlot(slot.id)" class="slot-card__item">
-                    <WikiIcon
-                      :src="itemInSlot(slot.id)?.image"
-                      :alt="itemInSlot(slot.id)?.name ?? ''"
-                      :size="40"
-                    />
-                    <div class="slot-card__copy">
-                      <div class="slot-card__name">
-                        {{ itemInSlot(slot.id)?.name }}
-                      </div>
-                      <div class="slot-card__meta">
-                        {{ displayInfoboxType(itemInSlot(slot.id)?.type) }}
-                      </div>
-                    </div>
-                    <v-btn
-                      icon="mdi-close"
-                      size="x-small"
-                      variant="text"
-                      @click.stop="clearSlot(slot.id)"
-                    />
-                  </div>
-                  <div v-else class="slot-card__empty">Click to equip from collection</div>
+                  <WikiIcon
+                    v-if="itemInSlot(slot.id)"
+                    :src="itemInSlot(slot.id)?.image"
+                    :alt="itemInSlot(slot.id)?.name ?? ''"
+                    :size="44"
+                  />
+                  <span
+                    v-else-if="ownedFittingItems(slot.kind).length"
+                    class="equip-slot__owned"
+                  >
+                    {{ ownedFittingItems(slot.kind).length }}
+                  </span>
                 </button>
               </div>
             </section>
@@ -509,7 +521,9 @@ const loading = computed(
             {{ pickerError }}
           </v-alert>
           <div v-if="pickerCandidates.length === 0" class="side-card__hint">
-            No collected items fit this slot.
+            No collected items fit this slot. Unique consoles and starship
+            traits come from collected ships; weapons and gear come from
+            collected items.
           </div>
           <button
             v-for="item in pickerCandidates"
@@ -529,6 +543,14 @@ const loading = computed(
           </button>
         </v-card-text>
         <v-card-actions>
+          <v-btn
+            v-if="pickerSlot && itemInSlot(pickerSlot.id)"
+            variant="text"
+            color="error"
+            @click="clearPickerSlot"
+          >
+            Unequip
+          </v-btn>
           <v-spacer />
           <v-btn variant="text" @click="pickerOpen = false">Close</v-btn>
         </v-card-actions>
@@ -620,8 +642,70 @@ const loading = computed(
   align-items: start;
 }
 
-.slot-group {
-  margin-bottom: 1.25rem;
+.loadout-slots {
+  padding: 0.35rem 0.85rem 0.5rem;
+  border-radius: 14px;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  background: #101b2a;
+}
+
+.equip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  min-height: 3.7rem;
+  padding: 0.4rem 0.1rem;
+  border-bottom: 1px solid rgba(125, 211, 252, 0.12);
+}
+
+.equip-row:last-child {
+  border-bottom: 0;
+}
+
+.equip-row__label {
+  margin: 0;
+  flex: 1 1 auto;
+  min-width: 7.5rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.equip-row__slots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.28rem;
+}
+
+.equip-slot {
+  width: 3.25rem;
+  height: 3.25rem;
+  padding: 0.18rem;
+  border-radius: 6px;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  background: linear-gradient(160deg, #152336, #0d1624);
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.equip-slot--filled {
+  border-style: solid;
+  border-color: rgba(125, 211, 252, 0.5);
+}
+
+.equip-slot__owned {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: #7dd3fc;
+}
+
+.equip-slot:hover,
+.equip-slot:focus-visible {
+  border-color: rgba(125, 211, 252, 0.9);
 }
 
 .slot-group__title {
@@ -632,54 +716,12 @@ const loading = computed(
   color: #7dd3fc;
 }
 
-.slot-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  gap: 0.65rem;
-}
-
-.slot-card {
-  text-align: left;
-  min-height: 5.5rem;
-  padding: 0.75rem 0.85rem;
-  border-radius: 12px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-  background: linear-gradient(160deg, #152336, #0d1624);
-  color: inherit;
-  cursor: pointer;
-}
-
-.slot-card--filled {
-  border-style: solid;
-  border-color: rgba(255, 255, 255, 0.12);
-}
-
-.slot-card__label {
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 0.4rem;
-}
-
-.slot-card__item {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-}
-
-.slot-card__copy,
-.slot-card__name {
-  min-width: 0;
-}
-
 .slot-card__name {
   font-weight: 650;
   line-height: 1.25;
 }
 
 .slot-card__meta,
-.slot-card__empty,
 .side-card__hint {
   color: rgba(255, 255, 255, 0.55);
   font-size: 0.82rem;
@@ -732,6 +774,21 @@ const loading = computed(
 @media (max-width: 1100px) {
   .loadout-board {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .equip-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .equip-row__label {
+    min-width: 0;
+  }
+
+  .equip-row__slots {
+    flex: 1 1 100%;
   }
 }
 </style>
