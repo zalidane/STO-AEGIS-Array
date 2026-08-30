@@ -1,4 +1,4 @@
-import type { HullSlotKind } from "./slotClass";
+import { itemSlotClassesFromType, type HullSlotKind } from "./slotClass";
 import type { LoadoutSlotFill } from "./types";
 
 export const ITEM_QUALITIES = [
@@ -28,11 +28,13 @@ export const ITEM_MARKS = [
   "XIII",
   "XIV",
   "XV",
+  "∞",
 ] as const;
 
 export type ItemMark = (typeof ITEM_MARKS)[number];
 
 export const DEFAULT_ITEM_MARK: ItemMark = "XV";
+export const INFINITY_MARK: ItemMark = "∞";
 export const DEFAULT_ITEM_QUALITY: ItemQuality = "Very Rare";
 
 /** STO rarity pip colors for seated quality. */
@@ -41,7 +43,7 @@ export const QUALITY_COLORS: Record<ItemQuality, string> = {
   Uncommon: "#2ecc40",
   Rare: "#3d8bfd",
   "Very Rare": "#c084fc",
-  "Ultra Rare": "#fb923c",
+  "Ultra Rare": "#e879f9",
   Epic: "#facc15",
 };
 
@@ -82,12 +84,24 @@ export function inheritModsFromPreviousSameKind(
   return {};
 }
 
+export function defaultItemMark(
+  kind?: HullSlotKind,
+  itemType?: string | null,
+): ItemMark {
+  if (kind === "universalConsole") return INFINITY_MARK;
+  if (itemSlotClassesFromType(itemType).includes("universalConsole")) {
+    return INFINITY_MARK;
+  }
+  return DEFAULT_ITEM_MARK;
+}
+
 export function modsForNewFill(input: {
   kind: HullSlotKind;
   catalogKind: string;
   existing?: LoadoutSlotFill;
   inherited?: { quality?: string; mark?: string };
   rarity?: string | null;
+  itemType?: string | null;
 }): { quality?: string; mark?: string } {
   if (!slotUsesItemMods(input.kind) || input.catalogKind !== "item") {
     return {};
@@ -97,7 +111,10 @@ export function modsForNewFill(input: {
       input.existing?.quality ??
       input.inherited?.quality ??
       qualityFromRarity(input.rarity),
-    mark: input.existing?.mark ?? input.inherited?.mark ?? DEFAULT_ITEM_MARK,
+    mark:
+      input.existing?.mark ??
+      input.inherited?.mark ??
+      defaultItemMark(input.kind, input.itemType),
   };
 }
 
@@ -114,14 +131,31 @@ export function displayedQuality(
 
 export function displayedMark(
   fill: LoadoutSlotFill | null | undefined,
+  kind?: HullSlotKind,
+  itemType?: string | null,
 ): ItemMark {
-  return normalizeMark(fill?.mark);
+  return normalizeMark(fill?.mark, defaultItemMark(kind, itemType));
 }
 
-export function normalizeMark(value: string | null | undefined): ItemMark {
+function isInfinityMark(value: string): boolean {
+  const needle = value.trim().toLowerCase();
+  return (
+    needle === "∞" ||
+    needle === "infinity" ||
+    needle === "infinite" ||
+    needle === "inf"
+  );
+}
+
+export function normalizeMark(
+  value: string | null | undefined,
+  fallback: ItemMark = DEFAULT_ITEM_MARK,
+): ItemMark {
   const roman = value?.replace(/^mk\s*/i, "").trim();
-  if (roman && ITEM_MARKS.includes(roman as ItemMark)) {
+  if (!roman) return fallback;
+  if (isInfinityMark(roman)) return INFINITY_MARK;
+  if (ITEM_MARKS.includes(roman as ItemMark)) {
     return roman as ItemMark;
   }
-  return DEFAULT_ITEM_MARK;
+  return fallback;
 }

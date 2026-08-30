@@ -70,12 +70,47 @@ describe("slotQuality", () => {
       "Epic",
     );
     expect(displayedMark({ slotId: "foreWeapon-0", itemId: 1 })).toBe("XV");
+    expect(
+      displayedMark(
+        { slotId: "universalConsole-0", itemId: 5 },
+        "universalConsole",
+        "universal console",
+      ),
+    ).toBe("∞");
   });
 
-  it("shows Roman numerals and reads older Mk saves", () => {
+  it("defaults universal consoles to infinity mark", () => {
+    expect(
+      modsForNewFill({
+        kind: "universalConsole",
+        catalogKind: "item",
+        itemType: "universal console",
+      }),
+    ).toMatchObject({ mark: "∞" });
+    expect(
+      modsForNewFill({
+        kind: "tacticalConsole",
+        catalogKind: "item",
+        itemType: "universal console",
+      }),
+    ).toMatchObject({ mark: "∞" });
+    expect(
+      modsForNewFill({
+        kind: "foreWeapon",
+        catalogKind: "item",
+        itemType: "ship fore weapon",
+      }),
+    ).toMatchObject({ mark: "XV" });
+  });
+
+  it("shows Roman numerals, infinity, and reads older Mk saves", () => {
     expect(normalizeMark("Mk XII")).toBe("XII");
     expect(normalizeMark("XV")).toBe("XV");
+    expect(normalizeMark("∞")).toBe("∞");
+    expect(normalizeMark("Mk ∞")).toBe("∞");
+    expect(normalizeMark("infinity")).toBe("∞");
     expect(qualityColor("Epic")).toBe("#facc15");
     expect(qualityColor("Very Rare")).toBe("#c084fc");
+    expect(qualityColor("Ultra Rare")).toBe("#e879f9");
   });
 });

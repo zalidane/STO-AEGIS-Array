@@ -7,7 +7,7 @@ export type LoadoutSlotFill = {
   catalogKind?: LoadoutCatalogKind;
   /** Seated copy quality; independent of catalog rarity. */
   quality?: string;
-  /** Seated copy mark level, e.g. XII. */
+  /** Seated copy mark level, e.g. XII or ∞. */
   mark?: string;
 };
 

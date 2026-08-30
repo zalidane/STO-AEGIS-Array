@@ -334,6 +334,42 @@ describe("loadout equip", () => {
     expect(second).toEqual({ ok: false, reason: "equip-limit" });
   });
 
+  it("treats universal consoles as unique even without wiki equiplimit", () => {
+    const hullSlots = buildHullSlots({ ...escort, tier: 6 });
+    const console: LoadoutItem = {
+      id: 80,
+      name: "Console - Universal - Phase Shift",
+      type: "universal console",
+      equiplimit: null,
+    };
+    const context = {
+      hullSlots,
+      items: [...items, console],
+      ownedKeys: new Set([
+        ...items.map((item) => `item:${item.id}`),
+        "item:80",
+      ]),
+    };
+    let state = createLoadout(captainState(), { shipId: 10 }, clock);
+    const loadoutId = state.loadouts[0]!.id;
+    const first = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "universalConsole-0", itemId: 80 },
+      context,
+      clock,
+    );
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    state = applyLoadout(state, first.loadout);
+    const second = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "universalConsole-1", itemId: 80 },
+      context,
+      clock,
+    );
+    expect(second).toEqual({ ok: false, reason: "equip-limit" });
+  });
+
   it("refuses items the captain does not own", () => {
     const state = withLoadout();
     const result = equipLoadoutSlot(

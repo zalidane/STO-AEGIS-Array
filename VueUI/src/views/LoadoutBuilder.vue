@@ -41,6 +41,7 @@ import {
 import {
   equippedItemsForLoadout,
   itemFitsHullSlot,
+  itemHasOpenCopy,
   loadoutOwnershipKey,
   matchSetBonuses,
 } from "@/logic/loadout/setBonus";
@@ -247,14 +248,15 @@ const pickerHasFill = computed(() => {
 
 const pickerCandidates = computed(() => {
   const query = (pickerSearch.value ?? "").trim().toLowerCase();
-  const pool = pickerCaptainSlot.value
-    ? fittingCaptainTraits(pickerCaptainSlot.value, onlyCollected.value)
-    : pickerHullSlot.value
-      ? fittingItems(pickerHullSlot.value.kind, onlyCollected.value)
+  const captainSlot = pickerCaptainSlot.value;
+  const hullSlot = pickerHullSlot.value;
+  const pool = captainSlot
+    ? fittingCaptainTraits(captainSlot, onlyCollected.value, captainSlot.id)
+    : hullSlot
+      ? fittingItems(hullSlot.kind, onlyCollected.value, hullSlot.id)
       : [];
   const matched = pool.filter((item) => matchesPickerQuery(item, query));
-  const hullSlot = pickerHullSlot.value;
-  if (!hullSlot || pickerCaptainSlot.value) return matched;
+  if (!hullSlot || captainSlot) return matched;
   return rankPickerCandidates(
     matched,
     preferredItemIdsForNextSlot(
@@ -367,12 +369,21 @@ function toLoadoutPersonalTrait(row: TraitsQuery["traits"][number]): LoadoutItem
   };
 }
 
+function seatedFills() {
+  return [
+    ...(activeLoadout.value?.slots ?? []),
+    ...(activeCharacter.value?.traitSlots ?? []),
+  ];
+}
+
 function fittingItems(
   kind: HullSlot["kind"],
   collectedOnly: boolean,
+  exceptSlotId?: string,
 ): LoadoutItem[] {
   return catalogItems.value.filter((item) => {
     if (!itemFitsHullSlot(item, kind)) return false;
+    if (!itemHasOpenCopy(item, seatedFills(), exceptSlotId)) return false;
     if (!collectedOnly) return true;
     return ownedKeys.value.has(loadoutOwnershipKey(item.catalogKind, item.id));
   });
@@ -409,10 +420,12 @@ function asCaptainTrait(item: LoadoutItem): CaptainTraitSource {
 function fittingCaptainTraits(
   slot: CaptainTraitSlot,
   collectedOnly: boolean,
+  exceptSlotId?: string,
 ): LoadoutItem[] {
   const identity = captainIdentity();
   return catalogItems.value.filter((item) => {
     if (!traitFitsCaptainSlot(asCaptainTrait(item), slot, identity)) return false;
+    if (!itemHasOpenCopy(item, seatedFills(), exceptSlotId)) return false;
     if (!collectedOnly) return true;
     return ownedKeys.value.has(
       captainTraitOwnershipKey(
@@ -497,7 +510,11 @@ function slotQuality(slot: HullSlot): ItemQuality {
 }
 
 function slotMark(slot: HullSlot): string {
-  return displayedMark(fillForSlot(activeLoadout.value, slot.id));
+  return displayedMark(
+    fillForSlot(activeLoadout.value, slot.id),
+    slot.kind,
+    itemInSlot(slot.id)?.type,
+  );
 }
 
 function onSlotQualityChange(slot: HullSlot, quality: ItemQuality) {
