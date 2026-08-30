@@ -1,6 +1,6 @@
 # Extractor
 
-Extracts Star Trek Online game data from [STOWiki](https://stowiki.net) Cargo tables into `output/*.json`, then imports those files into PostgreSQL via `@sto-aegis/database`. Image files are downloaded into `VueUI/public/images/`.
+Extracts Star Trek Online game data from [STOWiki](https://stowiki.net) Cargo tables into `output/*.json`, then imports those files into PostgreSQL via `@sto-aegis/database`. Image files are downloaded into `VueUI/public/images/`. After Cargo extract, experimental-weapon names are scraped from hull wikitext into `output/ShipExperimentalWeapons.json` (not a Cargo table).
 
 **Workflow**
 
@@ -56,11 +56,19 @@ npm run import -- --force-import
 npm run import:prod
 ```
 
+## Cargo tables
+
+Written to `output/{Name}.json`:
+
+Infobox, Mastery, Reputation, SetBonus, Ships, StarshipTraits, Traits, TraySkill, GwObtain, SwObtain, Modifiers.
+
+Import order is Infobox → Ships → StarshipTraits → Mastery → Modifiers → GwObtain → SwObtain → Reputation → SetBonus → Traits → TraySkill, then `linkRelations` (ship types, unique consoles, experimental weapons, trait-ship joins, HTML-entity name dedupe).
+
 ## CLI
 
 | Command / flag | Effect |
 |----------------|--------|
-| `extract` | Fetch Cargo tables, then download catalog images |
+| `extract` | Fetch Cargo tables + experimental-weapon sidecar, then catalog images |
 | `import` | Import JSON into PostgreSQL + `linkRelations` |
 | `--force-refresh` | Re-extract all Cargo tables from STOWiki |
 | `--force-images` | Re-query the wiki and re-download image files even if they already exist |
@@ -68,6 +76,16 @@ npm run import:prod
 | `--images-only` | Images only (needs `output/*.json`) |
 | `--force-import` | Re-import all JSON files (ignore hash skip) |
 | `--prod` | Load `.env.production` (used by `import:prod`) |
+
+## Tests
+
+From the monorepo root:
+
+```bash
+npm run test:extractor
+```
+
+Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, and import name dedupe.
 
 ## Images
 
@@ -87,7 +105,7 @@ Third-party licensing for extracted text and images is documented in
 
 ## Output in git
 
-`Extractor/output/*.json` **is tracked** so production deploys can import without extracting.
+`Extractor/output/*.json` **is tracked** so production deploys can import without extracting (including `ShipExperimentalWeapons.json`).
 
 `output/importState.json` and `output/.wiki-session.json` are **local-only** (gitignored).
 
