@@ -8,6 +8,11 @@ import {
   bindChoiceFromCost,
   FALLBACK_BIND_CHOICE_PROMPT,
 } from "@/logic/collection/bindChoice";
+import CaptainIdentityFields from "@/components/collection/CaptainIdentityFields.vue";
+import {
+  isCompleteIdentity,
+  type CaptainCareer,
+} from "@/logic/captain/identity";
 
 const props = defineProps<{
   kind: CatalogKind;
@@ -31,6 +36,15 @@ const { activeCharacter } = storeToRefs(store);
 const createOpen = ref(false);
 const bindOpen = ref(false);
 const draftName = ref("");
+const draftIdentity = ref<{
+  career: CaptainCareer | "";
+  faction: string;
+  race: string;
+}>({
+  career: "",
+  faction: "",
+  race: "",
+});
 
 const storedBind = computed(() =>
   store.bindForActive(props.kind, props.catalogId),
@@ -53,12 +67,22 @@ const otherLabel = computed(() => {
 const createError = computed(() => {
   const name = draftName.value.trim();
   if (!name) return "Name is required.";
+  if (
+    !isCompleteIdentity({
+      career: draftIdentity.value.career || undefined,
+      faction: draftIdentity.value.faction,
+      race: draftIdentity.value.race,
+    })
+  ) {
+    return "Class, faction, and race are required.";
+  }
   return "";
 });
 
 function toggle() {
   if (!activeCharacter.value) {
     draftName.value = "";
+    draftIdentity.value = { career: "", faction: "", race: "" };
     createOpen.value = true;
     return;
   }
@@ -75,7 +99,12 @@ function toggle() {
 
 function submitCreate() {
   if (createError.value) return;
-  store.addCharacter(draftName.value);
+  store.addCharacter({
+    name: draftName.value,
+    career: draftIdentity.value.career as CaptainCareer,
+    faction: draftIdentity.value.faction,
+    race: draftIdentity.value.race,
+  });
   createOpen.value = false;
   if (props.allowAccountUnlock) {
     bindOpen.value = true;
@@ -143,7 +172,7 @@ const dialogPrompt = computed(() => {
       <span v-if="otherLabel" class="collect-toggle__others">{{ otherLabel }}</span>
     </div>
 
-    <v-dialog v-model="createOpen" max-width="420">
+    <v-dialog v-model="createOpen" max-width="460">
       <v-card>
         <v-card-title>Create a captain first</v-card-title>
         <v-card-text>
@@ -155,6 +184,7 @@ const dialogPrompt = computed(() => {
             autofocus
             @keydown.enter="submitCreate"
           />
+          <CaptainIdentityFields v-model:identity="draftIdentity" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />

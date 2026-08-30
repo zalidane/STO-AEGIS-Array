@@ -23,12 +23,16 @@ query Ships {
     tacticalSlots
     engineeringSlots
     scienceSlots
+    t5uConsole
+    boffs
     secondaryDeflector
     hangars
     devices
     experimental
     uniconsole
     uniconsoleId
+    experimentalWeapon
+    experimentalWeaponId
     cost
     displayPrefix
     displayClass
@@ -92,6 +96,8 @@ query Ship($id: Int!) {
     displayType
     factionLede
     uniconsoleId
+    experimentalWeapon
+    experimentalWeaponId
     shipTypeId
     createdAt
     updatedAt
@@ -100,6 +106,12 @@ query Ship($id: Int!) {
       name
     }
     uniConsole {
+      id
+      name
+      rarity
+      type
+    }
+    experimentalWeaponItem {
       id
       name
       rarity
@@ -167,6 +179,8 @@ query ShipByName($name: String!) {
     displayType
     factionLede
     uniconsoleId
+    experimentalWeapon
+    experimentalWeaponId
     shipTypeId
     createdAt
     updatedAt
@@ -175,6 +189,12 @@ query ShipByName($name: String!) {
       name
     }
     uniConsole {
+      id
+      name
+      rarity
+      type
+    }
+    experimentalWeaponItem {
       id
       name
       rarity

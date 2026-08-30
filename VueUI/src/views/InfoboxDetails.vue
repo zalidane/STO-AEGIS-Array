@@ -28,19 +28,29 @@ const { result, loading, error } = useQuery(InfoboxDocument, () => ({
 
 type Detail = NonNullable<InfoboxQuery["infobox"]>;
 const item = computed<Detail | null>(() => result.value?.infobox ?? null);
+const grantingShips = computed(() => {
+  if (!item.value) return [];
+  const byId = new Map<number, Detail["shipsWithConsole"][number]>();
+  for (const ship of [
+    ...item.value.shipsWithConsole,
+    ...item.value.shipsWithExperimentalWeapon,
+  ]) {
+    byId.set(ship.id, ship);
+  }
+  return [...byId.values()];
+});
 const bind = computed(() =>
   bindScopeForKind({
     kind: "item",
-    grantingShipCosts:
-      item.value?.shipsWithConsole.map((ship) => ship.cost) ?? [],
+    grantingShipCosts: grantingShips.value.map((ship) => ship.cost),
     boundto: item.value?.boundto,
   }),
 );
 const allowAccountUnlock = computed(() =>
-  allowsAccountUnlockFromGrantingShips(item.value?.shipsWithConsole ?? []),
+  allowsAccountUnlockFromGrantingShips(grantingShips.value),
 );
 const bindChoicePrompt = computed(() =>
-  bindChoiceFromGrantingShips(item.value?.shipsWithConsole ?? []).prompt,
+  bindChoiceFromGrantingShips(grantingShips.value).prompt,
 );
 
 const fields = computed(() => {
@@ -97,14 +107,14 @@ const fields = computed(() => {
         <v-card-title>Granted by ships</v-card-title>
         <v-list>
           <v-list-item
-            v-for="ship in item.shipsWithConsole"
+            v-for="ship in grantingShips"
             :key="ship.id"
             @click="router.push(`/ships/${ship.id}`)"
           >
             <v-list-item-title>{{ ship.name }}</v-list-item-title>
             <v-list-item-subtitle>Tier {{ ship.tier }}</v-list-item-subtitle>
           </v-list-item>
-          <v-list-item v-if="!item.shipsWithConsole.length">None</v-list-item>
+          <v-list-item v-if="!grantingShips.length">None</v-list-item>
         </v-list>
       </v-card>
 
