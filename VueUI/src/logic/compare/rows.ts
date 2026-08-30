@@ -2,8 +2,12 @@ import { hasCommanderMiracleWorkerSeat } from "@/logic/loadout/hullExtras";
 import { toBoffSeatView } from "@/mappers/boffColors";
 import { formatYesNo } from "@/utils/formatters";
 import { parseShipCost } from "@/utils/parsers/shipCost";
+import { sortBoffSeatRaws } from "@/utils/parsers/boffSeat";
 
 export type CompareAdvantage = "left" | "right" | null;
+
+/** Right-hull highlight relative to the left hull. */
+export type CompareTone = "improve" | "decrease" | "diff" | null;
 
 export type CompareRow = {
   key: string;
@@ -12,9 +16,7 @@ export type CompareRow = {
   right: string;
   differs: boolean;
   advantage: CompareAdvantage;
-  /** Seat (or other value) also exists on the other hull, even in another row. */
-  leftMatch: boolean;
-  rightMatch: boolean;
+  rightTone: CompareTone;
 };
 
 export type CompareSection = {
@@ -88,6 +90,16 @@ function powerValue(
   return null;
 }
 
+function rightToneFrom(
+  differs: boolean,
+  advantage: CompareAdvantage,
+): CompareTone {
+  if (!differs) return null;
+  if (advantage === "right") return "improve";
+  if (advantage === "left") return "decrease";
+  return "diff";
+}
+
 function numericRow(
   key: string,
   label: string,
@@ -111,8 +123,7 @@ function numericRow(
     right: rightText,
     differs,
     advantage,
-    leftMatch: false,
-    rightMatch: false,
+    rightTone: rightToneFrom(differs, advantage),
   };
 }
 
@@ -121,19 +132,18 @@ function textRow(
   label: string,
   left: string,
   right: string,
-  matches?: { leftMatch?: boolean; rightMatch?: boolean },
 ): CompareRow {
   const leftText = left.trim() || "—";
   const rightText = right.trim() || "—";
+  const differs = leftText !== rightText;
   return {
     key,
     label,
     left: leftText,
     right: rightText,
-    differs: leftText !== rightText,
+    differs,
     advantage: null,
-    leftMatch: matches?.leftMatch === true,
-    rightMatch: matches?.rightMatch === true,
+    rightTone: rightToneFrom(differs, null),
   };
 }
 
@@ -159,8 +169,7 @@ function boolRow(
     right: rightText,
     differs,
     advantage,
-    leftMatch: false,
-    rightMatch: false,
+    rightTone: rightToneFrom(differs, advantage),
   };
 }
 
@@ -174,30 +183,11 @@ function padPair(left: string[], right: string[]): Array<[string, string]> {
 
 function boffLabels(boffs: string | null | undefined): string[] {
   if (!boffs?.trim()) return [];
-  return boffs
+  const raws = boffs
     .split(",")
     .map((part) => part.trim())
-    .filter(Boolean)
-    .map((raw) => toBoffSeatView(raw).label);
-}
-
-/** True for each seat that the other hull also has, consuming duplicates in order. */
-export function seatMatchFlags(
-  seats: readonly string[],
-  otherSeats: readonly string[],
-): boolean[] {
-  const remaining = new Map<string, number>();
-  for (const seat of otherSeats) {
-    if (seat === "—") continue;
-    remaining.set(seat, (remaining.get(seat) ?? 0) + 1);
-  }
-  return seats.map((seat) => {
-    if (seat === "—") return false;
-    const count = remaining.get(seat) ?? 0;
-    if (count <= 0) return false;
-    remaining.set(seat, count - 1);
-    return true;
-  });
+    .filter(Boolean);
+  return sortBoffSeatRaws(raws).map((raw) => toBoffSeatView(raw).label);
 }
 
 function abilityLines(abilities: string | null | undefined): string[] {
@@ -315,17 +305,12 @@ export function buildBoffRows(
 ): CompareRow[] {
   const leftSeats = boffLabels(left.boffs);
   const rightSeats = boffLabels(right.boffs);
-  const leftFlags = seatMatchFlags(leftSeats, rightSeats);
-  const rightFlags = seatMatchFlags(rightSeats, leftSeats);
   const pairs = padPair(leftSeats, rightSeats);
   if (pairs.length === 0) {
     return [textRow("boff-empty", "Seats", "—", "—")];
   }
   return pairs.map(([leftText, rightText], index) =>
-    textRow(`boff-${index}`, `Seat ${index + 1}`, leftText, rightText, {
-      leftMatch: leftFlags[index] === true,
-      rightMatch: rightFlags[index] === true,
-    }),
+    textRow(`boff-${index}`, `Seat ${index + 1}`, leftText, rightText),
   );
 }
 

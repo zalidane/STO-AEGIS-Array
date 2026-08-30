@@ -1,5 +1,6 @@
 import {
   parseBoffSeat,
+  sortBoffSeatRaws,
   type BoffCareer,
   type BoffSeat,
 } from "@/utils/parsers/boffSeat";
@@ -88,10 +89,10 @@ export function toBoffSeatView(raw: string): BoffSeatView {
 export function parseBoffSeats(boffs: string | null | undefined): BoffSeatView[] {
   if (!boffs?.trim()) return [];
 
-  return boffs
+  const raws = boffs
     .split(",")
     .map((part) => part.trim())
-    .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b))
-    .map(toBoffSeatView);
+    .filter(Boolean);
+
+  return sortBoffSeatRaws(raws).map(toBoffSeatView);
 }
