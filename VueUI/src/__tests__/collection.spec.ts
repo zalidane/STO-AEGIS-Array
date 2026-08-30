@@ -19,6 +19,7 @@ import {
   collectionStatus,
   createCharacter,
   deleteCharacter,
+  ownedCopyCount,
   setEntryBind,
   uncollectItem,
   uncollectMany,
@@ -155,6 +156,15 @@ describe("bindScope", () => {
     expect(bindScopeFromCatalog(sources, "item", 10)).toBe("account");
     expect(bindScopeFromCatalog(sources, "item", 11)).toBe("character");
     expect(bindScopeFromCatalog(sources, "item", 12)).toBe("character");
+  });
+
+  it("resolves catalog bind from experimental-weapon hull grants", () => {
+    const sources = {
+      ships: [{ id: 1, cost: "3000;Zen", experimentalWeaponId: 20 }],
+      starshipTraits: [],
+      items: [{ id: 20, boundto: "character" }],
+    };
+    expect(bindScopeFromCatalog(sources, "item", 20)).toBe("account");
   });
 
   it("offers a catalog bind choice for dual-path and expensive Zen ships", () => {
@@ -299,6 +309,32 @@ describe("collection state", () => {
     state = uncollectItem(state, { kind: "item", catalogId: 9 });
     expect(state.entries).toHaveLength(1);
     expect(state.entries[0]?.characterId).toBe("id-2");
+  });
+
+  it("allows extra copies of non-unique items and uncollects one at a time", () => {
+    let state = withCaptains();
+    state = collectItem(state, { kind: "item", catalogId: 9 }, clock);
+    state = collectItem(
+      state,
+      { kind: "item", catalogId: 9, allowDuplicate: true },
+      clock,
+    );
+    expect(ownedCopyCount(state, { kind: "item", catalogId: 9 })).toBe(2);
+
+    state = uncollectItem(state, { kind: "item", catalogId: 9 });
+    expect(ownedCopyCount(state, { kind: "item", catalogId: 9 })).toBe(1);
+    expect(state.entries.map((entry) => entry.characterId)).toEqual(["id-2"]);
+  });
+
+  it("keeps ships unique even when a duplicate collect is requested", () => {
+    let state = withCaptains();
+    state = collectItem(state, { kind: "ship", catalogId: 10 }, clock);
+    state = collectItem(
+      state,
+      { kind: "ship", catalogId: 10, allowDuplicate: true },
+      clock,
+    );
+    expect(ownedCopyCount(state, { kind: "ship", catalogId: 10 })).toBe(1);
   });
 
   it("collects and uncollects a batch for the active captain", () => {

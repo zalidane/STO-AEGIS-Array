@@ -18,13 +18,21 @@ import {
   equipLoadoutSlot,
   filledSlotMap,
   unequipLoadoutSlot,
+  updateLoadoutSlotMods,
 } from "@/logic/loadout/state";
 import { itemFitsSlot, itemSlotClassesFromType } from "@/logic/loadout/slotClass";
 import { matchSetBonuses } from "@/logic/loadout/setBonus";
 import {
+  experimentalWeaponIdsFromOwnedShips,
   ownedKeysIncludingHullGrants,
   uniqueConsoleIdsFromOwnedShips,
 } from "@/logic/loadout/hullGrants";
+import {
+  aggregateLoadoutCosts,
+  formatAggregatedAmount,
+  seatedItemsForCosts,
+  splitShipAbilities,
+} from "@/logic/loadout/loadoutCosts";
 import type { LoadoutItem } from "@/logic/loadout/types";
 
 const clock: CollectionClock = {
@@ -107,6 +115,7 @@ describe("hull extras", () => {
     ).toMatchObject({
       universalConsoles: 3,
       starshipTraits: 2,
+      devices: 2,
     });
     expect(
       hasCommanderMiracleWorkerSeat(
@@ -127,13 +136,45 @@ describe("hull extras", () => {
     ).toMatchObject({
       universalConsoles: 2,
       starshipTraits: 2,
+      devices: 2,
     });
     expect(
       extraHullSlotSummary({ tier: 5, boffs: "Commander Tactical" }),
     ).toMatchObject({
       universalConsoles: 0,
+      tacticalConsoles: 0,
       starshipTraits: 0,
+      devices: 0,
     });
+  });
+
+  it("adds T5-U career console and T5-X extras when the hull can upgrade", () => {
+    expect(
+      extraHullSlotSummary({
+        tier: 5,
+        t5uConsole: "tac",
+        boffs: "Commander Tactical",
+      }),
+    ).toMatchObject({
+      tacticalConsoles: 1,
+      engineeringConsoles: 0,
+      scienceConsoles: 0,
+      universalConsoles: 2,
+      starshipTraits: 2,
+      devices: 2,
+    });
+    expect(
+      extraHullSlotSummary({
+        tier: 5,
+        t5uConsole: "eng",
+      }).engineeringConsoles,
+    ).toBe(1);
+    expect(
+      extraHullSlotSummary({
+        tier: 5,
+        t5uConsole: "sci",
+      }).scienceConsoles,
+    ).toBe(1);
   });
 });
 
@@ -144,14 +185,18 @@ describe("buildHullSlots", () => {
     expect(slots.some((slot) => slot.id === "experimental")).toBe(true);
     expect(slots.some((slot) => slot.id === "core")).toBe(true);
     expect(slots.some((slot) => slot.id === "secondaryDeflector")).toBe(false);
+    expect(slots.filter((slot) => slot.kind === "starshipTrait")).toHaveLength(2);
+    expect(groupHullSlots(slots).map((section) => section.group)).not.toContain(
+      "traits",
+    );
     expect(groupHullSlots(slots).map((section) => section.group)).toEqual([
       "foreWeapons",
-      "experimental",
       "deflector",
       "impulse",
       "core",
       "shields",
       "aftWeapons",
+      "experimental",
       "devices",
       "engineeringConsoles",
       "scienceConsoles",
@@ -169,19 +214,18 @@ describe("buildHullSlots", () => {
     });
     expect(groupHullSlots(slots).map((section) => section.group)).toEqual([
       "foreWeapons",
-      "experimental",
       "deflector",
       "impulse",
       "core",
       "shields",
       "aftWeapons",
+      "experimental",
       "devices",
       "universalConsoles",
       "engineeringConsoles",
       "scienceConsoles",
       "tacticalConsoles",
       "hangars",
-      "traits",
     ]);
     expect(
       groupHullSlots(slots)
@@ -200,12 +244,41 @@ describe("buildHullSlots", () => {
       3,
     );
     expect(slots.filter((slot) => slot.kind === "starshipTrait")).toHaveLength(2);
-    expect(groupHullSlots(slots).map((section) => section.group)).toContain(
+    expect(slots.filter((slot) => slot.kind === "device")).toHaveLength(4);
+    expect(
+      slots
+        .filter((slot) => slot.kind === "device")
+        .map((slot) => slot.label),
+    ).toEqual(["Device 1", "Device 2", "Device (T6-X)", "Device (T6-X2)"]);
+    expect(groupHullSlots(slots).map((section) => section.group)).not.toContain(
       "traits",
     );
     expect(
       slotForGrantedConsole(slots, "universal console")?.kind,
     ).toBe("universalConsole");
+  });
+
+  it("adds a T5-U tactical socket to upgradeable T5 escorts", () => {
+    const slots = buildHullSlots({
+      ...escort,
+      tier: 5,
+      t5uConsole: "tac",
+    });
+    expect(slots.filter((slot) => slot.kind === "tacticalConsole")).toHaveLength(
+      5,
+    );
+    expect(slots.filter((slot) => slot.kind === "engineeringConsole")).toHaveLength(
+      3,
+    );
+    expect(slots.filter((slot) => slot.kind === "universalConsole")).toHaveLength(
+      2,
+    );
+    expect(slots.filter((slot) => slot.kind === "device")).toHaveLength(4);
+    expect(
+      slots
+        .filter((slot) => slot.kind === "tacticalConsole")
+        .map((slot) => slot.label),
+    ).toEqual(["Tactical 1", "Tactical 2", "Tactical 3", "Tactical 4", "Tactical 5"]);
   });
 });
 
@@ -270,6 +343,17 @@ describe("loadout equip", () => {
       clock,
     );
     expect(result).toEqual({ ok: false, reason: "not-owned" });
+  });
+
+  it("seats unowned items when requireOwned is false", () => {
+    const state = withLoadout();
+    const result = equipLoadoutSlot(
+      state,
+      { loadoutId: state.loadouts[0]!.id, slotId: "foreWeapon-0", itemId: 1 },
+      { ...context, ownedKeys: new Set(), requireOwned: false },
+      clock,
+    );
+    expect(result.ok).toBe(true);
   });
 
   it("seats a starship trait in an upgrade slot and allows removing it", () => {
@@ -359,6 +443,49 @@ describe("loadout equip", () => {
     const state = deleteLoadout(withLoadout(), "lo-2");
     expect(state.loadouts).toHaveLength(0);
   });
+
+  it("names the first saved hull Build 1", () => {
+    expect(withLoadout().loadouts[0]?.name).toBe("Build 1");
+  });
+
+  it("stores quality and mark and copies them onto the next same-kind slot", () => {
+    let state = withLoadout();
+    const loadoutId = state.loadouts[0]!.id;
+    const first = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "foreWeapon-0", itemId: 1 },
+      context,
+      clock,
+    );
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(first.loadout.slots[0]).toMatchObject({
+      quality: "Very Rare",
+      mark: "XV",
+    });
+
+    state = applyLoadout(state, first.loadout);
+    state = updateLoadoutSlotMods(
+      state,
+      { loadoutId, slotId: "foreWeapon-0", quality: "Epic", mark: "XII" },
+      clock,
+    );
+    const second = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "foreWeapon-1", itemId: 1 },
+      context,
+      clock,
+    );
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(
+      second.loadout.slots.find((fill) => fill.slotId === "foreWeapon-1"),
+    ).toMatchObject({
+      itemId: 1,
+      quality: "Epic",
+      mark: "XII",
+    });
+  });
 });
 
 describe("matchSetBonuses", () => {
@@ -405,12 +532,46 @@ describe("hydrateCollectionState v1 to v2", () => {
     expect(migrated.characters).toHaveLength(1);
     expect(migrated.loadouts).toEqual([]);
   });
+
+  it("keeps seated quality and mark on v2 loadouts", () => {
+    const migrated = hydrateCollectionState({
+      version: 2,
+      activeCharacterId: "c1",
+      characters: [
+        { id: "c1", name: "Alice", createdAt: "2026-08-22T00:00:00.000Z" },
+      ],
+      entries: [],
+      loadouts: [
+        {
+          id: "l1",
+          characterId: "c1",
+          shipId: 10,
+          name: "Build 1",
+          createdAt: "2026-08-22T00:00:00.000Z",
+          updatedAt: "2026-08-22T00:00:00.000Z",
+          slots: [
+            {
+              slotId: "foreWeapon-0",
+              itemId: 1,
+              catalogKind: "item",
+              quality: "Epic",
+              mark: "Mk XII",
+            },
+          ],
+        },
+      ],
+    });
+    expect(migrated.loadouts[0]?.slots[0]).toMatchObject({
+      quality: "Epic",
+      mark: "Mk XII",
+    });
+  });
 });
 
 describe("hull grants", () => {
   const fleet = [
     { id: 1, uniconsoleId: 49852 },
-    { id: 2, uniconsoleId: 100 },
+    { id: 2, uniconsoleId: 100, experimentalWeaponId: 77 },
     { id: 3, uniconsoleId: null },
   ];
 
@@ -427,7 +588,7 @@ describe("hull grants", () => {
         traits: [{ id: 90, ships: [{ id: 2 }] }],
       }),
     ).toEqual(
-      new Set(["item:49852", "item:100", "starshipTrait:90"]),
+      new Set(["item:49852", "item:100", "item:77", "starshipTrait:90"]),
     );
   });
 
@@ -451,5 +612,204 @@ describe("hull grants", () => {
         [{ id: 900, name: "Console - Universal - Wing Torpedo Platforms" }],
       ),
     ).toEqual([900]);
+  });
+
+  it("unlocks the included experimental weapon from a collected hull", () => {
+    expect(
+      experimentalWeaponIdsFromOwnedShips(
+        [
+          {
+            id: 1,
+            experimentalWeaponId: null,
+            experimentalWeapon: "Prototype Phaser Hexa Cannons",
+          },
+        ],
+        new Set([1]),
+        [{ id: 55, name: "Prototype Phaser Hexa Cannons" }],
+      ),
+    ).toEqual([55]);
+  });
+});
+
+describe("loadout costs", () => {
+    const ships = [
+      { id: 1, uniconsoleId: 10, cost: "3000;Zen" },
+      { id: 2, uniconsoleId: 11, cost: "3000;Zen" },
+      { id: 3, uniconsoleId: 10, cost: "1;LB" },
+      {
+        id: 4,
+        experimentalWeaponId: 88,
+        experimentalWeapon: "Prototype Phaser Hexa Cannons",
+        cost: "3000;Zen",
+      },
+    ];
+  const traits = [{ id: 90, ships: [{ id: 1, cost: "3000;Zen" }] }];
+
+  it("aggregates granting-ship costs and splits collected from missing", () => {
+    const summary = aggregateLoadoutCosts({
+      seated: [
+        { id: 10, name: "Console A", catalogKind: "item" },
+        { id: 11, name: "Console B", catalogKind: "item" },
+      ],
+      ownedKeys: new Set(["item:10"]),
+      ownedShipIds: new Set([1]),
+      ships,
+    });
+    expect(summary.collected).toEqual([
+      expect.objectContaining({ currencyCode: "Zen", amount: 3000 }),
+    ]);
+    expect(summary.notCollected).toEqual([
+      expect.objectContaining({ currencyCode: "Zen", amount: 3000 }),
+    ]);
+  });
+
+  it("counts a granting ship once when its console and trait are both seated", () => {
+    const summary = aggregateLoadoutCosts({
+      seated: [
+        { id: 10, name: "Console A", catalogKind: "item" },
+        { id: 90, name: "Trait A", catalogKind: "starshipTrait" },
+      ],
+      ownedKeys: new Set(["item:10", "starshipTrait:90"]),
+      ownedShipIds: new Set([1]),
+      ships,
+      traits,
+    });
+    expect(summary.collected).toEqual([
+      expect.objectContaining({ currencyCode: "Zen", amount: 3000 }),
+    ]);
+    expect(summary.notCollected).toEqual([]);
+  });
+
+  it("uses wiki who text when an item has no granting ship", () => {
+    const summary = aggregateLoadoutCosts({
+      seated: [
+        {
+          id: 50,
+          name: "Fleet Beam Array",
+          catalogKind: "item",
+          who: "200000;dil",
+        },
+      ],
+      ownedKeys: new Set(),
+      ownedShipIds: new Set(),
+      ships: [],
+    });
+    expect(summary.notCollected).toEqual([
+      expect.objectContaining({
+        currencyCode: "dil",
+        amount: 200000,
+      }),
+    ]);
+    expect(formatAggregatedAmount(200000)).toBe("200,000");
+  });
+
+  it("inherits granting-ship cost for a seated experimental weapon", () => {
+    const summary = aggregateLoadoutCosts({
+      seated: [
+        {
+          id: 88,
+          name: "Prototype Phaser Hexa Cannons",
+          catalogKind: "item",
+        },
+      ],
+      ownedKeys: new Set(),
+      ownedShipIds: new Set(),
+      ships,
+    });
+    expect(summary.notCollected).toEqual([
+      expect.objectContaining({ currencyCode: "Zen", amount: 3000 }),
+    ]);
+  });
+
+  it("unions hull fills with captain-board traits without duplicating", () => {
+    const catalog: LoadoutItem[] = [
+      { id: 10, name: "Console A", type: "universal console", catalogKind: "item" },
+      { id: 90, name: "Trait A", type: "starship trait", catalogKind: "starshipTrait" },
+    ];
+    const seated = seatedItemsForCosts({
+      loadout: {
+        slots: [
+          { slotId: "universalConsole-0", itemId: 10, catalogKind: "item" },
+          { slotId: "starshipTrait-0", itemId: 90, catalogKind: "starshipTrait" },
+        ],
+      },
+      captainFills: [
+        { slotId: "captainStarship-0", itemId: 90, catalogKind: "starshipTrait" },
+      ],
+      items: catalog,
+    });
+    expect(seated.map((item) => item.id)).toEqual([10, 90]);
+  });
+
+  it("counts a lock-box personal trait on the captain board", () => {
+    const summary = aggregateLoadoutCosts({
+      seated: [
+        {
+          id: 8,
+          name: "Adaptive Offense",
+          catalogKind: "trait",
+          who: "Genetic Resequencer pack from the Borg Lock Box",
+        },
+      ],
+      ownedKeys: new Set(),
+      ownedShipIds: new Set(),
+      ships: [],
+    });
+    expect(summary.notCollected).toEqual([
+      expect.objectContaining({ currencyCode: "LB", amount: 1 }),
+    ]);
+  });
+
+  it("infers lock box from wiki HTML source instead of CSS fragments", () => {
+    const summary = aggregateLoadoutCosts({
+      seated: [
+        {
+          id: 8,
+          name: "Adaptive Offense",
+          catalogKind: "trait",
+          who: "Available from the <span style=\"font-family:'FuturaBody', Tahoma, Geneva, Arial;\" class=\"veryrare lht-data\">[[Genetic Resequencer - Space Trait: Adaptive Offense]]</span> pack, which is a random reward of the [[Borg Lock Box]] and can now be obtained from the [[Infinity Prize Pack: Personal Trait (Space)]].",
+        },
+      ],
+      ownedKeys: new Set(),
+      ownedShipIds: new Set(),
+      ships: [],
+    });
+    expect(summary.notCollected).toEqual([
+      expect.objectContaining({ currencyCode: "LB", amount: 1, label: "Lock Box" }),
+    ]);
+  });
+
+  it("adds a captain starship trait’s granting-ship cost", () => {
+    const summary = aggregateLoadoutCosts({
+      seated: seatedItemsForCosts({
+        loadout: { slots: [] },
+        captainFills: [
+          { slotId: "captainStarship-0", itemId: 90, catalogKind: "starshipTrait" },
+        ],
+        items: [
+          {
+            id: 90,
+            name: "Trait A",
+            type: "starship trait",
+            catalogKind: "starshipTrait",
+          },
+        ],
+      }),
+      ownedKeys: new Set(),
+      ownedShipIds: new Set(),
+      ships,
+      traits,
+    });
+    expect(summary.notCollected).toEqual([
+      expect.objectContaining({ currencyCode: "Zen", amount: 3000 }),
+    ]);
+  });
+
+  it("splits hull ability names on commas", () => {
+    expect(splitShipAbilities("Cloak,Raider Flanking, ")).toEqual([
+      "Cloak",
+      "Raider Flanking",
+    ]);
+    expect(splitShipAbilities(null)).toEqual([]);
   });
 });

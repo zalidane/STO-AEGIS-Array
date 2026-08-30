@@ -7,6 +7,7 @@ import {
   infoboxTextBlocks,
   parseInfoboxTextField,
 } from "@/logic/collection/itemText";
+import { filterTraitBrowserItems } from "@/logic/traitBrowser";
 
 describe("parseInfoboxTextField", () => {
   it("returns null for empty fields", () => {
@@ -122,6 +123,37 @@ describe("mapEquipmentInfoboxToBrowserItem", () => {
       image: "Custom_Phaser_icon.png",
     });
     expect(mapped.imageSrc).toBe("/images/items/Custom_Phaser_icon.png");
+  });
+
+  it("matches item browser search against infobox text fields", () => {
+    const sticky = mapEquipmentInfoboxToBrowserItem({
+      id: 10,
+      name: "Console - Universal - Sticky Web",
+      type: "Universal Console",
+      text1: "+25% Tetryon Damage&lt;br /&gt;+1.8 Auxiliary Power Setting",
+    });
+    const domino = mapEquipmentInfoboxToBrowserItem({
+      id: 11,
+      name: "Console - Universal - D.O.M.I.N.O.",
+      type: "Universal Console",
+      text1: "+15% Phaser Damage&lt;br /&gt;+20 Accuracy Rating",
+    });
+    const named = mapEquipmentInfoboxToBrowserItem({
+      id: 12,
+      name: "Tetryon Beam Array",
+      type: "Ship Fore Weapon",
+    });
+
+    expect(
+      filterTraitBrowserItems([sticky, domino, named], "tetryon").map(
+        (item) => item.id,
+      ),
+    ).toEqual([10, 12]);
+    expect(
+      filterTraitBrowserItems([sticky, domino, named], "phaser").map(
+        (item) => item.id,
+      ),
+    ).toEqual([11]);
   });
 });
 
