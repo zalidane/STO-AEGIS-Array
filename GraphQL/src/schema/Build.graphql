@@ -1,0 +1,34 @@
+type SharedBuild {
+  publicCode: String!
+  title: String!
+  shipName: String!
+  ship: Ship
+  payload: JSON!
+  visibility: String!
+  fillCount: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type PublishBuildResult {
+  build: SharedBuild!
+  editToken: String!
+  listingError: String
+}
+
+extend type Query {
+  sharedBuild(code: String!): SharedBuild
+  buildOfTheDay: SharedBuild
+  catalogUsage(catalogKind: String!, name: String!, type: String): Int!
+}
+
+type Mutation {
+  publishBuild(payload: JSON!, listPublic: Boolean): PublishBuildResult!
+  updateBuild(
+    publicCode: String!
+    editToken: String!
+    payload: JSON
+    listPublic: Boolean
+  ): PublishBuildResult!
+  unlistBuild(publicCode: String!, editToken: String!): SharedBuild!
+}

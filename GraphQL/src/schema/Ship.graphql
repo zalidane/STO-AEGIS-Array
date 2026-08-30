@@ -49,6 +49,7 @@ type Ship {
   displayClass: String
   displayType: String
   factionLede: String
+  wikiName: String!
   rawData: JSON
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -59,6 +60,7 @@ type Ship {
   uniConsole: Infobox
   experimentalWeaponItem: Infobox
   starshipTraits: [StarshipTrait!]!
+  publicBuildCount: Int!
 }
 
 extend type Query {

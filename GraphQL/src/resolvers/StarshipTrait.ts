@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@sto-aegis/database";
+import { countPublicUsage } from "./Build.js";
 
 export function createStarshipTraitResolver(prisma: PrismaClient) {
   return {
@@ -18,6 +19,11 @@ export function createStarshipTraitResolver(prisma: PrismaClient) {
         });
         return links.map((link) => link.ship);
       },
+      publicBuildCount: (parent: { name: string }) =>
+        countPublicUsage(prisma, {
+          catalogKind: "starshipTrait",
+          name: parent.name,
+        }),
     },
   };
 }

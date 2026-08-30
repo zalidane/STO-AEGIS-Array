@@ -42,6 +42,7 @@ type Infobox {
   swLockBoxes: [SwObtain!]!
   shipsWithConsole: [Ship!]!
   shipsWithExperimentalWeapon: [Ship!]!
+  publicBuildCount: Int!
 }
 
 extend type Query {

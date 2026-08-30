@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@sto-aegis/database";
 import { formatShipResolvedName } from "../logic/formatShipResolvedName.js";
+import { countPublicUsage } from "./Build.js";
 
 export function createShipResolver(prisma: PrismaClient) {
   return {
@@ -13,6 +14,9 @@ export function createShipResolver(prisma: PrismaClient) {
     Ship: {
       name: (parent: { name: string; displayClass: string | null }) =>
         formatShipResolvedName(parent.name, parent.displayClass),
+      wikiName: (parent: { name: string }) => parent.name,
+      publicBuildCount: (parent: { name: string }) =>
+        countPublicUsage(prisma, { name: parent.name, shipName: parent.name }),
       shipType: (parent: { shipTypeId: number | null }) =>
         parent.shipTypeId == null
           ? null
