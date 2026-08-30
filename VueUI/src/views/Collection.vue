@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { RouterLink } from "vue-router";
+import { computed, ref, watch } from "vue";
+import { RouterLink, useRoute, useRouter } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
 import { storeToRefs } from "pinia";
 import {
@@ -27,6 +27,11 @@ import type {
   CollectionEntry,
 } from "@/logic/collection/types";
 import { displayInfoboxType } from "@/logic/collection/itemBrowser";
+import {
+  collectionKindEmptyCopy,
+  groupCollectionByKind,
+  resolveCollectionTab,
+} from "@/logic/collection/kindTabs";
 import { getShipImageUrl } from "@/utils/shipImage";
 import {
   getItemImageUrl,
@@ -35,6 +40,8 @@ import {
 } from "@/utils/wikiImage";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
 
+const route = useRoute();
+const router = useRouter();
 const store = useCollectionStore();
 const { activeCharacter, state } = storeToRefs(store);
 
@@ -54,20 +61,6 @@ type Row = {
   bindChoicePrompt: string;
   ownedByActive: boolean;
   ownerName: string;
-};
-
-const KIND_ORDER: CatalogKind[] = [
-  "ship",
-  "trait",
-  "starshipTrait",
-  "item",
-];
-
-const KIND_LABEL: Record<CatalogKind, string> = {
-  ship: "Ships",
-  trait: "Traits",
-  starshipTrait: "Starship Traits",
-  item: "Items",
 };
 
 function lookupName(
@@ -168,12 +161,28 @@ const rows = computed<Row[]>(() => {
   });
 });
 
-const grouped = computed(() =>
-  KIND_ORDER.map((kind) => ({
-    kind,
-    label: KIND_LABEL[kind],
-    rows: rows.value.filter((row) => row.entry.kind === kind),
-  })).filter((group) => group.rows.length > 0),
+const tabs = computed(() =>
+  groupCollectionByKind(rows.value, (row) => row.entry.kind),
+);
+
+const requestedTab = computed(() =>
+  typeof route.query.tab === "string" ? route.query.tab : "",
+);
+
+const activeTab = ref<CatalogKind>(resolveCollectionTab(requestedTab.value));
+
+watch(requestedTab, (tab) => {
+  const next = resolveCollectionTab(tab);
+  if (next !== activeTab.value) activeTab.value = next;
+});
+
+watch(activeTab, (kind) => {
+  if (kind === requestedTab.value) return;
+  void router.replace({ query: { ...route.query, tab: kind } });
+});
+
+const activeGroup = computed(
+  () => tabs.value.find((tab) => tab.kind === activeTab.value) ?? tabs.value[0],
 );
 </script>
 
@@ -196,15 +205,32 @@ const grouped = computed(() =>
       No captain selected.
     </div>
 
-    <div v-else-if="grouped.length === 0" class="empty-featured">
-      Nothing collected yet. Browse ships, traits, or items and tap Collect.
-    </div>
+    <template v-else>
+      <v-tabs
+        v-model="activeTab"
+        color="primary"
+        bg-color="transparent"
+        show-arrows
+        class="collection-tabs"
+      >
+        <v-tab v-for="tab in tabs" :key="tab.kind" :value="tab.kind">
+          <v-icon start :icon="tab.icon" />
+          {{ tab.label }}
+          <span class="collection-tabs__count">{{ tab.rows.length }}</span>
+        </v-tab>
+      </v-tabs>
 
-    <section v-for="group in grouped" :key="group.kind" class="collection-group">
-      <h2 class="collection-group__title">{{ group.label }}</h2>
-      <div class="collection-list">
+      <div v-if="!activeGroup || activeGroup.rows.length === 0" class="empty-featured">
+        {{
+          activeGroup
+            ? collectionKindEmptyCopy(activeGroup.kind)
+            : "Nothing collected yet."
+        }}
+      </div>
+
+      <div v-else class="collection-list">
         <RouterLink
-          v-for="row in group.rows"
+          v-for="row in activeGroup.rows"
           :key="row.entry.id"
           :to="row.to"
           class="collection-row"
@@ -212,11 +238,11 @@ const grouped = computed(() =>
           <div class="collection-row__main">
             <WikiIcon :src="row.imageSrc" :alt="row.name" :size="40" />
             <div>
-            <div class="collection-row__name">{{ row.name }}</div>
-            <div class="collection-row__meta">
-              {{ row.subtitle }}
-              <span v-if="!row.ownedByActive"> · On {{ row.ownerName }}</span>
-            </div>
+              <div class="collection-row__name">{{ row.name }}</div>
+              <div class="collection-row__meta">
+                {{ row.subtitle }}
+                <span v-if="!row.ownedByActive"> · On {{ row.ownerName }}</span>
+              </div>
             </div>
           </div>
           <div class="collection-row__actions">
@@ -240,7 +266,7 @@ const grouped = computed(() =>
           </div>
         </RouterLink>
       </div>
-    </section>
+    </template>
   </v-container>
 </template>
 
@@ -275,16 +301,14 @@ const grouped = computed(() =>
   color: rgba(255, 255, 255, 0.68);
 }
 
-.collection-group {
-  margin-bottom: 1.5rem;
+.collection-tabs {
+  margin-bottom: 0.85rem;
 }
 
-.collection-group__title {
-  margin: 0 0 0.75rem;
-  font-size: 0.78rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #7dd3fc;
+.collection-tabs__count {
+  margin-left: 0.35rem;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.85em;
 }
 
 .collection-list {

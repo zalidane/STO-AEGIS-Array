@@ -189,17 +189,17 @@ const queryError = computed(
       {{ queryError.message }}
     </v-alert>
 
-    <FeaturedBuildCard
-      v-if="buildOfTheDay"
-      class="mb-4"
-      :public-code="buildOfTheDay.publicCode"
-      :title="buildOfTheDay.title"
-      :ship-name="buildOfTheDay.shipName"
-      :fill-count="buildOfTheDay.fillCount"
-      :ship="buildOfTheDay.ship"
-    />
-
     <section class="home-board" aria-label="Featured catalog">
+      <FeaturedBuildCard
+        v-if="buildOfTheDay"
+        class="home-botd"
+        :public-code="buildOfTheDay.publicCode"
+        :title="buildOfTheDay.title"
+        :ship-name="buildOfTheDay.shipName"
+        :fill-count="buildOfTheDay.fillCount"
+        :ship="buildOfTheDay.ship"
+      />
+
       <div class="featured-block">
         <loading-panel
           v-if="shipsLoading && !featuredShip"
@@ -211,40 +211,7 @@ const queryError = computed(
         </div>
       </div>
 
-      <nav class="catalog-stack" aria-label="Catalog sections">
-        <HomeSectionCard
-          v-for="section in sectionCards"
-          :key="section.key"
-          dense
-          :title="section.title"
-          :to="section.to"
-          :description="section.description"
-          :icon="section.icon"
-          :count-label="section.countLabel"
-        />
-      </nav>
-
       <div class="featured-traits">
-        <div class="featured-traits__item">
-          <div class="featured-heading">Featured Trait</div>
-          <loading-panel
-            v-if="traitsLoading && !featuredTrait"
-            message="Featured Trait"
-          />
-          <TraitDetailCard
-            v-else-if="featuredTrait"
-            :item="featuredTrait"
-            compact
-            collect-kind="trait"
-            collect-bind="character"
-            :art-src="FALLBACK_TRAIT_IMAGE"
-            :details-path="(id) => `/traits/${id}`"
-          />
-          <div v-else class="empty-featured">
-            No traits are available to feature.
-          </div>
-        </div>
-
         <div class="featured-traits__item">
           <div class="featured-heading">Featured Starship Trait</div>
           <loading-panel
@@ -267,7 +234,39 @@ const queryError = computed(
             No starship traits are available to feature.
           </div>
         </div>
+
+        <div class="featured-traits__item">
+          <div class="featured-heading">Featured Trait</div>
+          <loading-panel
+            v-if="traitsLoading && !featuredTrait"
+            message="Featured Trait"
+          />
+          <TraitDetailCard
+            v-else-if="featuredTrait"
+            :item="featuredTrait"
+            compact
+            collect-kind="trait"
+            collect-bind="character"
+            :art-src="FALLBACK_TRAIT_IMAGE"
+            :details-path="(id) => `/traits/${id}`"
+          />
+          <div v-else class="empty-featured">
+            No traits are available to feature.
+          </div>
+        </div>
       </div>
+
+      <nav class="catalog-row" aria-label="Catalog sections">
+        <HomeSectionCard
+          v-for="section in sectionCards"
+          :key="section.key"
+          :title="section.title"
+          :to="section.to"
+          :description="section.description"
+          :icon="section.icon"
+          :count-label="section.countLabel"
+        />
+      </nav>
     </section>
   </v-container>
 </template>
@@ -361,14 +360,16 @@ const queryError = computed(
 
 .home-board {
   display: grid;
-  grid-template-columns: 3fr 1fr;
+  grid-template-columns: minmax(0, 3fr) minmax(16rem, 2fr);
   gap: 1rem;
   align-items: stretch;
 }
 
+.home-botd {
+  grid-column: 1 / -1;
+}
+
 .featured-block {
-  grid-column: 1;
-  grid-row: 1;
   min-width: 0;
   display: flex;
 }
@@ -378,36 +379,29 @@ const queryError = computed(
   width: 100%;
 }
 
-.catalog-stack {
-  grid-column: 2;
-  grid-row: 1;
+.featured-traits {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  min-width: 0;
-}
-
-.catalog-stack > * {
-  flex: 1;
-}
-
-.featured-traits {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 1rem;
-  align-items: stretch;
+  min-width: 0;
 }
 
 .featured-traits__item {
   display: flex;
   flex-direction: column;
+  flex: 1;
   min-width: 0;
 }
 
 .featured-traits__item > :last-child {
   flex: 1;
+}
+
+.catalog-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
 }
 
 .featured-heading {
@@ -431,16 +425,16 @@ const queryError = computed(
     grid-template-columns: 1fr;
   }
 
+  .home-botd,
   .featured-block,
-  .catalog-stack,
-  .featured-traits {
+  .featured-traits,
+  .catalog-row {
     grid-column: 1;
-    grid-row: auto;
   }
 }
 
 @media (max-width: 800px) {
-  .featured-traits {
+  .catalog-row {
     grid-template-columns: 1fr;
   }
 }

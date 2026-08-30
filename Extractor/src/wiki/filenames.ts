@@ -26,10 +26,24 @@ export function iconFileTitle(nameOrFile: string): string {
   return `File:${title} icon.png`;
 }
 
+/** ASCII and Unicode apostrophes. Strip them so public paths stay POSIX/WAF-safe. */
+export const WIKI_APOSTROPHES = /['\u2018\u2019\u02BC]/g;
+
+export function stripWikiApostrophes(name: string): string {
+  return name.replace(WIKI_APOSTROPHES, "");
+}
+
+/** Case-insensitive key that also ignores apostrophes still present on disk. */
+export function imageFileMatchKey(filename: string): string {
+  return stripWikiApostrophes(filename).toLowerCase();
+}
+
 export function localFilename(fileTitle: string): string {
-  return normalizeWikiFileTitle(fileTitle)
-    .replace(/^File:/i, "")
-    .replaceAll(" ", "_");
+  return stripWikiApostrophes(
+    normalizeWikiFileTitle(fileTitle)
+      .replace(/^File:/i, "")
+      .replaceAll(" ", "_"),
+  );
 }
 
 export function matchKey(fileTitle: string): string {
