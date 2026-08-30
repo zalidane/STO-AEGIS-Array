@@ -37,6 +37,7 @@ query Ships {
     displayPrefix
     displayClass
     displayType
+    wikiName
     shipType {
       id
       name
@@ -95,6 +96,7 @@ query Ship($id: Int!) {
     displayClass
     displayType
     factionLede
+    wikiName
     uniconsoleId
     experimentalWeapon
     experimentalWeaponId
@@ -124,6 +126,7 @@ query Ship($id: Int!) {
       type
       obtained
     }
+    publicBuildCount
   }
 }
 
@@ -178,6 +181,7 @@ query ShipByName($name: String!) {
     displayClass
     displayType
     factionLede
+    wikiName
     uniconsoleId
     experimentalWeapon
     experimentalWeaponId
