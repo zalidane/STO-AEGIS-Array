@@ -1,4 +1,4 @@
-import { itemFitsSlot } from "./slotClass";
+import { itemFitsSlot, itemSlotClassesFromType } from "./slotClass";
 import type {
   CollectionLoadout,
   LoadoutCatalogKind,
@@ -94,6 +94,15 @@ export function isUniqueLimited(item: Pick<LoadoutItem, "equiplimit">): boolean 
   return item.equiplimit != null && item.equiplimit > 0;
 }
 
+/** One copy per loadout: personal traits, starship traits, and universal consoles. */
+export function isForcedUniqueItem(
+  item: Pick<LoadoutItem, "type" | "catalogKind">,
+): boolean {
+  const kind = item.catalogKind ?? "item";
+  if (kind === "trait" || kind === "starshipTrait") return true;
+  return itemSlotClassesFromType(item.type).includes("universalConsole");
+}
+
 export function loadoutOwnershipKey(
   catalogKind: LoadoutCatalogKind | undefined,
   itemId: number,
@@ -107,7 +116,10 @@ export function fillCatalogKind(
   return fill.catalogKind ?? "item";
 }
 
-export function copiesAllowed(item: Pick<LoadoutItem, "equiplimit">): number {
+export function copiesAllowed(
+  item: Pick<LoadoutItem, "equiplimit" | "type" | "catalogKind">,
+): number {
+  if (isForcedUniqueItem(item)) return 1;
   if (!isUniqueLimited(item)) return Number.POSITIVE_INFINITY;
   return item.equiplimit!;
 }
@@ -124,6 +136,23 @@ export function countCopiesInLoadout(
       fillCatalogKind(fill) === catalogKind &&
       fill.slotId !== exceptSlotId,
   ).length;
+}
+
+export function itemHasOpenCopy(
+  item: Pick<LoadoutItem, "id" | "equiplimit" | "type" | "catalogKind">,
+  fills: ReadonlyArray<Pick<LoadoutSlotFill, "slotId" | "itemId" | "catalogKind">>,
+  exceptSlotId?: string,
+): boolean {
+  const allowed = copiesAllowed(item);
+  if (!Number.isFinite(allowed)) return true;
+  const kind = item.catalogKind ?? "item";
+  const seated = fills.filter(
+    (fill) =>
+      fill.itemId === item.id &&
+      fillCatalogKind(fill) === kind &&
+      fill.slotId !== exceptSlotId,
+  ).length;
+  return seated < allowed;
 }
 
 export function itemFitsHullSlot(

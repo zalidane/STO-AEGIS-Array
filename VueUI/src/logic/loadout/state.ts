@@ -213,6 +213,7 @@ export function equipLoadoutSlot(
       slot,
     ),
     rarity: item.rarity,
+    itemType: item.type,
   });
   const nextSlots: LoadoutSlotFill[] = [
     ...loadout.slots.filter((fill) => fill.slotId !== input.slotId),
