@@ -13,6 +13,7 @@ import {
   setEntryBind,
   uncollectItem,
   uncollectMany as uncollectManyItems,
+  updateCharacter,
 } from "@/logic/collection/state";
 import {
   applyLoadout,
@@ -22,14 +23,22 @@ import {
   loadoutsForCharacter,
   renameLoadout,
   unequipLoadoutSlot,
+  updateLoadoutSlotMods,
 } from "@/logic/loadout/state";
 import type { LoadoutEquipContext } from "@/logic/loadout/types";
+import {
+  applyCaptainTraitFills,
+  equipCaptainTraitSlot,
+  unequipCaptainTraitSlot,
+  type CaptainTraitEquipContext,
+} from "@/logic/loadout/captainTraitState";
+import type { CaptainTraitFill } from "@/logic/loadout/captainTraits";
 import {
   createEmptyCollectionState,
   type CatalogKind,
   type CollectionState,
 } from "@/logic/collection/types";
-import type { BindScope } from "@/logic/collection/types";
+import type { BindScope, CreateCharacterInput } from "@/logic/collection/types";
 import { getCollectionRepository } from "@/models/collection";
 
 export const useCollectionStore = defineStore("collection", () => {
@@ -50,14 +59,27 @@ export const useCollectionStore = defineStore("collection", () => {
   const activeCharacter = computed(() => getActiveCharacter(state.value));
   const activeCharacterId = computed(() => state.value.activeCharacterId);
 
-  function addCharacter(name: string) {
-    state.value = createCharacter(state.value, name);
+  function addCharacter(input: string | CreateCharacterInput) {
+    state.value = createCharacter(state.value, input);
     persist();
     return getActiveCharacter(state.value);
   }
 
   function updateCharacterName(characterId: string, name: string) {
     state.value = renameCharacter(state.value, characterId, name);
+    persist();
+  }
+
+  function updateCharacterIdentity(
+    characterId: string,
+    patch: {
+      name?: string;
+      career?: CreateCharacterInput["career"];
+      faction?: string;
+      race?: string;
+    },
+  ) {
+    state.value = updateCharacter(state.value, characterId, patch);
     persist();
   }
 
@@ -82,7 +104,12 @@ export const useCollectionStore = defineStore("collection", () => {
   }
 
   function collectMany(
-    items: Array<{ kind: CatalogKind; catalogId: number; bind?: BindScope }>,
+    items: Array<{
+      kind: CatalogKind;
+      catalogId: number;
+      bind?: BindScope;
+      allowDuplicate?: boolean;
+    }>,
   ) {
     state.value = collectManyItems(state.value, items);
     persist();
@@ -164,6 +191,39 @@ export const useCollectionStore = defineStore("collection", () => {
     persist();
   }
 
+  function updateSlotMods(
+    loadoutId: string,
+    slotId: string,
+    mods: { quality?: string; mark?: string },
+  ) {
+    state.value = updateLoadoutSlotMods(state.value, {
+      loadoutId,
+      slotId,
+      ...mods,
+    });
+    persist();
+  }
+
+  function equipCaptainTrait(
+    input: {
+      slotId: string;
+      itemId: number;
+      catalogKind: CaptainTraitFill["catalogKind"];
+    },
+    context: CaptainTraitEquipContext,
+  ) {
+    const result = equipCaptainTraitSlot(state.value, input, context);
+    if (!result.ok) return result;
+    state.value = applyCaptainTraitFills(state.value, result.fills);
+    persist();
+    return result;
+  }
+
+  function unequipCaptainTrait(slotId: string) {
+    state.value = unequipCaptainTraitSlot(state.value, slotId);
+    persist();
+  }
+
   return {
     state,
     characters,
@@ -173,6 +233,7 @@ export const useCollectionStore = defineStore("collection", () => {
     load,
     addCharacter,
     updateCharacterName,
+    updateCharacterIdentity,
     removeCharacter,
     selectCharacter,
     collect,
@@ -188,5 +249,8 @@ export const useCollectionStore = defineStore("collection", () => {
     removeLoadout,
     equipSlot,
     unequipSlot,
+    updateSlotMods,
+    equipCaptainTrait,
+    unequipCaptainTrait,
   };
 });

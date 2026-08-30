@@ -4,6 +4,8 @@ export type HullGrantShip = {
   id: number;
   uniconsole?: string | null;
   uniconsoleId?: number | null;
+  experimentalWeapon?: string | null;
+  experimentalWeaponId?: number | null;
 };
 
 export type HullGrantTrait = {
@@ -20,11 +22,12 @@ function normalizeGrantName(value: string): string {
   return value.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-/** Unique consoles come with collected hulls; they are not a separate item collect. */
-export function uniqueConsoleIdsFromOwnedShips(
+function grantedItemIdsFromOwnedShips(
   ships: ReadonlyArray<HullGrantShip>,
   ownedShipIds: ReadonlySet<number>,
-  items: ReadonlyArray<HullGrantItem> = [],
+  items: ReadonlyArray<HullGrantItem>,
+  getId: (ship: HullGrantShip) => number | null | undefined,
+  getName: (ship: HullGrantShip) => string | null | undefined,
 ): number[] {
   const ids = new Set<number>();
   const itemIdByName = new Map(
@@ -32,16 +35,47 @@ export function uniqueConsoleIdsFromOwnedShips(
   );
   for (const ship of ships) {
     if (!ownedShipIds.has(ship.id)) continue;
-    if (ship.uniconsoleId != null) {
-      ids.add(ship.uniconsoleId);
+    const linkedId = getId(ship);
+    if (linkedId != null) {
+      ids.add(linkedId);
       continue;
     }
-    const named = ship.uniconsole?.trim();
+    const named = getName(ship)?.trim();
     if (!named) continue;
     const fromName = itemIdByName.get(normalizeGrantName(named));
     if (fromName != null) ids.add(fromName);
   }
   return [...ids];
+}
+
+/** Unique consoles come with collected hulls; they are not a separate item collect. */
+export function uniqueConsoleIdsFromOwnedShips(
+  ships: ReadonlyArray<HullGrantShip>,
+  ownedShipIds: ReadonlySet<number>,
+  items: ReadonlyArray<HullGrantItem> = [],
+): number[] {
+  return grantedItemIdsFromOwnedShips(
+    ships,
+    ownedShipIds,
+    items,
+    (ship) => ship.uniconsoleId,
+    (ship) => ship.uniconsole,
+  );
+}
+
+/** Included experimental weapons come with collected hulls that grant them. */
+export function experimentalWeaponIdsFromOwnedShips(
+  ships: ReadonlyArray<HullGrantShip>,
+  ownedShipIds: ReadonlySet<number>,
+  items: ReadonlyArray<HullGrantItem> = [],
+): number[] {
+  return grantedItemIdsFromOwnedShips(
+    ships,
+    ownedShipIds,
+    items,
+    (ship) => ship.experimentalWeaponId,
+    (ship) => ship.experimentalWeapon,
+  );
 }
 
 /** Starship traits granted by any collected hull. */
@@ -72,6 +106,13 @@ export function ownedKeysIncludingHullGrants(input: {
     keys.add(loadoutOwnershipKey("starshipTrait", id));
   }
   for (const id of uniqueConsoleIdsFromOwnedShips(
+    input.ships,
+    input.ownedShipIds,
+    input.items ?? [],
+  )) {
+    keys.add(loadoutOwnershipKey("item", id));
+  }
+  for (const id of experimentalWeaponIdsFromOwnedShips(
     input.ships,
     input.ownedShipIds,
     input.items ?? [],

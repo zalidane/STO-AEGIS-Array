@@ -7,6 +7,7 @@ import {
   itemFitsHullSlot,
   loadoutOwnershipKey,
 } from "./setBonus";
+import { inheritModsFromPreviousSameKind, modsForNewFill } from "./slotQuality";
 import type {
   CollectionLoadout,
   EquipResult,
@@ -24,7 +25,7 @@ function defaultLoadoutName(
     (loadout) =>
       loadout.characterId === characterId && loadout.shipId === shipId,
   ).length;
-  return count === 0 ? "Loadout 1" : `Loadout ${count + 1}`;
+  return count === 0 ? "Build 1" : `Build ${count + 1}`;
 }
 
 export function loadoutsForCharacter(
@@ -169,7 +170,11 @@ export function equipLoadoutSlot(
       (row.catalogKind ?? "item") === (input.catalogKind ?? "item"),
   );
   if (!item) return { ok: false, reason: "unknown-item" };
-  if (!context.ownedKeys.has(loadoutOwnershipKey(item.catalogKind, item.id))) {
+  const requireOwned = context.requireOwned !== false;
+  if (
+    requireOwned &&
+    !context.ownedKeys.has(loadoutOwnershipKey(item.catalogKind, item.id))
+  ) {
     return { ok: false, reason: "not-owned" };
   }
   if (!itemFitsHullSlot(item, slot.kind)) {
@@ -197,9 +202,21 @@ export function equipLoadoutSlot(
     return { ok: false, reason: "equip-limit" };
   }
 
+  const existing = loadout.slots.find((fill) => fill.slotId === input.slotId);
+  const mods = modsForNewFill({
+    kind: slot.kind,
+    catalogKind,
+    existing,
+    inherited: inheritModsFromPreviousSameKind(
+      context.hullSlots,
+      loadout.slots,
+      slot,
+    ),
+    rarity: item.rarity,
+  });
   const nextSlots: LoadoutSlotFill[] = [
     ...loadout.slots.filter((fill) => fill.slotId !== input.slotId),
-    { slotId: input.slotId, itemId: item.id, catalogKind },
+    { slotId: input.slotId, itemId: item.id, catalogKind, ...mods },
   ];
   const nextLoadout: CollectionLoadout = {
     ...loadout,
@@ -211,6 +228,30 @@ export function equipLoadoutSlot(
     ok: true,
     loadout: nextLoadout,
   };
+}
+
+export function updateLoadoutSlotMods(
+  state: CollectionState,
+  input: { loadoutId: string; slotId: string; quality?: string; mark?: string },
+  clock: CollectionClock = defaultCollectionClock(),
+): CollectionState {
+  return replaceLoadout(state, input.loadoutId, (loadout) => {
+    const fill = loadout.slots.find((row) => row.slotId === input.slotId);
+    if (!fill) return loadout;
+    return {
+      ...loadout,
+      updatedAt: clock.now(),
+      slots: loadout.slots.map((row) =>
+        row.slotId === input.slotId
+          ? {
+              ...row,
+              ...(input.quality != null ? { quality: input.quality } : {}),
+              ...(input.mark != null ? { mark: input.mark } : {}),
+            }
+          : row,
+      ),
+    };
+  });
 }
 
 export function applyLoadout(

@@ -1,10 +1,14 @@
-export type LoadoutCatalogKind = "item" | "starshipTrait";
+export type LoadoutCatalogKind = "item" | "starshipTrait" | "trait";
 
 export type LoadoutSlotFill = {
   slotId: string;
   itemId: number;
   /** Omitted on older saves; treated as an infobox item. */
   catalogKind?: LoadoutCatalogKind;
+  /** Seated copy quality; independent of catalog rarity. */
+  quality?: string;
+  /** Seated copy mark level, e.g. XII. */
+  mark?: string;
 };
 
 export type CollectionLoadout = {
@@ -25,12 +29,25 @@ export type LoadoutItem = {
   image?: string | null;
   equiplimit?: number | null;
   catalogKind?: LoadoutCatalogKind;
+  /** Wiki obtained / who text; used when no granting-ship cost exists. */
+  who?: string | null;
+  /** Infobox body copy used by the slot picker search. */
+  searchText?: string | null;
+  environment?: string | null;
+  career?: string | null;
+  required?: string | null;
 };
 
 export type LoadoutEquipContext = {
-  hullSlots: ReadonlyArray<{ id: string; kind: import("./slotClass").HullSlotKind }>;
+  hullSlots: ReadonlyArray<{
+    id: string;
+    kind: import("./slotClass").HullSlotKind;
+    index: number;
+  }>;
   items: ReadonlyArray<LoadoutItem>;
   ownedKeys: ReadonlySet<string>;
+  /** When false, unowned catalog items may still be seated. Defaults to true. */
+  requireOwned?: boolean;
 };
 
 export type EquipFailure =

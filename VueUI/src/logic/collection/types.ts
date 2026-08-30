@@ -1,3 +1,5 @@
+import type { CaptainCareer } from "@/logic/captain/identity";
+import type { CaptainTraitFill } from "@/logic/loadout/captainTraits";
 import type { CollectionLoadout } from "@/logic/loadout/types";
 
 export const COLLECTION_STATE_VERSION = 2 as const;
@@ -10,6 +12,17 @@ export type CollectionCharacter = {
   id: string;
   name: string;
   createdAt: string;
+  career?: CaptainCareer;
+  faction?: string;
+  race?: string;
+  traitSlots?: CaptainTraitFill[];
+};
+
+export type CreateCharacterInput = {
+  name: string;
+  career: CaptainCareer;
+  faction: string;
+  race: string;
 };
 
 export type CollectionEntry = {

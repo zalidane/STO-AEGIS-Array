@@ -5,10 +5,18 @@ import type {
   CollectionEntry,
   CollectionState,
   CollectionStatus,
+  CreateCharacterInput,
 } from "./types";
 import { createEmptyCollectionState, defaultCollectionClock } from "./types";
 import type { BindScope } from "./types";
 import type { CollectionLoadout } from "@/logic/loadout/types";
+import { careerById, factionById, raceById } from "@/logic/captain/identity";
+import {
+  buildCaptainTraitSlots,
+  pruneCaptainTraitFills,
+  type CaptainTraitFill,
+} from "@/logic/loadout/captainTraits";
+import { stripTraitFromCharacterBoard } from "@/logic/loadout/captainTraitState";
 import {
   stripItemFromCharacterLoadouts,
   stripLoadoutsForCharacter,
@@ -35,18 +43,36 @@ export function getActiveCharacter(
   );
 }
 
+function parseCreateInput(
+  input: string | CreateCharacterInput,
+): { name: string; identity?: Omit<CreateCharacterInput, "name"> } {
+  if (typeof input === "string") {
+    return { name: input.trim() };
+  }
+  return {
+    name: input.name.trim(),
+    identity: {
+      career: input.career,
+      faction: input.faction,
+      race: input.race,
+    },
+  };
+}
+
 export function createCharacter(
   state: CollectionState,
-  name: string,
+  input: string | CreateCharacterInput,
   clock: CollectionClock = defaultCollectionClock(),
 ): CollectionState {
-  const trimmed = name.trim();
-  if (!trimmed) return state;
+  const parsed = parseCreateInput(input);
+  if (!parsed.name) return state;
 
   const character: CollectionCharacter = {
     id: clock.id(),
-    name: trimmed,
+    name: parsed.name,
     createdAt: clock.now(),
+    ...(parsed.identity ?? {}),
+    traitSlots: [],
   };
 
   return {
@@ -61,17 +87,45 @@ export function renameCharacter(
   characterId: string,
   name: string,
 ): CollectionState {
-  const trimmed = name.trim();
-  if (!trimmed) return state;
+  return updateCharacter(state, characterId, { name });
+}
+
+export function updateCharacter(
+  state: CollectionState,
+  characterId: string,
+  patch: {
+    name?: string;
+    career?: CollectionCharacter["career"];
+    faction?: string;
+    race?: string;
+  },
+): CollectionState {
   if (!state.characters.some((character) => character.id === characterId)) {
     return state;
   }
+  const nextName = patch.name != null ? patch.name.trim() : undefined;
+  if (patch.name != null && !nextName) return state;
 
   return {
     ...state,
-    characters: state.characters.map((character) =>
-      character.id === characterId ? { ...character, name: trimmed } : character,
-    ),
+    characters: state.characters.map((character) => {
+      if (character.id !== characterId) return character;
+      const next: CollectionCharacter = {
+        ...character,
+        ...(nextName != null ? { name: nextName } : {}),
+        ...(patch.career !== undefined ? { career: patch.career } : {}),
+        ...(patch.faction !== undefined ? { faction: patch.faction } : {}),
+        ...(patch.race !== undefined ? { race: patch.race } : {}),
+      };
+      const slots = buildCaptainTraitSlots({
+        faction: next.faction,
+        race: next.race,
+      });
+      return {
+        ...next,
+        traitSlots: pruneCaptainTraitFills(next.traitSlots, slots),
+      };
+    }),
   };
 }
 
@@ -115,25 +169,36 @@ export function setActiveCharacter(
   return { ...state, activeCharacterId: characterId };
 }
 
+export function ownedCopyCount(
+  state: CollectionState,
+  input: { kind: CatalogKind; catalogId: number },
+): number {
+  const characterId = state.activeCharacterId;
+  if (!characterId) return 0;
+  return state.entries.filter(
+    (entry) =>
+      entry.characterId === characterId &&
+      entry.kind === input.kind &&
+      entry.catalogId === input.catalogId,
+  ).length;
+}
+
 export function collectItem(
   state: CollectionState,
   input: {
     kind: CatalogKind;
     catalogId: number;
     bind?: BindScope;
+    allowDuplicate?: boolean;
   },
   clock: CollectionClock = defaultCollectionClock(),
 ): CollectionState {
   const characterId = state.activeCharacterId;
   if (!characterId) return state;
 
-  const already = state.entries.some(
-    (entry) =>
-      entry.characterId === characterId &&
-      entry.kind === input.kind &&
-      entry.catalogId === input.catalogId,
-  );
-  if (already) return state;
+  const already = ownedCopyCount(state, input) > 0;
+  const canDuplicate = Boolean(input.allowDuplicate) && input.kind === "item";
+  if (already && !canDuplicate) return state;
 
   const entry: CollectionEntry = {
     id: clock.id(),
@@ -156,6 +221,7 @@ export function collectMany(
     kind: CatalogKind;
     catalogId: number;
     bind?: BindScope;
+    allowDuplicate?: boolean;
   }>,
   clock: CollectionClock = defaultCollectionClock(),
 ): CollectionState {
@@ -212,23 +278,47 @@ export function uncollectItem(
   const characterId = state.activeCharacterId;
   if (!characterId) return state;
 
+  let lastIndex = -1;
+  for (let i = state.entries.length - 1; i >= 0; i -= 1) {
+    const entry = state.entries[i];
+    if (
+      entry.characterId === characterId &&
+      entry.kind === input.kind &&
+      entry.catalogId === input.catalogId
+    ) {
+      lastIndex = i;
+      break;
+    }
+  }
+  if (lastIndex < 0) return state;
+
   const next = {
     ...state,
-    entries: state.entries.filter(
-      (entry) =>
-        !(
-          entry.characterId === characterId &&
-          entry.kind === input.kind &&
-          entry.catalogId === input.catalogId
-        ),
-    ),
+    entries: state.entries.filter((_, index) => index !== lastIndex),
   };
+  if (ownedCopyCount(next, input) > 0) return next;
+
+  if (input.kind === "trait") {
+    return stripTraitFromCharacterBoard(
+      next,
+      characterId,
+      input.catalogId,
+      "trait",
+    );
+  }
   if (input.kind !== "item" && input.kind !== "starshipTrait") return next;
-  return stripItemFromCharacterLoadouts(
+  const stripped = stripItemFromCharacterLoadouts(
     next,
     characterId,
     input.catalogId,
     input.kind === "starshipTrait" ? "starshipTrait" : "item",
+  );
+  if (input.kind !== "starshipTrait") return stripped;
+  return stripTraitFromCharacterBoard(
+    stripped,
+    characterId,
+    input.catalogId,
+    "starshipTrait",
   );
 }
 
@@ -332,14 +422,46 @@ export function hydrateCollectionState(
   };
 }
 
+function isTraitFill(value: unknown): value is CaptainTraitFill {
+  if (!value || typeof value !== "object") return false;
+  const fill = value as CaptainTraitFill;
+  return (
+    typeof fill.slotId === "string" &&
+    typeof fill.itemId === "number" &&
+    (fill.catalogKind === "trait" || fill.catalogKind === "starshipTrait")
+  );
+}
+
 function isCharacter(value: unknown): value is CollectionCharacter {
   if (!value || typeof value !== "object") return false;
   const character = value as CollectionCharacter;
-  return (
-    typeof character.id === "string" &&
-    typeof character.name === "string" &&
-    typeof character.createdAt === "string"
-  );
+  if (
+    typeof character.id !== "string" ||
+    typeof character.name !== "string" ||
+    typeof character.createdAt !== "string"
+  ) {
+    return false;
+  }
+  if (character.career != null && careerById(character.career) == null) {
+    return false;
+  }
+  if (character.faction != null && factionById(character.faction) == null) {
+    return false;
+  }
+  if (
+    character.race != null &&
+    raceById(character.faction, character.race) == null &&
+    raceById(undefined, character.race) == null
+  ) {
+    return false;
+  }
+  if (character.traitSlots != null && !Array.isArray(character.traitSlots)) {
+    return false;
+  }
+  if (character.traitSlots && !character.traitSlots.every(isTraitFill)) {
+    return false;
+  }
+  return true;
 }
 
 function isLoadout(value: unknown): value is CollectionLoadout {
@@ -360,7 +482,12 @@ function isLoadout(value: unknown): value is CollectionLoadout {
 function isSlotFill(value: unknown): value is CollectionLoadout["slots"][number] {
   if (!value || typeof value !== "object") return false;
   const fill = value as CollectionLoadout["slots"][number];
-  return typeof fill.slotId === "string" && typeof fill.itemId === "number";
+  if (typeof fill.slotId !== "string" || typeof fill.itemId !== "number") {
+    return false;
+  }
+  if (fill.quality != null && typeof fill.quality !== "string") return false;
+  if (fill.mark != null && typeof fill.mark !== "string") return false;
+  return true;
 }
 
 function isEntry(value: unknown): value is CollectionEntry {
