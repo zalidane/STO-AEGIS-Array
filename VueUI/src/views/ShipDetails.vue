@@ -20,6 +20,7 @@ import {
 } from "@/logic/collection/bind";
 import { shipsListQueryForAcquisition } from "@/logic/shipsBinder";
 import { extraHullSlotSummary } from "@/logic/loadout/hullExtras";
+import { publicUsageLabel } from "@/logic/share/usage";
 import {
   densityFromWidth,
   getShipDetailLabels,
@@ -119,6 +120,9 @@ watch(
                   <div class="ship-title font-weight-light">
                     {{ ship.name }}
                   </div>
+                  <p v-if="publicUsageLabel(ship.publicBuildCount)" class="usage-line">
+                    {{ publicUsageLabel(ship.publicBuildCount) }}
+                  </p>
                   <div class="d-flex justify-start mt-3">
                     <v-btn
                       :to="`/ships/${ship.id}/loadout`"
@@ -690,6 +694,12 @@ watch(
   font-size: clamp(1.75rem, 2.4vw, 3rem);
   line-height: 1.1;
   overflow-wrap: anywhere;
+}
+
+.usage-line {
+  margin: 0.5rem 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.9rem;
 }
 
 .hero-image {

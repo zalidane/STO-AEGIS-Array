@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
 import {
+  BuildOfTheDayDocument,
   ShipsDocument,
   StarshipTraitsDocument,
   TraitsDocument,
@@ -12,6 +13,7 @@ import {
 } from "@/graphql/generated/graphql";
 import HomeSectionCard from "@/components/home/HomeSectionCard.vue";
 import FeaturedShipCard from "@/components/home/FeaturedShipCard.vue";
+import FeaturedBuildCard from "@/components/home/FeaturedBuildCard.vue";
 import TraitDetailCard from "@/components/traits/TraitDetailCard.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import {
@@ -61,6 +63,7 @@ const {
   loading: starshipTraitsLoading,
   error: starshipTraitsError,
 } = useQuery(StarshipTraitsDocument);
+const { result: botdResult } = useQuery(BuildOfTheDayDocument);
 
 type Ship = ShipsQuery["ships"][number];
 type Trait = TraitsQuery["traits"][number];
@@ -117,6 +120,8 @@ const featuredStarshipTrait = computed<TraitBrowserItem | null>(() =>
     ? mapStarshipTraitToBrowserItem(featuredStarshipTraitSource.value)
     : null,
 );
+
+const buildOfTheDay = computed(() => botdResult.value?.buildOfTheDay ?? null);
 
 function featuredStarshipBind(): BindScope {
   return bindScopeForKind({
@@ -183,6 +188,16 @@ const queryError = computed(
     <v-alert v-if="queryError" type="error" class="mb-4">
       {{ queryError.message }}
     </v-alert>
+
+    <FeaturedBuildCard
+      v-if="buildOfTheDay"
+      class="mb-4"
+      :public-code="buildOfTheDay.publicCode"
+      :title="buildOfTheDay.title"
+      :ship-name="buildOfTheDay.shipName"
+      :fill-count="buildOfTheDay.fillCount"
+      :ship="buildOfTheDay.ship"
+    />
 
     <section class="home-board" aria-label="Featured catalog">
       <div class="featured-block">

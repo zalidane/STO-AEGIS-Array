@@ -18,6 +18,7 @@ import {
 } from "@/logic/collection/bind";
 import { bindChoiceFromGrantingShips } from "@/logic/collection/bindChoice";
 import { displayInfoboxType } from "@/logic/collection/itemBrowser";
+import { publicUsageLabel } from "@/logic/share/usage";
 
 const route = useRoute();
 const router = useRouter();
@@ -87,6 +88,9 @@ const fields = computed(() => {
           <div>
             <h3>{{ item.name }}</h3>
             <h5>{{ item.rarity }} • {{ displayInfoboxType(item.type) }}</h5>
+            <p v-if="publicUsageLabel(item.publicBuildCount)" class="usage-line">
+              {{ publicUsageLabel(item.publicBuildCount) }}
+            </p>
           </div>
         </div>
         <CollectToggle
@@ -147,3 +151,11 @@ const fields = computed(() => {
     <v-alert v-else type="warning">Infobox not found</v-alert>
   </v-container>
 </template>
+
+<style scoped>
+.usage-line {
+  margin: 0.35rem 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.9rem;
+}
+</style>

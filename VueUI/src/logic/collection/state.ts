@@ -281,6 +281,7 @@ export function uncollectItem(
   let lastIndex = -1;
   for (let i = state.entries.length - 1; i >= 0; i -= 1) {
     const entry = state.entries[i];
+    if (!entry) continue;
     if (
       entry.characterId === characterId &&
       entry.kind === input.kind &&

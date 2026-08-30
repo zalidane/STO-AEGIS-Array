@@ -78,6 +78,37 @@ export function createLoadout(
   };
 }
 
+/** Copy a published snapshot onto this captain. Always mints a new local UUID. */
+export function importSharedLoadout(
+  state: CollectionState,
+  input: { shipId: number; name?: string; slots: LoadoutSlotFill[] },
+  clock: CollectionClock = defaultCollectionClock(),
+): CollectionState {
+  const characterId = state.activeCharacterId;
+  if (!characterId) return state;
+
+  const name = input.name?.trim() || defaultLoadoutName(
+    state.loadouts,
+    input.shipId,
+    characterId,
+  );
+  const now = clock.now();
+  const loadout: CollectionLoadout = {
+    id: clock.id(),
+    characterId,
+    shipId: input.shipId,
+    name,
+    createdAt: now,
+    updatedAt: now,
+    slots: input.slots.map((fill) => ({ ...fill })),
+  };
+
+  return {
+    ...state,
+    loadouts: [...state.loadouts, loadout],
+  };
+}
+
 export function renameLoadout(
   state: CollectionState,
   loadoutId: string,

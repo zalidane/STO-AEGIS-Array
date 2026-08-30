@@ -18,7 +18,9 @@ import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
 import CaptainTraitsPanel from "@/components/loadout/CaptainTraitsPanel.vue";
+import ShareBuildDialog from "@/components/loadout/ShareBuildDialog.vue";
 import { useCollectionStore } from "@/stores/collection";
+import { useShareStore } from "@/stores/share";
 import {
   resolvedBindForEntry,
   visibleCatalogIds,
@@ -78,6 +80,7 @@ import {
   rankPickerCandidates,
 } from "@/logic/loadout/pickerRank";
 import { collectRequestsForSeated } from "@/logic/loadout/collectSeated";
+import { encodeSharePayload } from "@/logic/share/payload";
 import {
   displayedMark,
   displayedQuality,
@@ -231,6 +234,24 @@ const pickerError = ref("");
 const draftName = ref("");
 const pendingUniqueSeatId = ref<string | null>(null);
 const onlyCollected = ref(true);
+const shareOpen = ref(false);
+const shareStore = useShareStore();
+
+const sharePayload = computed(() => {
+  if (!activeLoadout.value || !ship.value) return null;
+  return encodeSharePayload({
+    shipName: ship.value.wikiName,
+    title: activeLoadout.value.name,
+    loadout: activeLoadout.value,
+    items: catalogItems.value,
+  });
+});
+
+const activeShare = computed(() =>
+  activeLoadout.value
+    ? shareStore.forLoadout(activeLoadout.value.id)
+    : null,
+);
 
 const pickerLabel = computed(
   () => pickerCaptainSlot.value?.label ?? pickerHullSlot.value?.label ?? "",
@@ -820,6 +841,9 @@ const loading = computed(
               @keydown.enter="renameActive"
               @blur="renameActive"
             />
+            <v-btn variant="text" color="primary" @click="shareOpen = true">
+              {{ activeShare ? "Shared" : "Share" }}
+            </v-btn>
             <v-btn variant="text" color="error" @click="removeActive">
               Delete
             </v-btn>
@@ -1178,6 +1202,12 @@ const loading = computed(
         </v-card-actions>
       </v-card>
     </v-dialog>
+      <ShareBuildDialog
+        v-if="activeLoadout"
+        v-model:open="shareOpen"
+        :loadout-id="activeLoadout.id"
+        :payload="sharePayload"
+      />
   </v-container>
 </template>
 
