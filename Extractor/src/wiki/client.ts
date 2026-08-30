@@ -165,6 +165,32 @@ export class WikiClient {
     return parseImageInfoPages(json);
   }
 
+  /**
+   * Current wikitext for wiki pages, keyed by the requested title.
+   * Follows redirects. Missing pages are omitted.
+   */
+  async pageWikitext(titles: readonly string[]): Promise<Map<string, string>> {
+    const result = new Map<string, string>();
+    const unique = [...new Set(titles.map((title) => title.trim()).filter(Boolean))];
+    const batchSize = 50;
+
+    for (let offset = 0; offset < unique.length; offset += batchSize) {
+      const batch = unique.slice(offset, offset + batchSize);
+      const json = await this.apiGet({
+        action: "query",
+        formatversion: "2",
+        redirects: "1",
+        titles: batch.join("|"),
+        prop: "revisions",
+        rvprop: "content",
+        rvslots: "main",
+      });
+      mergePageWikitext(json, batch, result);
+    }
+
+    return result;
+  }
+
   async categoryFiles(
     categoryTitle: string,
     pageSize = 20,
@@ -344,6 +370,77 @@ function parseWikiJson(text: string): WikiJson {
     if (error instanceof WikiClientError) throw error;
     throw new WikiClientError("Failed to parse STOWiki JSON");
   }
+}
+
+function mergePageWikitext(
+  json: WikiJson,
+  requested: readonly string[],
+  into: Map<string, string>,
+) {
+  const query = json.query;
+  if (!query || typeof query !== "object") return;
+  const q = query as Record<string, unknown>;
+  const alias = new Map<string, string>();
+  for (const row of listOf(q.normalized).concat(listOf(q.redirects))) {
+    const from = typeof row.from === "string" ? row.from : "";
+    const to = typeof row.to === "string" ? row.to : "";
+    if (from && to) alias.set(from, to);
+  }
+
+  const contentByTitle = new Map<string, string>();
+  for (const page of listOf(q.pages)) {
+    if (page.missing != null) continue;
+    const title = typeof page.title === "string" ? page.title : "";
+    const text = revisionWikitext(page);
+    if (title && text != null) contentByTitle.set(title, text);
+  }
+
+  for (const title of requested) {
+    const canonical = resolveAlias(title, alias);
+    const text =
+      contentByTitle.get(canonical) ??
+      contentByTitle.get(title) ??
+      contentByTitle.get(title.replace(/_/g, " "));
+    if (text != null) into.set(title, text);
+  }
+}
+
+function resolveAlias(title: string, alias: Map<string, string>): string {
+  let current = title;
+  for (let i = 0; i < 8; i += 1) {
+    const next = alias.get(current);
+    if (!next || next === current) return current;
+    current = next;
+  }
+  return current;
+}
+
+function revisionWikitext(page: Record<string, unknown>): string | null {
+  const revisions = Array.isArray(page.revisions) ? page.revisions[0] : null;
+  if (!revisions || typeof revisions !== "object") return null;
+  const rev = revisions as Record<string, unknown>;
+  if (typeof rev.content === "string") return rev.content;
+  if (typeof rev["*"] === "string") return rev["*"];
+  const slots = rev.slots;
+  if (!slots || typeof slots !== "object") return null;
+  const main = (slots as Record<string, unknown>).main;
+  if (!main || typeof main !== "object") return null;
+  const slot = main as Record<string, unknown>;
+  if (typeof slot.content === "string") return slot.content;
+  if (typeof slot["*"] === "string") return slot["*"];
+  return null;
+}
+
+function listOf(value: unknown): Array<Record<string, unknown>> {
+  const rows = Array.isArray(value)
+    ? value
+    : value && typeof value === "object"
+      ? Object.values(value as Record<string, unknown>)
+      : [];
+  return rows.filter(
+    (row): row is Record<string, unknown> =>
+      Boolean(row) && typeof row === "object",
+  );
 }
 
 function parseImageInfoPages(json: WikiJson): ImageInfo[] {

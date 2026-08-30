@@ -9,6 +9,7 @@ import {
   decodeHtmlEntitiesOrNull,
 } from "../utils/decodeHtmlEntities";
 import { buildShipNameIdMap } from "../utils/shipNameLookup";
+import { loadExperimentalWeaponMap } from "../extractors/extractShipExperimentalWeapons";
 import {
   dedupeShipsByDecodedName,
   dedupeStarshipTraitsByDecodedName,
@@ -52,10 +53,16 @@ export async function linkRelations(prisma: PrismaClient) {
   const masteries = await prisma.mastery.findMany();
   const gwRows = await prisma.gwObtain.findMany();
   const swRows = await prisma.swObtain.findMany();
+  const experimentalByShip = await loadExperimentalWeaponMap();
 
   const shipByName = buildShipNameIdMap(ships);
   const traitByName = nameIdMap(traits);
   const infoboxByName = nameIdMap(infoboxes);
+  const infoboxByNormalized = new Map(
+    infoboxes.map(
+      (row) => [normalizeInfoboxName(row.name), row.id] as const,
+    ),
+  );
 
   // --- ShipType taxonomy (Mastery.masterypackage / Ships.type) ---
   const typeNames = new Set<string>();
@@ -89,6 +96,15 @@ export async function linkRelations(prisma: PrismaClient) {
     const uniconsoleId = uniconsole
       ? (infoboxByName.get(uniconsole) ?? null)
       : null;
+    const experimentalWeapon = experimentalWeaponName(
+      ship.name,
+      experimentalByShip,
+    );
+    const experimentalWeaponId = experimentalWeapon
+      ? (infoboxByName.get(experimentalWeapon) ??
+        infoboxByNormalized.get(normalizeInfoboxName(experimentalWeapon)) ??
+        null)
+      : null;
 
     await prisma.ship.update({
       where: { id: ship.id },
@@ -96,6 +112,8 @@ export async function linkRelations(prisma: PrismaClient) {
         shipTypeId,
         uniconsole,
         uniconsoleId,
+        experimentalWeapon,
+        experimentalWeaponId,
       },
     });
   }
@@ -190,5 +208,19 @@ export async function linkRelations(prisma: PrismaClient) {
     shipTypes: shipTypeIdByName.size,
     traitShips: traitShipRows.length,
     modifierItems: modifierItems.length,
+    experimentalWeapons: Object.values(experimentalByShip).filter(Boolean).length,
   });
+}
+
+function experimentalWeaponName(
+  shipName: string,
+  map: Record<string, string | null>,
+): string | null {
+  const decoded = decodeHtmlEntities(shipName);
+  const named = map[shipName] ?? map[decoded] ?? null;
+  return named?.trim() ? named.trim() : null;
+}
+
+function normalizeInfoboxName(value: string): string {
+  return decodeHtmlEntities(value).replace(/\s+/g, " ").trim().toLowerCase();
 }

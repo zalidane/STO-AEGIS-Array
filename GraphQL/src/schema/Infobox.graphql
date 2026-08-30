@@ -41,6 +41,7 @@ type Infobox {
   gwLockBoxes: [GwObtain!]!
   swLockBoxes: [SwObtain!]!
   shipsWithConsole: [Ship!]!
+  shipsWithExperimentalWeapon: [Ship!]!
 }
 
 extend type Query {

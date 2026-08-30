@@ -21,6 +21,12 @@ export function createShipResolver(prisma: PrismaClient) {
         parent.uniconsoleId == null
           ? null
           : prisma.infobox.findUnique({ where: { id: parent.uniconsoleId } }),
+      experimentalWeaponItem: (parent: { experimentalWeaponId: number | null }) =>
+        parent.experimentalWeaponId == null
+          ? null
+          : prisma.infobox.findUnique({
+              where: { id: parent.experimentalWeaponId },
+            }),
       starshipTraits: async (parent: { id: number }) => {
         const links = await prisma.starshipTraitShip.findMany({
           where: { shipId: parent.id },
