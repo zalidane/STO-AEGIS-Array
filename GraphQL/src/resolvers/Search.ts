@@ -1,22 +1,10 @@
 import type { PrismaClient } from "@sto-aegis/database";
 import { formatShipResolvedName } from "../logic/formatShipResolvedName.js";
-import { equipmentInfoboxTypeWhere } from "../logic/equipmentInfobox.js";
-
-type ContainsFilter = {
-  contains: string;
-  mode: "insensitive";
-};
-
-function textContains(text: string): ContainsFilter {
-  return { contains: text, mode: "insensitive" };
-}
-
-/** Build a Prisma `OR` of case-insensitive `contains` filters for string fields. */
-export function orTextFields(text: string, fields: readonly string[]) {
-  return {
-    OR: fields.map((field) => ({ [field]: textContains(text) })),
-  };
-}
+import {
+  infoboxBodyOnlyWhere,
+  infoboxIdentityWhere,
+} from "../logic/infoboxSearch.js";
+import { mergeUniqueById, orTextFields } from "../logic/searchText.js";
 
 /** Text fields searched for each entity type. */
 export const SEARCH_FIELDS = {
@@ -78,34 +66,11 @@ export const SEARCH_FIELDS = {
   ],
   reputation: ["name", "description", "link", "environment"],
   setBonus: ["name", "setPage", "passives", "traySkills", "procs", "abilities"],
-  infobox: [
-    "name",
-    "type",
-    "rarity",
-    "who",
-    "boundto",
-    "text1",
-    "text2",
-    "text3",
-    "text4",
-    "text5",
-    "text6",
-    "text7",
-    "text8",
-    "text9",
-    "head1",
-    "head2",
-    "head3",
-    "head4",
-    "head5",
-    "head6",
-    "head7",
-    "head8",
-    "head9",
-  ],
 } as const;
 
 const SEARCH_TAKE = 20;
+/** Extra item hits from Text/Head fields so name-quota weapons do not hide consoles. */
+const SEARCH_INFOBOX_BODY_TAKE = 150;
 
 export function createSearchResolver(prisma: PrismaClient) {
   return {
@@ -121,7 +86,8 @@ export function createSearchResolver(prisma: PrismaClient) {
           traySkills,
           reputations,
           setBonuses,
-          infoboxes,
+          infoboxIdentityHits,
+          infoboxBodyHits,
         ] = await Promise.all([
           prisma.ship.findMany({
             where: orTextFields(text, SEARCH_FIELDS.ship),
@@ -154,16 +120,18 @@ export function createSearchResolver(prisma: PrismaClient) {
             orderBy: { name: "asc" },
           }),
           prisma.infobox.findMany({
-            where: {
-              AND: [
-                orTextFields(text, SEARCH_FIELDS.infobox),
-                equipmentInfoboxTypeWhere(),
-              ],
-            },
+            where: infoboxIdentityWhere(text),
             take: SEARCH_TAKE,
             orderBy: { name: "asc" },
           }),
+          prisma.infobox.findMany({
+            where: infoboxBodyOnlyWhere(text),
+            take: SEARCH_INFOBOX_BODY_TAKE,
+            orderBy: { name: "asc" },
+          }),
         ]);
+
+        const infoboxes = mergeUniqueById(infoboxBodyHits, infoboxIdentityHits);
 
         return [
           ...ships.map((s) => ({

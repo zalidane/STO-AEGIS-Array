@@ -71,6 +71,9 @@ model Ship {
   shipType       ShipType?           @relation(fields: [shipTypeId], references: [id])
   uniconsoleId   Int?
   uniConsole     Infobox?            @relation("ShipUniConsole", fields: [uniconsoleId], references: [id])
+  experimentalWeapon   String?
+  experimentalWeaponId Int?
+  experimentalWeaponItem Infobox?    @relation("ShipExperimentalWeapon", fields: [experimentalWeaponId], references: [id])
 }
 
 model StarshipTrait {
@@ -283,6 +286,7 @@ model Infobox {
   swLockBoxes      SwObtain[]     @relation("SwLockBox")
   modifierItems    ModifierItem[]
   shipsWithConsole Ship[]         @relation("ShipUniConsole")
+  shipsWithExperimentalWeapon Ship[] @relation("ShipExperimentalWeapon")
 
   @@index([name])
 }

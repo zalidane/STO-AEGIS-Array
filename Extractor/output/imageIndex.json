@@ -29631,6 +29631,16 @@
   },
   {
     "kind": "items",
+    "wikiTitle": "File:Emitter-Linked Disruptor Dual Cannons icon.png",
+    "localFilename": "Emitter-Linked_Disruptor_Dual_Cannons_icon.png",
+    "localPath": "/images/items/Emitter-Linked_Disruptor_Dual_Cannons_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/7c/Emitter-Linked_Disruptor_Dual_Cannons_icon.png",
+    "status": "exists",
+    "bytes": 8695,
+    "official": true
+  },
+  {
+    "kind": "items",
     "wikiTitle": "File:Emitter-Linked Disruptor Dual Heavy Cannons icon.png",
     "localFilename": "Emitter-Linked_Disruptor_Dual_Heavy_Cannons_icon.png",
     "localPath": "/images/items/Emitter-Linked_Disruptor_Dual_Heavy_Cannons_icon.png",
@@ -57301,12 +57311,362 @@
   },
   {
     "kind": "items",
-    "wikiTitle": "File:Emitter-Linked Disruptor Dual Cannons icon.png",
-    "localFilename": "Emitter-Linked_Disruptor_Dual_Cannons_icon.png",
-    "localPath": "/images/items/Emitter-Linked_Disruptor_Dual_Cannons_icon.png",
-    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/7c/Emitter-Linked_Disruptor_Dual_Cannons_icon.png",
+    "wikiTitle": "File:Elite Fleet Colony Security Antiproton Assault Minigun icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Antiproton_Assault_Minigun_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Antiproton_Assault_Minigun_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/a/a8/Elite_Fleet_Colony_Security_Antiproton_Assault_Minigun_icon.png",
     "status": "downloaded",
-    "bytes": 8695,
+    "bytes": 6768,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Antiproton Blast Assault icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Antiproton_Blast_Assault_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Antiproton_Blast_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/0/03/Elite_Fleet_Colony_Security_Antiproton_Blast_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6768,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Antiproton High Density Beam Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Antiproton_High_Density_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Antiproton_High_Density_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/78/Elite_Fleet_Colony_Security_Antiproton_High_Density_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Antiproton Pulsewave Assault icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Antiproton_Pulsewave_Assault_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Antiproton_Pulsewave_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/2/28/Elite_Fleet_Colony_Security_Antiproton_Pulsewave_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 7336,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Antiproton Sniper Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Antiproton_Sniper_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Antiproton_Sniper_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/4/41/Elite_Fleet_Colony_Security_Antiproton_Sniper_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Antiproton Split Beam Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Antiproton_Split_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Antiproton_Split_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/9/9f/Elite_Fleet_Colony_Security_Antiproton_Split_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Antiproton Stun Pistol icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Antiproton_Stun_Pistol_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Antiproton_Stun_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/a/a8/Elite_Fleet_Colony_Security_Antiproton_Stun_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 7914,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Antiproton Wide Beam Pistol icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Antiproton_Wide_Beam_Pistol_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Antiproton_Wide_Beam_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/d7/Elite_Fleet_Colony_Security_Antiproton_Wide_Beam_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 7914,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Disruptor Assault Minigun icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Disruptor_Assault_Minigun_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Disruptor_Assault_Minigun_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/2/27/Elite_Fleet_Colony_Security_Disruptor_Assault_Minigun_icon.png",
+    "status": "downloaded",
+    "bytes": 6768,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Disruptor Blast Assault icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Disruptor_Blast_Assault_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Disruptor_Blast_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/c/ca/Elite_Fleet_Colony_Security_Disruptor_Blast_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6768,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Disruptor High Density Beam Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Disruptor_High_Density_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Disruptor_High_Density_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/9/9f/Elite_Fleet_Colony_Security_Disruptor_High_Density_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Disruptor Pulsewave Assault icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Disruptor_Pulsewave_Assault_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Disruptor_Pulsewave_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/8/81/Elite_Fleet_Colony_Security_Disruptor_Pulsewave_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 7336,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Disruptor Sniper Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Disruptor_Sniper_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Disruptor_Sniper_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/3/3e/Elite_Fleet_Colony_Security_Disruptor_Sniper_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Disruptor Split Beam Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Disruptor_Split_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Disruptor_Split_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/70/Elite_Fleet_Colony_Security_Disruptor_Split_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Disruptor Stun Pistol icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Disruptor_Stun_Pistol_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Disruptor_Stun_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/e/eb/Elite_Fleet_Colony_Security_Disruptor_Stun_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 7914,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Disruptor Wide Beam Pistol icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Disruptor_Wide_Beam_Pistol_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Disruptor_Wide_Beam_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/70/Elite_Fleet_Colony_Security_Disruptor_Wide_Beam_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 7914,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Phaser Assault Minigun icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Phaser_Assault_Minigun_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Phaser_Assault_Minigun_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/da/Elite_Fleet_Colony_Security_Phaser_Assault_Minigun_icon.png",
+    "status": "downloaded",
+    "bytes": 6768,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Phaser Blast Assault icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Phaser_Blast_Assault_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Phaser_Blast_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/de/Elite_Fleet_Colony_Security_Phaser_Blast_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6768,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Phaser High Density Beam Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Phaser_High_Density_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Phaser_High_Density_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/78/Elite_Fleet_Colony_Security_Phaser_High_Density_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Phaser Pulsewave Assault icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Phaser_Pulsewave_Assault_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Phaser_Pulsewave_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/7d/Elite_Fleet_Colony_Security_Phaser_Pulsewave_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 7336,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Phaser Sniper Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Phaser_Sniper_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Phaser_Sniper_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/d3/Elite_Fleet_Colony_Security_Phaser_Sniper_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Phaser Split Beam Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Phaser_Split_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Phaser_Split_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/7a/Elite_Fleet_Colony_Security_Phaser_Split_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Phaser Stun Pistol icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Phaser_Stun_Pistol_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Phaser_Stun_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/3/31/Elite_Fleet_Colony_Security_Phaser_Stun_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 7914,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Phaser Wide Beam Pistol icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Phaser_Wide_Beam_Pistol_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Phaser_Wide_Beam_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/d3/Elite_Fleet_Colony_Security_Phaser_Wide_Beam_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 7914,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Plasma Assault Minigun icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Plasma_Assault_Minigun_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Plasma_Assault_Minigun_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/b/b3/Elite_Fleet_Colony_Security_Plasma_Assault_Minigun_icon.png",
+    "status": "downloaded",
+    "bytes": 6768,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Plasma Blast Assault icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Plasma_Blast_Assault_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Plasma_Blast_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/c/cd/Elite_Fleet_Colony_Security_Plasma_Blast_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6768,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Plasma High Density Beam Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Plasma_High_Density_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Plasma_High_Density_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/e/eb/Elite_Fleet_Colony_Security_Plasma_High_Density_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Plasma Pulsewave Assault icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Plasma_Pulsewave_Assault_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Plasma_Pulsewave_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/f/ff/Elite_Fleet_Colony_Security_Plasma_Pulsewave_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 7336,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Plasma Sniper Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Plasma_Sniper_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Plasma_Sniper_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/5/54/Elite_Fleet_Colony_Security_Plasma_Sniper_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Plasma Split Beam Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Plasma_Split_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Plasma_Split_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/4/4d/Elite_Fleet_Colony_Security_Plasma_Split_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Plasma Stun Pistol icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Plasma_Stun_Pistol_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Plasma_Stun_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/d0/Elite_Fleet_Colony_Security_Plasma_Stun_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 7914,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Plasma Wide Beam Pistol icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Plasma_Wide_Beam_Pistol_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Plasma_Wide_Beam_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/c/c7/Elite_Fleet_Colony_Security_Plasma_Wide_Beam_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 7914,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Polaron Assault Minigun icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Polaron_Assault_Minigun_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Polaron_Assault_Minigun_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/d9/Elite_Fleet_Colony_Security_Polaron_Assault_Minigun_icon.png",
+    "status": "downloaded",
+    "bytes": 6768,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Polaron Blast Assault icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Polaron_Blast_Assault_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Polaron_Blast_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/b/bb/Elite_Fleet_Colony_Security_Polaron_Blast_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6768,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Polaron High Density Beam Rifle icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Polaron_High_Density_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Polaron_High_Density_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/c/c9/Elite_Fleet_Colony_Security_Polaron_High_Density_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 8248,
+    "official": true
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Elite Fleet Colony Security Polaron Pulsewave Assault icon.png",
+    "localFilename": "Elite_Fleet_Colony_Security_Polaron_Pulsewave_Assault_icon.png",
+    "localPath": "/images/items/Elite_Fleet_Colony_Security_Polaron_Pulsewave_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/1/19/Elite_Fleet_Colony_Security_Polaron_Pulsewave_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 7336,
     "official": true
   },
   {
@@ -57431,11 +57791,651 @@
   },
   {
     "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Antiproton Assault Minigun icon.png",
+    "localFilename": "Advanced_Fleet_Antiproton_Assault_Minigun_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Antiproton_Assault_Minigun_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/3/36/Antiproton_Assault_Minigun_icon.png",
+    "status": "downloaded",
+    "bytes": 6661,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Antiproton Dual Pistols icon.png",
+    "localFilename": "Advanced_Fleet_Antiproton_Dual_Pistols_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Antiproton_Dual_Pistols_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/6/69/Antiproton_Dual_Pistols_icon.png",
+    "status": "downloaded",
+    "bytes": 10145,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Antiproton Full Auto Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Antiproton_Full_Auto_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Antiproton_Full_Auto_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/c/c4/Antiproton_Full_Auto_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6677,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Antiproton High Density Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Antiproton_High_Density_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Antiproton_High_Density_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/0/05/Antiproton_High_Density_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6677,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Antiproton Pulsewave Assault icon.png",
+    "localFilename": "Advanced_Fleet_Antiproton_Pulsewave_Assault_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Antiproton_Pulsewave_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/a/a2/Antiproton_Pulsewave_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6677,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Antiproton Sniper Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Antiproton_Sniper_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Antiproton_Sniper_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/3/30/Antiproton_Sniper_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6677,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Antiproton Split Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Antiproton_Split_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Antiproton_Split_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/72/Antiproton_Split_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6677,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Antiproton Stun Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Antiproton_Stun_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Antiproton_Stun_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/1/16/Antiproton_Stun_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 5942,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Antiproton Wide Beam Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Antiproton_Wide_Beam_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Antiproton_Wide_Beam_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/1/1e/Antiproton_Wide_Beam_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 5942,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Disruptor Assault Minigun icon.png",
+    "localFilename": "Advanced_Fleet_Disruptor_Assault_Minigun_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Disruptor_Assault_Minigun_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/1/14/Disruptor_Assault_Minigun_icon.png",
+    "status": "downloaded",
+    "bytes": 7362,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Disruptor Blast Assault icon.png",
+    "localFilename": "Advanced_Fleet_Disruptor_Blast_Assault_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Disruptor_Blast_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/8/88/Disruptor_Blast_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 7362,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Disruptor Compression Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Disruptor_Compression_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Disruptor_Compression_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/6/66/Disruptor_Compression_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 5430,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Disruptor Dual Pistols icon.png",
+    "localFilename": "Advanced_Fleet_Disruptor_Dual_Pistols_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Disruptor_Dual_Pistols_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/e/eb/Disruptor_Dual_Pistols_icon.png",
+    "status": "downloaded",
+    "bytes": 9902,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Disruptor Full Auto Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Disruptor_Full_Auto_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Disruptor_Full_Auto_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/1/1a/Disruptor_Full_Auto_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 5933,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Disruptor High Density Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Disruptor_High_Density_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Disruptor_High_Density_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/e/e2/Disruptor_High_Density_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6980,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Disruptor Pulsewave Assault icon.png",
+    "localFilename": "Advanced_Fleet_Disruptor_Pulsewave_Assault_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Disruptor_Pulsewave_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/4/4f/Disruptor_Pulsewave_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 5933,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Disruptor Sniper Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Disruptor_Sniper_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Disruptor_Sniper_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/76/Disruptor_Sniper_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 5933,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Disruptor Split Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Disruptor_Split_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Disruptor_Split_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/c/cc/Disruptor_Split_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6980,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Disruptor Stun Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Disruptor_Stun_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Disruptor_Stun_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/4/42/Disruptor_Stun_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6739,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Disruptor Wide Beam Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Disruptor_Wide_Beam_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Disruptor_Wide_Beam_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/2/29/Disruptor_Wide_Beam_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6739,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Phaser Assault Minigun icon.png",
+    "localFilename": "Advanced_Fleet_Phaser_Assault_Minigun_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Phaser_Assault_Minigun_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/c/cc/Phaser_Assault_Minigun_icon.png",
+    "status": "downloaded",
+    "bytes": 6725,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Phaser Blast Assault icon.png",
+    "localFilename": "Advanced_Fleet_Phaser_Blast_Assault_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Phaser_Blast_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/0/0e/Phaser_Blast_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6442,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Phaser Compression Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Phaser_Compression_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Phaser_Compression_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/d1/Phaser_Compression_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6398,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Phaser Dual Pistols icon.png",
+    "localFilename": "Advanced_Fleet_Phaser_Dual_Pistols_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Phaser_Dual_Pistols_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/d3/Phaser_Dual_Pistols_icon.png",
+    "status": "downloaded",
+    "bytes": 10443,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Phaser Full Auto Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Phaser_Full_Auto_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Phaser_Full_Auto_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/d3/Phaser_Full_Auto_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6389,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Phaser High Density Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Phaser_High_Density_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Phaser_High_Density_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/9/94/Phaser_High_Density_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6123,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Phaser Pulsewave Assault icon.png",
+    "localFilename": "Advanced_Fleet_Phaser_Pulsewave_Assault_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Phaser_Pulsewave_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/e/e7/Phaser_Pulsewave_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6123,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Phaser Sniper Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Phaser_Sniper_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Phaser_Sniper_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/2/2a/Phaser_Sniper_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6389,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Phaser Split Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Phaser_Split_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Phaser_Split_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/3/3d/Phaser_Split_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6389,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Phaser Stun Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Phaser_Stun_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Phaser_Stun_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/d5/Phaser_Stun_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6083,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Phaser Wide Beam Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Phaser_Wide_Beam_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Phaser_Wide_Beam_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/b/b8/Phaser_Wide_Beam_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6083,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Plasma Assault Minigun icon.png",
+    "localFilename": "Advanced_Fleet_Plasma_Assault_Minigun_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Plasma_Assault_Minigun_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/1/14/Plasma_Assault_Minigun_icon.png",
+    "status": "downloaded",
+    "bytes": 6426,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Plasma Blast Assault icon.png",
+    "localFilename": "Advanced_Fleet_Plasma_Blast_Assault_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Plasma_Blast_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/8/83/Plasma_Blast_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6426,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Plasma Compression Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Plasma_Compression_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Plasma_Compression_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/8/83/Plasma_Compression_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6983,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Plasma Dual Pistols icon.png",
+    "localFilename": "Advanced_Fleet_Plasma_Dual_Pistols_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Plasma_Dual_Pistols_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/4/48/Plasma_Dual_Pistols_icon.png",
+    "status": "downloaded",
+    "bytes": 9773,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Plasma Full Auto Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Plasma_Full_Auto_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Plasma_Full_Auto_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/e/e2/Plasma_Full_Auto_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6630,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Plasma High Density Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Plasma_High_Density_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Plasma_High_Density_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/4/49/Plasma_High_Density_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6630,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Plasma Pulsewave Assault icon.png",
+    "localFilename": "Advanced_Fleet_Plasma_Pulsewave_Assault_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Plasma_Pulsewave_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/a/a6/Plasma_Pulsewave_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6630,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Plasma Sniper Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Plasma_Sniper_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Plasma_Sniper_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/8/83/Plasma_Sniper_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6630,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Plasma Split Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Plasma_Split_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Plasma_Split_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/6/6c/Plasma_Split_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6630,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Plasma Stun Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Plasma_Stun_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Plasma_Stun_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/6/64/Plasma_Stun_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6983,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Plasma Wide Beam Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Plasma_Wide_Beam_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Plasma_Wide_Beam_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/c/c6/Plasma_Wide_Beam_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6983,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Polaron Assault Minigun icon.png",
+    "localFilename": "Advanced_Fleet_Polaron_Assault_Minigun_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Polaron_Assault_Minigun_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/7d/Polaron_Assault_Minigun_icon.png",
+    "status": "downloaded",
+    "bytes": 6938,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Polaron Blast Assault icon.png",
+    "localFilename": "Advanced_Fleet_Polaron_Blast_Assault_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Polaron_Blast_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/2/26/Polaron_Blast_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6938,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Polaron Compression Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Polaron_Compression_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Polaron_Compression_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/c/c1/Polaron_Compression_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6307,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Polaron Dual Pistols icon.png",
+    "localFilename": "Advanced_Fleet_Polaron_Dual_Pistols_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Polaron_Dual_Pistols_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/2/2b/Polaron_Dual_Pistols_icon.png",
+    "status": "downloaded",
+    "bytes": 10119,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Polaron Full Auto Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Polaron_Full_Auto_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Polaron_Full_Auto_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/a/aa/Polaron_Full_Auto_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6546,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Polaron High Density Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Polaron_High_Density_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Polaron_High_Density_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/b/b5/Polaron_High_Density_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6546,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Polaron Pulsewave Assault icon.png",
+    "localFilename": "Advanced_Fleet_Polaron_Pulsewave_Assault_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Polaron_Pulsewave_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/b/b8/Polaron_Pulsewave_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6546,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Polaron Sniper Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Polaron_Sniper_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Polaron_Sniper_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/4/46/Polaron_Sniper_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6546,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Polaron Split Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Polaron_Split_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Polaron_Split_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/2/28/Polaron_Split_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6546,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Polaron Stun Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Polaron_Stun_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Polaron_Stun_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/5/5f/Polaron_Stun_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6307,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Polaron Wide Beam Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Polaron_Wide_Beam_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Polaron_Wide_Beam_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/b/b8/Polaron_Wide_Beam_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6307,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Tetryon Assault Minigun icon.png",
+    "localFilename": "Advanced_Fleet_Tetryon_Assault_Minigun_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Tetryon_Assault_Minigun_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/0/03/Tetryon_Assault_Minigun_icon.png",
+    "status": "downloaded",
+    "bytes": 6630,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Tetryon Blast Assault icon.png",
+    "localFilename": "Advanced_Fleet_Tetryon_Blast_Assault_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Tetryon_Blast_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/da/Tetryon_Blast_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6630,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Tetryon Compression Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Tetryon_Compression_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Tetryon_Compression_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/5/5f/Tetryon_Compression_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6544,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Tetryon Dual Pistols icon.png",
+    "localFilename": "Advanced_Fleet_Tetryon_Dual_Pistols_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Tetryon_Dual_Pistols_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/b/bd/Tetryon_Dual_Pistols_icon.png",
+    "status": "downloaded",
+    "bytes": 10094,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Tetryon Full Auto Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Tetryon_Full_Auto_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Tetryon_Full_Auto_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/6/6b/Tetryon_Full_Auto_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6450,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Tetryon High Density Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Tetryon_High_Density_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Tetryon_High_Density_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/e/e1/Tetryon_High_Density_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6450,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Tetryon Pulsewave Assault icon.png",
+    "localFilename": "Advanced_Fleet_Tetryon_Pulsewave_Assault_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Tetryon_Pulsewave_Assault_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/71/Tetryon_Pulsewave_Assault_icon.png",
+    "status": "downloaded",
+    "bytes": 6450,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Tetryon Sniper Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Tetryon_Sniper_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Tetryon_Sniper_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/72/Tetryon_Sniper_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6450,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Tetryon Split Beam Rifle icon.png",
+    "localFilename": "Advanced_Fleet_Tetryon_Split_Beam_Rifle_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Tetryon_Split_Beam_Rifle_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/da/Tetryon_Split_Beam_Rifle_icon.png",
+    "status": "downloaded",
+    "bytes": 6450,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Advanced Fleet Tetryon Stun Pistol icon.png",
+    "localFilename": "Advanced_Fleet_Tetryon_Stun_Pistol_icon.png",
+    "localPath": "/images/items/Advanced_Fleet_Tetryon_Stun_Pistol_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/f/f4/Tetryon_Stun_Pistol_icon.png",
+    "status": "downloaded",
+    "bytes": 6544,
+    "official": false
+  },
+  {
+    "kind": "items",
     "wikiTitle": "File:Baseball Vanity Shield - Deep Space \"Niners\" icon.png",
     "localFilename": "Baseball_Vanity_Shield_-_Deep_Space_\"Niners\"_icon.png",
     "localPath": "/images/items/Baseball_Vanity_Shield_-_Deep_Space_\"Niners\"_icon.png",
     "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/e/ed/Deep_Space_Niners_Vanity_Shield_icon.png",
     "status": "failed",
+    "bytes": null,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Command Kit Module - Coordinate Bombing Strike icon.png",
+    "localFilename": "Command_Kit_Module_-_Coordinate_Bombing_Strike_icon.png",
+    "localPath": "/images/items/Command_Kit_Module_-_Coordinate_Bombing_Strike_icon.png",
+    "url": null,
+    "status": "missing",
     "bytes": null,
     "official": false
   },
@@ -57457,6 +58457,96 @@
     "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/4/4f/Special_Equipment_Pack_-_%22The_Last_Generation%22_Weapons_icon.png",
     "status": "failed",
     "bytes": null,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Temporal Operative Kit Module - Chronometric Diffusion icon.png",
+    "localFilename": "Temporal_Operative_Kit_Module_-_Chronometric_Diffusion_icon.png",
+    "localPath": "/images/items/Temporal_Operative_Kit_Module_-_Chronometric_Diffusion_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/8/83/Temporal_Operative_Kit_Module_-_Chronometric_Diffusion_icon.png",
+    "status": "downloaded",
+    "bytes": 8439,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Temporal Operative Kit Module - Chronoplasty icon.png",
+    "localFilename": "Temporal_Operative_Kit_Module_-_Chronoplasty_icon.png",
+    "localPath": "/images/items/Temporal_Operative_Kit_Module_-_Chronoplasty_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/9/98/Temporal_Operative_Kit_Module_-_Chronoplasty_icon.png",
+    "status": "downloaded",
+    "bytes": 8265,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Temporal Operative Kit Module - Degeneration icon.png",
+    "localFilename": "Temporal_Operative_Kit_Module_-_Degeneration_icon.png",
+    "localPath": "/images/items/Temporal_Operative_Kit_Module_-_Degeneration_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/c/c4/Temporal_Operative_Kit_Module_-_Degeneration_icon.png",
+    "status": "downloaded",
+    "bytes": 7902,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Temporal Operative Kit Module - Entropic Contagion icon.png",
+    "localFilename": "Temporal_Operative_Kit_Module_-_Entropic_Contagion_icon.png",
+    "localPath": "/images/items/Temporal_Operative_Kit_Module_-_Entropic_Contagion_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/4/44/Temporal_Operative_Kit_Module_-_Entropic_Contagion_icon.png",
+    "status": "downloaded",
+    "bytes": 8305,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Temporal Operative Kit Module - Recursive Affliction icon.png",
+    "localFilename": "Temporal_Operative_Kit_Module_-_Recursive_Affliction_icon.png",
+    "localPath": "/images/items/Temporal_Operative_Kit_Module_-_Recursive_Affliction_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/2/29/Temporal_Operative_Kit_Module_-_Recursive_Affliction_icon.png",
+    "status": "downloaded",
+    "bytes": 7914,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Temporal Operative Kit Module - Spread Decay icon.png",
+    "localFilename": "Temporal_Operative_Kit_Module_-_Spread_Decay_icon.png",
+    "localPath": "/images/items/Temporal_Operative_Kit_Module_-_Spread_Decay_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/3/3f/Temporal_Operative_Kit_Module_-_Spread_Decay_icon.png",
+    "status": "downloaded",
+    "bytes": 8304,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Temporal Operative Kit Module - Tachyonic Conversion icon.png",
+    "localFilename": "Temporal_Operative_Kit_Module_-_Tachyonic_Conversion_icon.png",
+    "localPath": "/images/items/Temporal_Operative_Kit_Module_-_Tachyonic_Conversion_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/7/78/Temporal_Operative_Kit_Module_-_Tachyonic_Conversion_icon.png",
+    "status": "downloaded",
+    "bytes": 8301,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Temporal Operative Kit Module - Temporal Narcosis icon.png",
+    "localFilename": "Temporal_Operative_Kit_Module_-_Temporal_Narcosis_icon.png",
+    "localPath": "/images/items/Temporal_Operative_Kit_Module_-_Temporal_Narcosis_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/d/dd/Temporal_Operative_Kit_Module_-_Temporal_Narcosis_icon.png",
+    "status": "downloaded",
+    "bytes": 7956,
+    "official": false
+  },
+  {
+    "kind": "items",
+    "wikiTitle": "File:Temporal Operative Kit Module - Uncertainty Burst icon.png",
+    "localFilename": "Temporal_Operative_Kit_Module_-_Uncertainty_Burst_icon.png",
+    "localPath": "/images/items/Temporal_Operative_Kit_Module_-_Uncertainty_Burst_icon.png",
+    "url": "https://stowiki.net/w/images/Wiki_Images/sto_images/b/b9/Temporal_Operative_Kit_Module_-_Uncertainty_Burst_icon.png",
+    "status": "downloaded",
+    "bytes": 8284,
     "official": false
   }
 ]

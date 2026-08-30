@@ -117,6 +117,14 @@ async function runExtract(options: {
     console.log(
       "Cargo extract complete. Commit Extractor/output/*.json when ready for production import.",
     );
+
+    await ensureLogin();
+    const { extractShipExperimentalWeapons } = await import(
+      "./extractors/extractShipExperimentalWeapons.js"
+    );
+    await extractShipExperimentalWeapons(wiki, {
+      force: options.forceRefresh,
+    });
   }
 
   if (options.skipImages) {

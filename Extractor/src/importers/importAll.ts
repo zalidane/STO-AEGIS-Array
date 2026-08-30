@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { createPrismaClient } from "@sto-aegis/database";
 
 import { importMappings } from "./importMappings.js";
@@ -5,6 +6,7 @@ import { importTable } from "./importTable.js";
 import { loadState, saveState } from "./importState.js";
 import { getFileHash } from "../extractors/getFileHash.js";
 import { linkRelations } from "./linkRelations.js";
+import { SHIP_EXPERIMENTAL_WEAPONS_PATH } from "../extractors/extractShipExperimentalWeapons.js";
 
 import type { ImportConfig } from "./importConfig.js";
 
@@ -63,9 +65,23 @@ export async function importAll(forceImport = false) {
       await saveState(state);
     }
 
-    if (anyImported || forceImport) {
+    const experimentalHash = existsSync(SHIP_EXPERIMENTAL_WEAPONS_PATH)
+      ? await getFileHash(SHIP_EXPERIMENTAL_WEAPONS_PATH)
+      : null;
+    const experimentalChanged =
+      experimentalHash != null &&
+      experimentalHash !== state.ShipExperimentalWeapons?.hash;
+
+    if (anyImported || forceImport || experimentalChanged) {
       console.log("Resolving relationships...");
       await linkRelations(prisma);
+      if (experimentalHash != null) {
+        state.ShipExperimentalWeapons = {
+          hash: experimentalHash,
+          lastImported: new Date().toISOString(),
+        };
+        await saveState(state);
+      }
     }
   } finally {
     await prisma.$disconnect();

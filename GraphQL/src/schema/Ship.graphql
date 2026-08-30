@@ -37,6 +37,7 @@ type Ship {
   uniconsole: String
   t5uConsole: String
   experimental: Boolean!
+  experimentalWeapon: String
   secondaryDeflector: Boolean!
   hangars: Int
   cost: String
@@ -53,8 +54,10 @@ type Ship {
   updatedAt: DateTime!
   shipTypeId: Int
   uniconsoleId: Int
+  experimentalWeaponId: Int
   shipType: ShipType
   uniConsole: Infobox
+  experimentalWeaponItem: Infobox
   starshipTraits: [StarshipTrait!]!
 }
 

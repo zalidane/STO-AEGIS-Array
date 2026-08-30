@@ -16,6 +16,10 @@ export function createInfoboxResolver(prisma: PrismaClient) {
         prisma.swObtain.findMany({ where: { lockBoxId: parent.id } }),
       shipsWithConsole: (parent: { id: number }) =>
         prisma.ship.findMany({ where: { uniconsoleId: parent.id } }),
+      shipsWithExperimentalWeapon: (parent: { id: number }) =>
+        prisma.ship.findMany({
+          where: { experimentalWeaponId: parent.id },
+        }),
     },
   };
 }
