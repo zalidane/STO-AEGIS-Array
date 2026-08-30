@@ -18,6 +18,11 @@ query Ships {
     turnRate
     impulse
     inertia
+    powerAll
+    powerWeapons
+    powerShields
+    powerEngines
+    powerAuxiliary
     foreWeapons
     aftWeapons
     tacticalSlots
@@ -29,9 +34,11 @@ query Ships {
     hangars
     devices
     experimental
+    equipCannons
     uniconsole
     uniconsoleId
     experimentalWeapon
+    abilities
     experimentalWeaponId
     cost
     displayPrefix

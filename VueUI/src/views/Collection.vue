@@ -39,6 +39,8 @@ import {
   getTraitImageUrl,
 } from "@/utils/wikiImage";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
+import CompareToggle from "@/components/compare/CompareToggle.vue";
+import CompareLaunch from "@/components/compare/CompareLaunch.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -199,6 +201,7 @@ const activeGroup = computed(
             : "Create a captain in the header to start a collection on this device."
         }}
       </p>
+      <CompareLaunch class="mt-3" />
     </header>
 
     <div v-if="!activeCharacter" class="empty-featured">
@@ -245,7 +248,12 @@ const activeGroup = computed(
               </div>
             </div>
           </div>
-          <div class="collection-row__actions">
+          <div class="collection-row__actions" @click.stop>
+            <CompareToggle
+              v-if="row.entry.kind === 'ship'"
+              compact
+              :ship-id="row.entry.catalogId"
+            />
             <v-btn
               v-if="row.entry.kind === 'ship'"
               :to="`/ships/${row.entry.catalogId}/loadout`"

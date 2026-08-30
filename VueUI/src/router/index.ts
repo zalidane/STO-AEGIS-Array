@@ -8,6 +8,7 @@ import SharedBuild from "@/views/SharedBuild.vue";
 import Ships from "@/views/Ships.vue";
 import ShipDetails from "@/views/ShipDetails.vue";
 import LoadoutBuilder from "@/views/LoadoutBuilder.vue";
+import ShipCompare from "@/views/ShipCompare.vue";
 import Traits from "@/views/Traits.vue";
 import TraitDetails from "@/views/TraitDetails.vue";
 import StarshipTraits from "@/views/StarshipTraits.vue";
@@ -63,6 +64,12 @@ const router = createRouter({
       name: "ships",
       component: Ships,
       meta: { breadcrumb: "Ships" },
+    },
+    {
+      path: "/ships/compare",
+      name: "ship-compare",
+      component: ShipCompare,
+      meta: { breadcrumb: "Compare", parent: "/ships" },
     },
     {
       path: "/ships/:id",
