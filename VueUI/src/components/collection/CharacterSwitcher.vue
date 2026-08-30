@@ -2,6 +2,11 @@
 import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useCollectionStore } from "@/stores/collection";
+import CaptainIdentityFields from "@/components/collection/CaptainIdentityFields.vue";
+import {
+  isCompleteIdentity,
+  type CaptainCareer,
+} from "@/logic/captain/identity";
 
 const store = useCollectionStore();
 const { characters, activeCharacter, activeCharacterId } = storeToRefs(store);
@@ -11,8 +16,17 @@ const createOpen = ref(false);
 const renameOpen = ref(false);
 const deleteOpen = ref(false);
 const draftName = ref("");
+const draftIdentity = ref<{
+  career: CaptainCareer | "";
+  faction: string;
+  race: string;
+}>({
+  career: "",
+  faction: "",
+  race: "",
+});
 
-const createError = computed(() => {
+const nameError = computed(() => {
   const name = draftName.value.trim();
   if (!name) return "Name is required.";
   const taken = characters.value.some(
@@ -24,25 +38,59 @@ const createError = computed(() => {
   return "";
 });
 
+const identityReady = computed(() =>
+  isCompleteIdentity({
+    career: draftIdentity.value.career || undefined,
+    faction: draftIdentity.value.faction,
+    race: draftIdentity.value.race,
+  }),
+);
+
+const createError = computed(() => {
+  if (nameError.value) return nameError.value;
+  if (!identityReady.value) return "Class, faction, and race are required.";
+  return "";
+});
+
+function resetIdentity() {
+  draftIdentity.value = { career: "", faction: "", race: "" };
+}
+
 function openCreate() {
   draftName.value = "";
+  resetIdentity();
   createOpen.value = true;
 }
 
 function openRename() {
   draftName.value = activeCharacter.value?.name ?? "";
+  draftIdentity.value = {
+    career: activeCharacter.value?.career ?? "",
+    faction: activeCharacter.value?.faction ?? "",
+    race: activeCharacter.value?.race ?? "",
+  };
   renameOpen.value = true;
 }
 
 function submitCreate() {
-  if (createError.value) return;
-  store.addCharacter(draftName.value);
+  if (createError.value || !identityReady.value) return;
+  store.addCharacter({
+    name: draftName.value,
+    career: draftIdentity.value.career as CaptainCareer,
+    faction: draftIdentity.value.faction,
+    race: draftIdentity.value.race,
+  });
   createOpen.value = false;
 }
 
 function submitRename() {
-  if (!activeCharacterId.value || createError.value) return;
-  store.updateCharacterName(activeCharacterId.value, draftName.value);
+  if (!activeCharacterId.value || nameError.value || !identityReady.value) return;
+  store.updateCharacterIdentity(activeCharacterId.value, {
+    name: draftName.value,
+    career: draftIdentity.value.career as CaptainCareer,
+    faction: draftIdentity.value.faction,
+    race: draftIdentity.value.race,
+  });
   renameOpen.value = false;
 }
 
@@ -82,7 +130,7 @@ function submitDelete() {
           @click="openCreate"
         />
         <v-list-item
-          title="Rename captain"
+          title="Edit captain"
           prepend-icon="mdi-pencil"
           :disabled="!activeCharacter"
           @click="openRename"
@@ -96,7 +144,7 @@ function submitDelete() {
       </v-list>
     </v-menu>
 
-    <v-dialog v-model="createOpen" max-width="420">
+    <v-dialog v-model="createOpen" max-width="460">
       <v-card>
         <v-card-title>New captain</v-card-title>
         <v-card-text>
@@ -104,9 +152,10 @@ function submitDelete() {
             v-model="draftName"
             label="Name"
             autofocus
-            :error-messages="draftName.trim() ? createError : ''"
+            :error-messages="draftName.trim() ? nameError : ''"
             @keydown.enter="submitCreate"
           />
+          <CaptainIdentityFields v-model:identity="draftIdentity" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -118,22 +167,27 @@ function submitDelete() {
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="renameOpen" max-width="420">
+    <v-dialog v-model="renameOpen" max-width="460">
       <v-card>
-        <v-card-title>Rename captain</v-card-title>
+        <v-card-title>Edit captain</v-card-title>
         <v-card-text>
           <v-text-field
             v-model="draftName"
             label="Name"
             autofocus
-            :error-messages="draftName.trim() ? createError : ''"
+            :error-messages="draftName.trim() ? nameError : ''"
             @keydown.enter="submitRename"
           />
+          <CaptainIdentityFields v-model:identity="draftIdentity" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn variant="text" @click="renameOpen = false">Cancel</v-btn>
-          <v-btn color="primary" :disabled="Boolean(createError)" @click="submitRename">
+          <v-btn
+            color="primary"
+            :disabled="Boolean(nameError) || !identityReady"
+            @click="submitRename"
+          >
             Save
           </v-btn>
         </v-card-actions>

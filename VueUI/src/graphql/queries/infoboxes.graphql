@@ -79,6 +79,12 @@ query Infobox($id: Int!) {
       tier
       cost
     }
+    shipsWithExperimentalWeapon {
+      id
+      name
+      tier
+      cost
+    }
   }
 }
 

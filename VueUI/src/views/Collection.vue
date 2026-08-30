@@ -228,7 +228,7 @@ const grouped = computed(() =>
               color="primary"
               @click.stop
             >
-              Loadout
+              Build
             </v-btn>
             <CollectToggle
               :kind="row.entry.kind"

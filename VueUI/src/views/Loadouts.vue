@@ -58,7 +58,7 @@ const rows = computed(() =>
       No captain selected.
     </div>
     <div v-else-if="rows.length === 0" class="empty-featured">
-      No loadouts yet. Open a ship and choose Loadout.
+      No builds yet. Open a ship and choose Build.
     </div>
     <div v-else class="loadout-list">
       <RouterLink
