@@ -26,6 +26,7 @@ import {
 } from "@/logic/shipsBinder";
 import { currencyDisplayLabel } from "@/utils/parsers/shipCost";
 import { useKeepAliveScrollRestore } from "@/composables/useKeepAliveScrollRestore";
+import CompareLaunch from "@/components/compare/CompareLaunch.vue";
 
 defineOptions({ name: "Ships" });
 
@@ -243,6 +244,7 @@ const hasActiveFilters = computed(
           <div class="registry-header__counts">
             <div>{{ ships.length }} vessels catalogued</div>
             <div>{{ filteredShips.length }} results displayed</div>
+            <CompareLaunch />
           </div>
         </div>
       </header>
@@ -501,6 +503,10 @@ const hasActiveFilters = computed(
 }
 
 .registry-header__counts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
   text-align: right;
   color: #7dd3fc;
   font-size: 0.75rem;

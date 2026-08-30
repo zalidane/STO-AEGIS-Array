@@ -9,6 +9,7 @@ import {
   factionMarkKey,
 } from "@/logic/resolvePrimaryFaction";
 import CollectToggle from "@/components/collection/CollectToggle.vue";
+import CompareToggle from "@/components/compare/CompareToggle.vue";
 import {
   allowsAccountUnlockFromCost,
   bindScopeForKind,
@@ -144,6 +145,9 @@ watch(
       </div>
     </div>
     </button>
+    <div class="ship-card__compare">
+      <CompareToggle compact :ship-id="ship.id" />
+    </div>
     <div class="ship-card__collect">
       <CollectToggle
         compact
@@ -189,6 +193,13 @@ watch(
 
 .ship-card__select:focus-visible {
   outline: none;
+}
+
+.ship-card__compare {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 6;
 }
 
 .ship-card__collect {

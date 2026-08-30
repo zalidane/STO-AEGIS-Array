@@ -14,6 +14,8 @@ import { formatFactionsByFacSort } from "@/utils/sortFactionsByFacSort";
 import { parseShipCost, type ShipCost } from "@/utils/parsers";
 import { FALLBACK_SHIP_IMAGE, getShipImageUrl } from "@/utils/shipImage";
 import CollectToggle from "@/components/collection/CollectToggle.vue";
+import CompareToggle from "@/components/compare/CompareToggle.vue";
+import CompareLaunch from "@/components/compare/CompareLaunch.vue";
 import {
   allowsAccountUnlockFromCost,
   bindScopeFromShipCost,
@@ -123,7 +125,7 @@ watch(
                   <p v-if="publicUsageLabel(ship.publicBuildCount)" class="usage-line">
                     {{ publicUsageLabel(ship.publicBuildCount) }}
                   </p>
-                  <div class="d-flex justify-start mt-3">
+                  <div class="d-flex justify-start mt-3 flex-wrap ga-2">
                     <v-btn
                       :to="`/ships/${ship.id}/loadout`"
                       color="primary"
@@ -133,6 +135,8 @@ watch(
                     >
                       Build
                     </v-btn>
+                    <CompareToggle :ship-id="ship.id" />
+                    <CompareLaunch />
                   </div>
                 </v-col>
 
