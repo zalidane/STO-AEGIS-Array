@@ -25,6 +25,11 @@ import {
   unequipLoadoutSlot,
   updateLoadoutSlotMods,
 } from "@/logic/loadout/state";
+import {
+  copyShareToCaptain,
+  type ShareShipRef,
+} from "@/logic/share/copyToCaptain";
+import type { ShareCatalogItem, SharePayload } from "@/logic/share/payload";
 import type { LoadoutEquipContext } from "@/logic/loadout/types";
 import {
   applyCaptainTraitFills,
@@ -224,6 +229,19 @@ export const useCollectionStore = defineStore("collection", () => {
     persist();
   }
 
+  function copySharedLoadout(input: {
+    payload: SharePayload;
+    items: ReadonlyArray<ShareCatalogItem>;
+    ships: ReadonlyArray<ShareShipRef>;
+  }) {
+    const result = copyShareToCaptain(state.value, input);
+    if (result.ok) {
+      state.value = result.state;
+      persist();
+    }
+    return result;
+  }
+
   return {
     state,
     characters,
@@ -252,5 +270,6 @@ export const useCollectionStore = defineStore("collection", () => {
     updateSlotMods,
     equipCaptainTrait,
     unequipCaptainTrait,
+    copySharedLoadout,
   };
 });

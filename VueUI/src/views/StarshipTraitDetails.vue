@@ -16,6 +16,7 @@ import {
   bindScopeForKind,
 } from "@/logic/collection/bind";
 import { bindChoiceFromGrantingShips } from "@/logic/collection/bindChoice";
+import { publicUsageLabel } from "@/logic/share/usage";
 
 const route = useRoute();
 const id = computed(() => Number(route.params.id));
@@ -58,7 +59,12 @@ const fields = computed(() => {
     <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
     <template v-else-if="trait">
       <div class="d-flex align-start justify-space-between ga-4 mb-4">
-        <h3>{{ trait.name }}</h3>
+        <div>
+          <h3>{{ trait.name }}</h3>
+          <p v-if="publicUsageLabel(trait.publicBuildCount)" class="usage-line">
+            {{ publicUsageLabel(trait.publicBuildCount) }}
+          </p>
+        </div>
         <CollectToggle
           kind="starshipTrait"
           :catalog-id="trait.id"
@@ -96,3 +102,11 @@ const fields = computed(() => {
     <v-alert v-else type="warning">Starship trait not found</v-alert>
   </v-container>
 </template>
+
+<style scoped>
+.usage-line {
+  margin: 0.35rem 0 0;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.9rem;
+}
+</style>
