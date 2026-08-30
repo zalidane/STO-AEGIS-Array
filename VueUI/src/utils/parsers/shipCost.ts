@@ -162,6 +162,16 @@ export function currencyDisplayLabel(currencyCode: string): string {
   return named?.[1] ?? decoded;
 }
 
+function isStructuredCostAmount(amount: string): boolean {
+  return Number.isFinite(Number.parseFloat(amount.replace(/,/g, "").trim()));
+}
+
+function isStructuredCurrencyCode(currencyCode: string): boolean {
+  const code = currencyCode.trim();
+  if (!code || code.length > 24) return false;
+  return /^[A-Za-z0-9][A-Za-z0-9&]*$/.test(code);
+}
+
 export function parseShipCost(cost: string | null | undefined): ShipCost[] {
   if (!cost) {
     return [];
@@ -172,7 +182,12 @@ export function parseShipCost(cost: string | null | undefined): ShipCost[] {
     .map((part) => {
       const [amount, currencyCode] = part.trim().split(";");
 
-      if (!amount || !currencyCode) {
+      if (
+        !amount ||
+        !currencyCode ||
+        !isStructuredCostAmount(amount) ||
+        !isStructuredCurrencyCode(currencyCode)
+      ) {
         return null;
       }
 

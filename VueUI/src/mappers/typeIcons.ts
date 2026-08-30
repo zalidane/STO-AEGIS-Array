@@ -7,5 +7,6 @@ export const typeIcons = {
   Mastery: "mdi-trophy",
   Modifier: "mdi-delta",
   Infobox: "mdi-information-outline",
+  SetBonus: "mdi-puzzle-outline",
   ShipType: "mdi-shape",
 };

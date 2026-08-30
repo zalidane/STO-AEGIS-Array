@@ -1,5 +1,6 @@
 import { itemFitsSlot, type HullSlotKind } from "./slotClass";
 import { extraHullSlotSummary } from "./hullExtras";
+import { SHIP_SPECIFIC_SLOTS } from "./captainTraits";
 
 /** One row on the in-game ship equipment panel (plus extras not on that panel). */
 export type HullSlotGroup =
@@ -38,6 +39,7 @@ export type HullSlotSource = {
   hangars?: number | null;
   tier?: number | null;
   boffs?: string | null;
+  t5uConsole?: string | null;
 };
 
 function count(value: number | null | undefined): number {
@@ -69,15 +71,18 @@ function single(
 }
 
 /**
- * Empty sockets for a hull, including T6-X/X2 and Commander Miracle Worker extras.
- * Unique ship consoles occupy a fillable console slot; they are not locked grants.
+ * Empty sockets for a hull, including T5-U/X and T6-X extras
+ * plus Commander Miracle Worker. Unique ship consoles occupy a
+ * fillable console slot; they are not locked grants.
  */
 export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
   const extras = extraHullSlotSummary(ship);
   const extraConsoleSlots: HullSlot[] = [];
   const extraTraitSlots: HullSlot[] = [];
+  const extraDeviceSlots: HullSlot[] = [];
   let universalIndex = 0;
   let traitIndex = 0;
+  let deviceIndex = count(ship.devices);
   for (const rule of extras.rules) {
     for (let i = 0; i < rule.universalConsoles; i += 1) {
       extraConsoleSlots.push({
@@ -99,13 +104,31 @@ export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
       });
       traitIndex += 1;
     }
+    for (let i = 0; i < rule.devices; i += 1) {
+      extraDeviceSlots.push({
+        id: `device-${deviceIndex}`,
+        kind: "device",
+        group: "devices",
+        label: rule.deviceLabel ?? `Device (${rule.detailLabel})`,
+        index: deviceIndex,
+      });
+      deviceIndex += 1;
+    }
+  }
+
+  while (traitIndex < SHIP_SPECIFIC_SLOTS) {
+    extraTraitSlots.push({
+      id: `starshipTrait-${traitIndex}`,
+      kind: "starshipTrait",
+      group: "traits",
+      label: `Ship Trait ${traitIndex + 1}`,
+      index: traitIndex,
+    });
+    traitIndex += 1;
   }
 
   return [
     ...numbered("foreWeapon", "foreWeapons", "Fore", count(ship.foreWeapons)),
-    ...(ship.experimental
-      ? [single("experimental", "experimental", "Experimental")]
-      : []),
     single("deflector", "deflector", "Deflector"),
     ...(ship.secondaryDeflector
       ? [single("secondaryDeflector", "deflector", "Secondary Deflector")]
@@ -114,25 +137,29 @@ export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
     single("core", "core", "Warp / Singularity Core"),
     single("shields", "shields", "Shields"),
     ...numbered("aftWeapon", "aftWeapons", "Aft", count(ship.aftWeapons)),
+    ...(ship.experimental
+      ? [single("experimental", "experimental", "Experimental")]
+      : []),
     ...numbered("device", "devices", "Device", count(ship.devices)),
+    ...extraDeviceSlots,
     ...extraConsoleSlots,
     ...numbered(
       "engineeringConsole",
       "engineeringConsoles",
       "Engineering",
-      count(ship.engineeringSlots),
+      count(ship.engineeringSlots) + extras.engineeringConsoles,
     ),
     ...numbered(
       "scienceConsole",
       "scienceConsoles",
       "Science",
-      count(ship.scienceSlots),
+      count(ship.scienceSlots) + extras.scienceConsoles,
     ),
     ...numbered(
       "tacticalConsole",
       "tacticalConsoles",
       "Tactical",
-      count(ship.tacticalSlots),
+      count(ship.tacticalSlots) + extras.tacticalConsoles,
     ),
     ...numbered("hangar", "hangars", "Hangar", count(ship.hangars)),
     ...extraTraitSlots,
@@ -182,19 +209,18 @@ export const HULL_SLOT_GROUP_LABEL: Record<HullSlotGroup, string> = {
 /** Same top-to-bottom order as the in-game ship equipment panel. */
 export const HULL_SLOT_GROUP_ORDER: readonly HullSlotGroup[] = [
   "foreWeapons",
-  "experimental",
   "deflector",
   "impulse",
   "core",
   "shields",
   "aftWeapons",
+  "experimental",
   "devices",
   "universalConsoles",
   "engineeringConsoles",
   "scienceConsoles",
   "tacticalConsoles",
   "hangars",
-  "traits",
 ];
 
 export function groupHullSlots(

@@ -24,21 +24,35 @@ export type ActiveSetBonus = {
 
 const MIN_SET_NAME_LENGTH = 6;
 
-export function equippedItemsForLoadout(
-  loadout: CollectionLoadout | null | undefined,
+function catalogByKey(
   items: ReadonlyArray<LoadoutItem>,
-): LoadoutItem[] {
-  if (!loadout) return [];
-  const byKey = new Map(
+): Map<string, LoadoutItem> {
+  return new Map(
     items.map((item) => [
       loadoutOwnershipKey(item.catalogKind, item.id),
       item,
     ]),
   );
+}
+
+export function seatedLoadoutItems(
+  loadout: CollectionLoadout | null | undefined,
+  items: ReadonlyArray<LoadoutItem>,
+): LoadoutItem[] {
+  if (!loadout) return [];
+  const byKey = catalogByKey(items);
   return loadout.slots
-    .filter((fill) => fillCatalogKind(fill) === "item")
     .map((fill) => byKey.get(loadoutOwnershipKey(fill.catalogKind, fill.itemId)))
     .filter((item): item is LoadoutItem => item != null);
+}
+
+export function equippedItemsForLoadout(
+  loadout: CollectionLoadout | null | undefined,
+  items: ReadonlyArray<LoadoutItem>,
+): LoadoutItem[] {
+  return seatedLoadoutItems(loadout, items).filter(
+    (item) => (item.catalogKind ?? "item") === "item",
+  );
 }
 
 export function itemBelongsToSet(itemName: string, setName: string): boolean {

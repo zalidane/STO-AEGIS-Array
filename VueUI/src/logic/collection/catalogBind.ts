@@ -15,6 +15,7 @@ export type CatalogBindShip = {
   name?: string | null;
   displayPrefix?: string | null;
   uniconsoleId?: number | null;
+  experimentalWeaponId?: number | null;
 };
 
 export type CatalogBindStarshipTrait = {
@@ -51,7 +52,11 @@ function grantingShipHulls(
     return trait?.ships ?? [];
   }
   if (kind === "item") {
-    return sources.ships.filter((ship) => ship.uniconsoleId === catalogId);
+    return sources.ships.filter(
+      (ship) =>
+        ship.uniconsoleId === catalogId ||
+        ship.experimentalWeaponId === catalogId,
+    );
   }
   return [];
 }

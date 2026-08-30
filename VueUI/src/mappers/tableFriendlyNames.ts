@@ -7,5 +7,6 @@ export const friendlyNames = {
   Modifier: "Modifiers",
   Mastery: "Masteries",
   Infobox: "Items",
+  SetBonus: "Set Bonuses",
   ShipType: "Ship Types",
 };

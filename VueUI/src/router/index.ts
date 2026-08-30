@@ -67,7 +67,7 @@ const router = createRouter({
       path: "/ships/:id/loadout",
       name: "ship-loadout",
       component: LoadoutBuilder,
-      meta: { breadcrumb: "Loadout", parent: "/ships" },
+      meta: { breadcrumb: "Build", parent: "/ships" },
     },
     {
       path: "/traits",

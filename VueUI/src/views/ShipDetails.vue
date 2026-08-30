@@ -60,7 +60,12 @@ const extraSlots = computed(() =>
   extraHullSlotSummary({
     tier: ship.value?.tier,
     boffs: ship.value?.boffs,
+    t5uConsole: ship.value?.t5uConsole,
   }),
+);
+
+const deviceSlotCount = computed(
+  () => (ship.value?.devices ?? 0) + extraSlots.value.devices,
 );
 
 const parsedCosts = computed<ShipCost[]>(() => parseShipCost(ship.value?.cost));
@@ -114,23 +119,7 @@ watch(
                   <div class="ship-title font-weight-light">
                     {{ ship.name }}
                   </div>
-                </v-col>
-
-                <v-col
-                  cols="12"
-                  sm="4"
-                  class="d-flex flex-column justify-space-between align-sm-end ga-3"
-                >
-                  <div class="d-flex flex-column align-sm-end ga-2">
-                    <CollectToggle
-                      kind="ship"
-                      :catalog-id="ship.id"
-                      :bind="collectBind"
-                      :allow-account-unlock="allowAccountUnlock"
-                      :cost="ship.cost"
-                      :display-prefix="ship.displayPrefix"
-                      :hull-name="ship.name"
-                    />
+                  <div class="d-flex justify-start mt-3">
                     <v-btn
                       :to="`/ships/${ship.id}/loadout`"
                       color="primary"
@@ -138,9 +127,16 @@ watch(
                       size="small"
                       prepend-icon="mdi-view-dashboard-outline"
                     >
-                      Loadout
+                      Build
                     </v-btn>
                   </div>
+                </v-col>
+
+                <v-col
+                  cols="12"
+                  sm="4"
+                  class="d-flex flex-column justify-space-between align-sm-end ga-3"
+                >
                   <div class="d-flex justify-sm-end flex-wrap ga-1">
                     <v-chip
                       v-for="faction in formattedFactions"
@@ -289,7 +285,7 @@ watch(
             </div>
           </v-card>
 
-          <v-card rounded="xl" class="glass-panel detail-card detail-card--short">
+          <v-card rounded="xl" class="glass-panel detail-card detail-card--short detail-card--acquisition">
             <v-card-title
               class="text-miracle detail-card__title"
               :title="SHIP_DETAIL_FULL_LABELS.acquisitionTitle"
@@ -328,6 +324,18 @@ watch(
               >
                 <span>{{ labels.releaseDate }}</span>
                 <span>{{ ship.released ? formatWikiDate(ship.released) : "" }}</span>
+              </div>
+
+              <div class="acquisition-collect">
+                <CollectToggle
+                  kind="ship"
+                  :catalog-id="ship.id"
+                  :bind="collectBind"
+                  :allow-account-unlock="allowAccountUnlock"
+                  :cost="ship.cost"
+                  :display-prefix="ship.displayPrefix"
+                  :hull-name="ship.name"
+                />
               </div>
             </div>
           </v-card>
@@ -384,13 +392,18 @@ watch(
               </div>
               <div class="d-flex justify-center flex-wrap ga-2 mt-3">
                 <v-chip size="small" color="engineering">
-                  ENG {{ ship.engineeringSlots }}
+                  ENG
+                  {{
+                    (ship.engineeringSlots ?? 0) + extraSlots.engineeringConsoles
+                  }}
                 </v-chip>
                 <v-chip size="small" color="science">
-                  SCI {{ ship.scienceSlots }}
+                  SCI
+                  {{ (ship.scienceSlots ?? 0) + extraSlots.scienceConsoles }}
                 </v-chip>
                 <v-chip size="small" color="tactical">
-                  TAC {{ ship.tacticalSlots }}
+                  TAC
+                  {{ (ship.tacticalSlots ?? 0) + extraSlots.tacticalConsoles }}
                 </v-chip>
                 <v-chip
                   v-if="extraSlots.universalConsoles > 0"
@@ -404,11 +417,23 @@ watch(
               <ul v-if="extraSlots.rules.length" class="extra-slot-list">
                 <li v-for="rule in extraSlots.rules" :key="rule.id">
                   {{ rule.detailLabel }}
+                  <span v-if="rule.tacticalConsoles">
+                    · +{{ rule.tacticalConsoles }} tactical
+                  </span>
+                  <span v-if="rule.engineeringConsoles">
+                    · +{{ rule.engineeringConsoles }} engineering
+                  </span>
+                  <span v-if="rule.scienceConsoles">
+                    · +{{ rule.scienceConsoles }} science
+                  </span>
                   <span v-if="rule.universalConsoles">
                     · +{{ rule.universalConsoles }} universal
                   </span>
                   <span v-if="rule.starshipTraits">
                     · +{{ rule.starshipTraits }} trait slot
+                  </span>
+                  <span v-if="rule.devices">
+                    · +{{ rule.devices }} device
                   </span>
                 </li>
               </ul>
@@ -417,12 +442,17 @@ watch(
         </v-col>
 
         <v-col cols="12" sm="6" md="2">
-          <v-card rounded="xl" class="glass-panel detail-card detail-card--panel">
+          <v-card rounded="xl" class="glass-panel detail-card detail-card--panel detail-card--slots">
             <v-card-title
-              class="detail-card__title"
+              class="text-info detail-card__title"
               :title="SHIP_DETAIL_FULL_LABELS.weaponsTitle"
             >
-              <v-icon class="mr-2" size="small">mdi-explosion</v-icon>
+              <v-icon
+                class="mr-2"
+                size="small"
+                color="info"
+                icon="mdi-view-grid-plus"
+              />
               {{ labels.weaponsTitle }}
             </v-card-title>
             <v-divider />
@@ -456,6 +486,24 @@ watch(
                 <span>{{ labels.canEquipCannons }}</span>
                 <span>{{ formatYesNo(ship.equipCannons) }}</span>
               </div>
+              <div
+                class="stat-row"
+                :title="SHIP_DETAIL_FULL_LABELS.secondaryDeflector"
+              >
+                <span>{{ labels.secondaryDeflector }}</span>
+                <span>{{ formatYesNo(ship.secondaryDeflector) }}</span>
+              </div>
+              <div
+                class="stat-row"
+                :title="SHIP_DETAIL_FULL_LABELS.deviceSlots"
+              >
+                <span>{{ labels.deviceSlots }}</span>
+                <span>{{ deviceSlotCount }}</span>
+              </div>
+              <div class="stat-row" :title="SHIP_DETAIL_FULL_LABELS.hangars">
+                <span>{{ labels.hangars }}</span>
+                <span>{{ ship.hangars ?? 0 }}</span>
+              </div>
             </div>
           </v-card>
         </v-col>
@@ -466,7 +514,12 @@ watch(
               class="text-secondary detail-card__title"
               :title="SHIP_DETAIL_FULL_LABELS.equipmentTitle"
             >
-              <v-icon class="mr-2" size="small">mdi-wrench</v-icon>
+              <v-icon
+                class="mr-2"
+                size="small"
+                color="secondary"
+                icon="mdi-wrench"
+              />
               {{ labels.equipmentTitle }}
             </v-card-title>
             <v-divider />
@@ -481,7 +534,23 @@ watch(
                 <div class="grant-link__name">{{ ship.uniConsole.name }}</div>
               </RouterLink>
 
-              <div v-if="ship.experimental" class="grant-flag">
+              <RouterLink
+                v-if="ship.experimentalWeaponItem"
+                :to="`/items/${ship.experimentalWeaponItem.id}`"
+                class="grant-link"
+              >
+                <div class="grant-link__label">Experimental weapon</div>
+                <div class="grant-link__name">
+                  {{ ship.experimentalWeaponItem.name }}
+                </div>
+              </RouterLink>
+              <div
+                v-else-if="ship.experimentalWeapon"
+                class="grant-flag"
+              >
+                Experimental weapon: {{ ship.experimentalWeapon }}
+              </div>
+              <div v-else-if="ship.experimental" class="grant-flag">
                 Experimental weapon slot
               </div>
 
@@ -495,25 +564,6 @@ watch(
                   {{ ability.trim() }}
                 </div>
               </template>
-
-              <div
-                class="stat-row"
-                :title="SHIP_DETAIL_FULL_LABELS.deviceSlots"
-              >
-                <span>{{ labels.deviceSlots }}</span>
-                <span>{{ ship.devices }}</span>
-              </div>
-              <div class="stat-row" :title="SHIP_DETAIL_FULL_LABELS.hangars">
-                <span>{{ labels.hangars }}</span>
-                <span>{{ ship.hangars ?? 0 }}</span>
-              </div>
-              <div
-                class="stat-row"
-                :title="SHIP_DETAIL_FULL_LABELS.secondaryDeflector"
-              >
-                <span>{{ labels.secondaryDeflector }}</span>
-                <span>{{ formatYesNo(ship.secondaryDeflector) }}</span>
-              </div>
             </div>
           </v-card>
         </v-col>
@@ -685,9 +735,39 @@ watch(
   min-height: 220px;
 }
 
+.detail-card--acquisition .detail-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.acquisition-collect {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.acquisition-collect :deep(.collect-toggle) {
+  align-items: flex-start;
+}
+
+.acquisition-collect :deep(.collect-toggle__meta) {
+  justify-content: flex-start;
+}
+
 .detail-card--panel {
   height: 100%;
   min-height: 280px;
+}
+
+.detail-card--slots {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+}
+
+.detail-card--slots .detail-card__body {
+  overflow: visible;
 }
 
 .detail-card__title {
