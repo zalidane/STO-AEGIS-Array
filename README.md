@@ -9,11 +9,13 @@ STO-AEGIS-Array/
 ├── packages/
 │   └── database/          # Shared Prisma schema, migrations, client (@sto-aegis/database)
 ├── Extractor/             # STOWiki Cargo extract + PostgreSQL import
-├── GraphQL/               # GraphQL backend (planned)
-├── VueUI/                 # Vue frontend (planned)
+├── GraphQL/               # GraphQL Yoga API (@sto-aegis/graphql)
+├── VueUI/                 # Vue 3 + Vuetify catalog, collection, and loadout builder
 ├── package.json           # npm workspaces root
-└── .env                   # DATABASE_URL (shared)
+└── .env                   # DATABASE_URL + STOWiki contact (shared)
 ```
+
+Requires **Node.js 20+**. VueUI’s Vite toolchain prefers Node 22.18+ or 24.12+.
 
 ## Setup
 
@@ -23,6 +25,26 @@ cp .env.example .env
 npm run db:generate
 npm run db:migrate
 ```
+
+Copy `.env.example` to `.env` and set `STOWIKI_CONTACT` so extract identifies itself. Bot passwords are optional on STOWiki (Special:BotPasswords is restricted). See [Extractor/README.md](Extractor/README.md).
+
+Commit updated `Extractor/output/*.json` after extracting so production can import without hitting the wiki.
+
+## Local development
+
+Run GraphQL and the Vue app together. GraphQL reads PostgreSQL; the UI talks to GraphQL.
+
+```bash
+# terminal 1 — API + GraphiQL
+npm run dev:graphql          # http://localhost:4000/graphql
+
+# terminal 2 — Vite with HMR
+npm run dev:vue              # http://localhost:5173
+```
+
+`npm run start:vue` is `vite preview` (default port **4173**). That serves a **built** `dist/`; run `npm run build:vue` first. Use `dev:vue` while iterating.
+
+Set `VITE_GRAPHQL_URL` only when the API is not at `http://localhost:4000/graphql`.
 
 ## Scripts
 
@@ -36,13 +58,16 @@ npm run db:migrate
 | `npm run db:migrate` | Apply migrations (deploy) |
 | `npm run db:migrate:dev` | Create/apply migrations (Prisma migrate dev) |
 | `npm run db:migrate:prod` | Apply migrations (production) |
-| `npm run db:studio` | Open Prisma Studio |
-| `npm run codegen` | Generate Vue GraphQL client types |
+| `npm run db:studio` / `db:studio:prod` | Open Prisma Studio (local / production) |
+| `npm run codegen` | Generate Vue GraphQL client types from schema + operations |
 | `npm run build` | Prisma generate + build all workspaces |
 | `npm run build:database` / `build:extractor` / `build:graphql` / `build:vue` | Build one package |
 | `npm run dev:graphql` / `dev:vue` / `dev:extractor` | Start a package in watch mode |
+| `npm run start` | Run GraphQL (`tsx src/server.ts`) |
+| `npm run start:vue` | Preview the built Vue app |
 | `npm run type-check` | Type-check all workspaces |
-| `npm run test:unit` | Run Vue UI unit tests |
+| `npm run test` | GraphQL + Extractor + Vue unit tests |
+| `npm run test:graphql` / `test:extractor` / `test:unit` | Tests for one package |
 
 Extract/import flags (pass after `--`):
 
@@ -54,9 +79,7 @@ npm run import -- --force-import
 npm run import:prod
 ```
 
-Copy `.env.example` to `.env` and set `STOWIKI_CONTACT` so extract identifies itself. Bot passwords are optional on STOWiki (Special:BotPasswords is restricted). See [Extractor/README.md](Extractor/README.md).
-
-Commit updated `Extractor/output/*.json` after extracting so production can import without hitting the wiki.
+After changing `GraphQL/src/schema/**/*.graphql` or `VueUI/src/graphql/queries/*.graphql`, run `npm run codegen` so the Vue client types stay in sync.
 
 ## Shared database
 
@@ -67,13 +90,14 @@ Commit updated `Extractor/output/*.json` after extracting so production can impo
 - Generated Prisma Client
 - `createPrismaClient()` helper (pg adapter + serialized pool clients)
 
-Both **Extractor** and future **GraphQL** should depend on this package instead of embedding their own Prisma schema.
+**Extractor** and **GraphQL** both depend on this package. Do not embed a second Prisma schema in those apps.
 
 ## Apps
 
-- **Extractor** — see [Extractor/README.md](Extractor/README.md)
-- **GraphQL** — placeholder; see [GraphQL/README.md](GraphQL/README.md)
-- **VueUI** — placeholder; see [VueUI/README.md](VueUI/README.md)
+- **Extractor** — [Extractor/README.md](Extractor/README.md)
+- **GraphQL** — [GraphQL/README.md](GraphQL/README.md)
+- **VueUI** — [VueUI/README.md](VueUI/README.md)
+- **Database** — [packages/database/README.md](packages/database/README.md)
 
 ## Railway (shared monorepo)
 
@@ -111,6 +135,8 @@ Rename the service to `GraphQL` if you want.
 2. Same repo, Root Directory `/`, Config as Code: `/Extractor/railway.toml`
 3. Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
 4. Deploy (exits after import; restart policy is `NEVER`)
+
+GraphQL’s `releaseCommand` already runs `import:force`, so a separate Import service is optional.
 
 ### Postgres
 
