@@ -30,6 +30,11 @@ import {
   splitHitsByOwnership,
 } from "@/logic/collection/searchCatalog";
 import {
+  collectionKindEmptyCopy,
+  groupCollectionByKind,
+  resolveCollectionTab,
+} from "@/logic/collection/kindTabs";
+import {
   createEmptyCollectionState,
   type CollectionClock,
   type CollectionState,
@@ -372,6 +377,40 @@ describe("collection state", () => {
     expect(state.characters.map((c) => c.name)).toEqual(["Alice"]);
     expect(state.activeCharacterId).toBe("id-1");
     expect(state.entries).toEqual([]);
+  });
+});
+
+describe("collection kind tabs", () => {
+  it("groups rows in catalog order and keeps empty kinds", () => {
+    const tabs = groupCollectionByKind(
+      [
+        { id: "t1", kind: "trait" as const },
+        { id: "s1", kind: "ship" as const },
+        { id: "i1", kind: "item" as const },
+      ],
+      (row) => row.kind,
+    );
+    expect(tabs.map((tab) => tab.kind)).toEqual([
+      "ship",
+      "trait",
+      "starshipTrait",
+      "item",
+    ]);
+    expect(tabs.map((tab) => tab.rows.map((row) => row.id))).toEqual([
+      ["s1"],
+      ["t1"],
+      [],
+      ["i1"],
+    ]);
+  });
+
+  it("resolves a requested tab or falls back to ships", () => {
+    expect(resolveCollectionTab("item")).toBe("item");
+    expect(resolveCollectionTab("nope")).toBe("ship");
+    expect(resolveCollectionTab(undefined)).toBe("ship");
+    expect(collectionKindEmptyCopy("starshipTrait")).toBe(
+      "No starship traits collected yet.",
+    );
   });
 });
 

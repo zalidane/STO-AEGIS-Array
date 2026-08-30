@@ -5,6 +5,7 @@ import type { ImageInfo } from "../wiki/client";
 import { matchKey } from "../wiki/filenames";
 import { catalogImageTargets, applyImageIndexToInfoboxes, type CatalogImageSource } from "../wiki/imageTargets";
 import { decideImageFetch } from "../wiki/imageSync";
+import { alignCatalogImageFiles } from "../wiki/localImageFiles";
 import type { ImageTarget } from "../wiki/filenames";
 
 const OFFICIAL_CATEGORY = "Category:Official images";
@@ -76,6 +77,13 @@ export async function extractImages(
   if (targets.length === 0) {
     console.log("Images: no catalog JSON found. Run a cargo extract first.");
     return;
+  }
+
+  const aligned = await alignCatalogImageFiles(options.imagesDir, targets);
+  if (aligned.renamed > 0) {
+    console.log(
+      `Images: renamed ${aligned.renamed} files onto apostrophe-free, case-accurate public names`,
+    );
   }
 
   const priorIndex = loadPriorIndex(

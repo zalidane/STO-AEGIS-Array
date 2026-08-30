@@ -14,40 +14,50 @@ describe("wikiImage", () => {
     );
   });
 
-  it("decodes HTML apostrophes to match extracted filenames", () => {
+  it("decodes HTML apostrophes and strips them from local filenames", () => {
     expect(
       wikiLocalFilename("File:Amarie Smuggler&#039;s Heavy Escort.jpg"),
-    ).toBe("Amarie_Smuggler's_Heavy_Escort.jpg");
+    ).toBe("Amarie_Smugglers_Heavy_Escort.jpg");
     expect(wikiLocalFilename("File:Rom Ship T'liss Temporal.png")).toBe(
-      "Rom_Ship_T'liss_Temporal.png",
+      "Rom_Ship_Tliss_Temporal.png",
     );
     expect(
       wikiLocalFilename("File:Son'a Collector Science Dreadnought.jpg"),
-    ).toBe("Son'a_Collector_Science_Dreadnought.jpg");
+    ).toBe("Sona_Collector_Science_Dreadnought.jpg");
+    expect(wikiLocalFilename("File:obeliskcarrier.jpg")).toBe(
+      "obeliskcarrier.jpg",
+    );
   });
 
-  it("percent-encodes apostrophes in public image URLs", () => {
+  it("builds public image URLs without apostrophes", () => {
     expect(
       getWikiImageUrl(
         "ships",
         "File:Amarie Smuggler&#039;s Heavy Escort.jpg",
         "/images/ships/ship-placeholder.png",
       ),
-    ).toBe("/images/ships/Amarie_Smuggler%27s_Heavy_Escort.jpg");
+    ).toBe("/images/ships/Amarie_Smugglers_Heavy_Escort.jpg");
     expect(
       getWikiImageUrl(
         "ships",
         "File:Rom Ship T'liss Temporal.png",
         "/images/ships/ship-placeholder.png",
       ),
-    ).toBe("/images/ships/Rom_Ship_T%27liss_Temporal.png");
+    ).toBe("/images/ships/Rom_Ship_Tliss_Temporal.png");
     expect(
       getWikiImageUrl(
         "ships",
         "File:Son'a Collector Science Dreadnought.jpg",
         "/images/ships/ship-placeholder.png",
       ),
-    ).toBe("/images/ships/Son%27a_Collector_Science_Dreadnought.jpg");
+    ).toBe("/images/ships/Sona_Collector_Science_Dreadnought.jpg");
+    expect(
+      getWikiImageUrl(
+        "ships",
+        "File:obeliskcarrier.jpg",
+        "/images/ships/ship-placeholder.png",
+      ),
+    ).toBe("/images/ships/obeliskcarrier.jpg");
   });
 
   it("appends icon.png for catalog names", () => {
