@@ -201,10 +201,12 @@ function swap() {
                 :key="row.key"
                 class="stat-row"
                 :class="{
-                  'stat-row--diff': row.differs,
-                  'stat-row--win': row.advantage === side,
-                  'stat-row--match':
-                    side === 'left' ? row.leftMatch : row.rightMatch,
+                  'stat-row--improve':
+                    side === 'right' && row.rightTone === 'improve',
+                  'stat-row--decrease':
+                    side === 'right' && row.rightTone === 'decrease',
+                  'stat-row--changed':
+                    side === 'right' && row.rightTone === 'diff',
                 }"
               >
                 <span>{{ row.label }}</span>
@@ -362,13 +364,18 @@ function swap() {
   font-variant-numeric: tabular-nums;
 }
 
-.stat-row--diff span:last-child {
-  color: rgba(255, 255, 255, 0.92);
+.stat-row--improve span:last-child {
+  color: #4ade80;
+  font-weight: 650;
 }
 
-.stat-row--win span:last-child,
-.stat-row--match span:last-child {
-  color: #7dd3fc;
+.stat-row--decrease span:last-child {
+  color: #f87171;
+  font-weight: 650;
+}
+
+.stat-row--changed span:last-child {
+  color: #facc15;
   font-weight: 650;
 }
 

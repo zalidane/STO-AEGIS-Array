@@ -102,22 +102,24 @@ describe("compare rows", () => {
     const hull = buildPhysicalStatRows(escort, cruiser).find((row) => row.key === "hull");
     expect(hull?.left).toBe("35,000");
     expect(hull?.right).toBe("50,000");
-    expect(hull?.advantage).toBe("right");
+    expect(hull?.rightTone).toBe("improve");
     const turn = buildPhysicalStatRows(escort, cruiser).find(
       (row) => row.key === "turnRate",
     );
-    expect(turn?.advantage).toBe("left");
+    expect(turn?.rightTone).toBe("decrease");
     const inertia = buildPhysicalStatRows(escort, cruiser).find(
       (row) => row.key === "inertia",
     );
-    expect(inertia?.advantage).toBe("left");
+    expect(inertia?.rightTone).toBe("decrease");
   });
 
   it("compares weapon slots and treats an experimental seat as an advantage", () => {
     const rows = buildWeaponSlotRows(escort, cruiser);
-    expect(rows.find((row) => row.key === "aft")?.advantage).toBe("right");
+    expect(rows.find((row) => row.key === "aft")?.rightTone).toBe("improve");
     expect(rows.find((row) => row.key === "experimental")?.left).toBe("Yes");
-    expect(rows.find((row) => row.key === "experimental")?.advantage).toBe("left");
+    expect(rows.find((row) => row.key === "experimental")?.rightTone).toBe(
+      "decrease",
+    );
   });
 
   it("pads BOff seats so both columns keep the same row count", () => {
@@ -129,29 +131,43 @@ describe("compare rows", () => {
     expect(rows[1]?.right).toBe("—");
   });
 
-  it("highlights identical BOff seats even when they sit in different positions", () => {
+  it("orders BOff seats Commander to Ensign, then type alphabetically", () => {
     const rows = buildBoffRows(
       {
         ...escort,
-        boffs: "Commander Tactical,Lieutenant Engineering,Ensign Science",
+        boffs:
+          "Ensign Science,Lieutenant Tactical,Commander Universal-Miracle Worker,Commander Engineering",
+      },
+      escort,
+    );
+    expect(rows.map((row) => row.left)).toEqual([
+      "Cmdr ENG",
+      "Cmdr UNI-MW",
+      "Lt TAC",
+      "Ens SCI",
+    ]);
+  });
+
+  it("highlights different BOff seats on the right hull", () => {
+    const rows = buildBoffRows(
+      {
+        ...escort,
+        boffs: "Commander Tactical,Lieutenant Tactical,Ensign Science",
       },
       {
         ...cruiser,
-        boffs: "Ensign Science,Lieutenant Tactical,Commander Tactical",
+        boffs: "Commander Engineering,Lieutenant Tactical,Ensign Science",
       },
     );
     expect(rows[0]?.left).toBe("Cmdr TAC");
-    expect(rows[0]?.leftMatch).toBe(true);
-    expect(rows[0]?.right).toBe("Ens SCI");
-    expect(rows[0]?.rightMatch).toBe(true);
-    expect(rows[1]?.left).toBe("Lt ENG");
-    expect(rows[1]?.leftMatch).toBe(false);
+    expect(rows[0]?.right).toBe("Cmdr ENG");
+    expect(rows[0]?.rightTone).toBe("diff");
+    expect(rows[1]?.left).toBe("Lt TAC");
     expect(rows[1]?.right).toBe("Lt TAC");
-    expect(rows[1]?.rightMatch).toBe(false);
+    expect(rows[1]?.rightTone).toBeNull();
     expect(rows[2]?.left).toBe("Ens SCI");
-    expect(rows[2]?.leftMatch).toBe(true);
-    expect(rows[2]?.right).toBe("Cmdr TAC");
-    expect(rows[2]?.rightMatch).toBe(true);
+    expect(rows[2]?.right).toBe("Ens SCI");
+    expect(rows[2]?.rightTone).toBeNull();
   });
 
   it("compares stock accessories without T5-U or T6-X extras", () => {
@@ -213,10 +229,25 @@ describe("compare rows", () => {
     expect(rows.find((row) => row.key === "uni")?.right).toBe("0");
   });
 
-  it("lists costs by currency without picking a winner", () => {
+  it("marks extra devices as an improvement and extra consoles the same way", () => {
+    const devices = buildAccessoryRows(escort, cruiser).find(
+      (row) => row.key === "devices",
+    );
+    expect(devices?.left).toBe("2");
+    expect(devices?.right).toBe("4");
+    expect(devices?.rightTone).toBe("improve");
+    const tac = buildConsoleSlotRows(escort, cruiser).find(
+      (row) => row.key === "tac",
+    );
+    expect(tac?.left).toBe("4");
+    expect(tac?.right).toBe("3");
+    expect(tac?.rightTone).toBe("decrease");
+  });
+
+  it("lists costs by currency as a difference, not a winner", () => {
     const rows = buildCostRows(escort, cruiser);
     expect(rows.map((row) => row.key)).toEqual(["cost-Zen", "cost-LB"]);
-    expect(rows[0]?.advantage).toBeNull();
+    expect(rows[0]?.rightTone).toBe("diff");
     expect(rows[0]?.differs).toBe(true);
   });
 

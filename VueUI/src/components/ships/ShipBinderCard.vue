@@ -197,8 +197,8 @@ watch(
 
 .ship-card__compare {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  right: 8px;
+  bottom: 8px;
   z-index: 6;
 }
 

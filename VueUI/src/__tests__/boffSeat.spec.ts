@@ -93,15 +93,29 @@ describe("boff formatting", () => {
     expect(seat.specialization).toBe("command");
   });
 
-  it("parses and sorts a comma-separated boffs list", () => {
+  it("parses and sorts a comma-separated boffs list by rank then type", () => {
     const seats = parseBoffSeats(
       "Lieutenant Universal,Commander Tactical-Pilot,Ensign Science",
     );
 
     expect(seats.map((seat) => seat.raw)).toEqual([
       "Commander Tactical-Pilot",
-      "Ensign Science",
       "Lieutenant Universal",
+      "Ensign Science",
+    ]);
+  });
+
+  it("orders Commander through Ensign, then type alphabetically", () => {
+    const seats = parseBoffSeats(
+      "Ensign Tactical,Lieutenant Commander Science,Commander Universal-Miracle Worker,Commander Engineering,Lieutenant Tactical",
+    );
+
+    expect(seats.map((seat) => seat.raw)).toEqual([
+      "Commander Engineering",
+      "Commander Universal-Miracle Worker",
+      "Lieutenant Commander Science",
+      "Lieutenant Tactical",
+      "Ensign Tactical",
     ]);
   });
 });
