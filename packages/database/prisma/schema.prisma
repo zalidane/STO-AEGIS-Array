@@ -358,3 +358,58 @@ model ModifierItem {
   @@id([modifierId, infoboxId])
   @@unique([modifierId, infoboxId])
 }
+
+/**
+ * Published loadout snapshots. App data — Extractor replace must never touch these.
+ * Hulls and items are keyed by wiki name so Cargo id churn cannot orphan a share.
+ */
+model Build {
+  id            String   @id @default(uuid())
+  publicCode    String   @unique
+  editTokenHash String
+  title         String
+  shipName      String
+  shipId        Int?
+  payload       Json
+  schemaVersion Int      @default(1)
+  contentHash   String
+  visibility    String   @default("unlisted")
+  listedAt      DateTime?
+  listIpHash    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  fills     BuildFill[]
+  featured  BuildFeatured[]
+
+  @@index([visibility])
+  @@index([shipName])
+  @@index([contentHash])
+  @@index([listIpHash, listedAt])
+}
+
+model BuildFill {
+  id          String @id @default(uuid())
+  buildId     String
+  contentHash String
+  catalogKind String
+  name        String
+  type        String  @default("")
+  shipName    String
+
+  build Build @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@unique([buildId, catalogKind, name, type])
+  @@index([name, catalogKind])
+  @@index([shipName])
+  @@index([contentHash])
+}
+
+model BuildFeatured {
+  id      String   @id @default(uuid())
+  date    DateTime @unique @db.Date
+  buildId String
+  build   Build    @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@index([buildId])
+}
