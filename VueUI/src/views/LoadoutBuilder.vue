@@ -509,6 +509,11 @@ function slotQuality(slot: HullSlot): ItemQuality {
   );
 }
 
+function slotFillStyle(slot: HullSlot): Record<string, string> | undefined {
+  if (!itemInSlot(slot.id) || !slotUsesItemMods(slot.kind)) return undefined;
+  return { "--slot-quality": qualityColor(slotQuality(slot)) };
+}
+
 function slotMark(slot: HullSlot): string {
   return displayedMark(
     fillForSlot(activeLoadout.value, slot.id),
@@ -849,6 +854,7 @@ const loading = computed(
                     type="button"
                     class="equip-slot"
                     :class="{ 'equip-slot--filled': itemInSlot(slot.id) }"
+                    :style="slotFillStyle(slot)"
                     :title="slotTitle(slot)"
                     :aria-label="slotTitle(slot)"
                     @click="openPicker(slot)"
@@ -1323,7 +1329,7 @@ const loading = computed(
 
 .equip-slot--filled {
   border-style: solid;
-  border-color: rgba(125, 211, 252, 0.5);
+  border-color: var(--slot-quality, rgba(125, 211, 252, 0.5));
 }
 
 .equip-slot__owned {
@@ -1335,6 +1341,11 @@ const loading = computed(
 .equip-slot:hover,
 .equip-slot:focus-visible {
   border-color: rgba(125, 211, 252, 0.9);
+}
+
+.equip-slot--filled:hover,
+.equip-slot--filled:focus-visible {
+  border-color: var(--slot-quality, rgba(125, 211, 252, 0.9));
 }
 
 .equip-slot__mods {
