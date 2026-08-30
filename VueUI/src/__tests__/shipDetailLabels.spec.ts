@@ -17,7 +17,8 @@ describe("getShipDetailLabels", () => {
   it("abbreviates constrained labels at comfortable density", () => {
     const labels = getShipDetailLabels("comfortable");
     expect(labels.bridgeTitle).toBe("BOffs & Consoles");
-    expect(labels.weaponsTitle).toBe("Hardpoints");
+    expect(labels.weaponsTitle).toBe("Equipment Slots");
+    expect(labels.equipmentTitle).toBe("Accessories");
     expect(labels.engineering).toBe("Eng");
     expect(labels.weapons).toBe("Wpn");
   });
@@ -35,8 +36,7 @@ describe("getShipDetailLabels", () => {
       "Bridge Officers and Consoles",
     );
     expect(SHIP_DETAIL_FULL_LABELS.engineering).toBe("Engineering");
-    expect(SHIP_DETAIL_FULL_LABELS.universalConsoles).toBe(
-      "Universal Console Slots",
-    );
+    expect(SHIP_DETAIL_FULL_LABELS.weaponsTitle).toBe("Equipment Slots");
+    expect(SHIP_DETAIL_FULL_LABELS.equipmentTitle).toBe("Accessories");
   });
 });
