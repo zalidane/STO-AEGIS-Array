@@ -1,0 +1,107 @@
+query SharedBuild($code: String!) {
+  sharedBuild(code: $code) {
+    publicCode
+    title
+    shipName
+    visibility
+    fillCount
+    payload
+    createdAt
+    updatedAt
+    ship {
+      id
+      name
+      wikiName
+      image
+      faction
+      factionLede
+      facSort
+      type
+      tier
+      displayPrefix
+      displayClass
+      displayType
+      cost
+      foreWeapons
+      aftWeapons
+      tacticalSlots
+      engineeringSlots
+      scienceSlots
+      devices
+      hangars
+      experimental
+      secondaryDeflector
+      t5uConsole
+      boffs
+      uniconsoleId
+      experimentalWeaponId
+    }
+  }
+}
+
+query BuildOfTheDay {
+  buildOfTheDay {
+    publicCode
+    title
+    shipName
+    fillCount
+    ship {
+      id
+      name
+      wikiName
+      image
+      faction
+      factionLede
+      facSort
+      type
+      tier
+      displayPrefix
+      displayClass
+      displayType
+      cost
+    }
+  }
+}
+
+mutation PublishBuild($payload: JSON!, $listPublic: Boolean) {
+  publishBuild(payload: $payload, listPublic: $listPublic) {
+    editToken
+    listingError
+    build {
+      publicCode
+      title
+      visibility
+      fillCount
+    }
+  }
+}
+
+mutation UpdateBuild(
+  $publicCode: String!
+  $editToken: String!
+  $payload: JSON
+  $listPublic: Boolean
+) {
+  updateBuild(
+    publicCode: $publicCode
+    editToken: $editToken
+    payload: $payload
+    listPublic: $listPublic
+  ) {
+    editToken
+    listingError
+    build {
+      publicCode
+      title
+      visibility
+      fillCount
+    }
+  }
+}
+
+mutation UnlistBuild($publicCode: String!, $editToken: String!) {
+  unlistBuild(publicCode: $publicCode, editToken: $editToken) {
+    publicCode
+    visibility
+  }
+}

@@ -85,6 +85,7 @@ query Infobox($id: Int!) {
       tier
       cost
     }
+    publicBuildCount
   }
 }
 
