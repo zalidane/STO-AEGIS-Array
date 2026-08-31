@@ -76,7 +76,7 @@ const fields = computed(() => {
 
       <v-card class="mt-4 mb-4">
         <v-card-title>Details</v-card-title>
-        <DetailFieldList :items="fields" />
+        <DetailFieldList justify :items="fields" />
       </v-card>
 
       <v-card v-if="trait.ships.length" class="mb-4">

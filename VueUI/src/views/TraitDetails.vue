@@ -47,7 +47,7 @@ const fields = computed(() => {
       </div>
       <v-card class="mt-4">
         <v-card-title>Trait Details</v-card-title>
-        <DetailFieldList :items="fields" />
+        <DetailFieldList justify :items="fields" />
       </v-card>
     </template>
     <v-alert v-else type="warning">Trait not found</v-alert>

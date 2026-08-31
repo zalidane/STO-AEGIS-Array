@@ -315,8 +315,10 @@ const resolvedBind = computed(
 
 .trait-browser__detail-text {
   margin: 0;
-  white-space: pre-wrap;
+  white-space: pre-line;
   line-height: 1.5;
+  text-align: justify;
+  text-align-last: start;
   color: rgba(255, 255, 255, 0.88);
 }
 

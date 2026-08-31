@@ -51,8 +51,8 @@ export function firstNonEmpty(
 }
 
 /**
- * Strip wiki list markers (`*`, `**`, `:`) and light wiki emphasis from trait body text.
- * HTML `<br>` tags become line breaks; leftover tags are removed.
+ * Strip wiki list markers, emphasis, and link/file markup from trait body text.
+ * HTML `<br>` / list tags become line breaks; leftover tags are removed.
  */
 export function cleanTraitDescriptionText(
   raw: string | null | undefined,
@@ -67,6 +67,7 @@ export function cleanTraitDescriptionText(
         // Leading wiki bullets / indents: "*", "**", ":", "#", or mixes.
         .replace(/^\s*[*#:]+[\s*]*/g, "")
         .replace(/'{2,}/g, "")
+        .replace(/[ \t]{2,}/g, " ")
         .trimEnd(),
     )
     .join("\n")

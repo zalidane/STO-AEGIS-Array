@@ -58,6 +58,47 @@ describe("traitBrowser", () => {
     ).toBe("When activating a mode:\nTo Foes: Taunt\nSummons allies");
   });
 
+  it("flattens wiki links in personal trait copy (Field Technician)", () => {
+    expect(cleanTraitDescriptionText("* -10% [[Kit]] Recharge Time")).toBe(
+      "-10% Kit Recharge Time",
+    );
+  });
+
+  it("flattens piped wiki links and italics in starship trait copy", () => {
+    expect(
+      cleanTraitDescriptionText(
+        "* Activating any Hull Healing Bridge Officer Ability or [[Intelligence Officer (specialization)#Bridge Officer Abilities|Intelligence]] Bridge Officer Ability will cause you to begin reflecting incoming damage from Energy Weapons back at your attackers as [[Damage_type_(space)#Disruptor| Disruptor Damage]].",
+      ),
+    ).toBe(
+      "Activating any Hull Healing Bridge Officer Ability or Intelligence Bridge Officer Ability will cause you to begin reflecting incoming damage from Energy Weapons back at your attackers as Disruptor Damage.",
+    );
+    expect(
+      cleanTraitDescriptionText(
+        "When activating any Hull Heal or Intel Bridge Officer Ability:\n* Apply &#039;&#039;Revenge&#039;&#039; to Self for 30 sec, or increase stack size by 1 (max 5 stacks)",
+      ),
+    ).toBe(
+      "When activating any Hull Heal or Intel Bridge Officer Ability:\nApply Revenge to Self for 30 sec, or increase stack size by 1 (max 5 stacks)",
+    );
+  });
+
+  it("drops file tokens, keeps piped labels, and suffixes after bare links", () => {
+    expect(
+      cleanTraitDescriptionText(
+        "Available for 200[[File:Lobi Crystal icon.png|14px|link=Lobi Crystal]] from the Lobi Crystal Consortium",
+      ),
+    ).toBe("Available for 200 from the Lobi Crystal Consortium");
+    expect(
+      cleanTraitDescriptionText(
+        "[[Ability: Go Down Fighting|Go Down Fighting]] can be used at any Hull Integrity.",
+      ),
+    ).toBe("Go Down Fighting can be used at any Hull Integrity.");
+    expect(
+      cleanTraitDescriptionText(
+        "spending time [[cloak]]ed or in [[Dark Mode (ability)|Dark Mode]]",
+      ),
+    ).toBe("spending time cloaked or in Dark Mode");
+  });
+
   it("filters by name and description text", () => {
     expect(filterTraitBrowserItems(items, "arrest").map((i) => i.id)).toEqual([
       1,
@@ -88,34 +129,44 @@ describe("traitBrowser", () => {
   it("maps personal traits onto browser items", () => {
     const mapped = mapPersonalTraitToBrowserItem({
       id: 9,
-      name: "Arrest",
-      description: "* Holds the target",
-      shortDescription: "Hold",
-      source: "Constable",
+      name: "Field Technician",
+      description: "* -10% [[Kit]] Recharge Time",
+      shortDescription: "Reduces recharge time for Kit abilities.",
+      source: "Innate to all captains.",
       type: "char",
       environment: "ground",
       career: null,
     });
-    expect(mapped.listDescription).toBe("Holds the target");
-    expect(mapped.detailDescription).toBe("Holds the target");
-    expect(mapped.source).toBe("Constable");
-    expect(mapped.imageSrc).toBe("/images/traits/Arrest_icon.png");
+    expect(mapped.listDescription).toBe("-10% Kit Recharge Time");
+    expect(mapped.detailDescription).toBe("-10% Kit Recharge Time");
+    expect(mapped.listDescription).not.toMatch(/\[\[|\]\]/);
+    expect(mapped.source).toBe("Innate to all captains.");
+    expect(mapped.imageSrc).toBe("/images/traits/Field_Technician_icon.png");
   });
 
   it("maps starship traits with obtained ships onto browser items", () => {
     const mapped = mapStarshipTraitToBrowserItem({
       id: 4,
-      name: "Go for the Kill",
-      short: "Damage boost",
-      basic: "Basic kill",
-      detailed: "Detailed kill text",
-      obtained: "Jem'Hadar ships",
-      type: "starship",
-      ships: [{ id: 2, name: "Jem'Hadar Attack Ship" }],
+      name: "Shall We Not Revenge",
+      short: "Hull Heal + Intel Boff Abilities add Energy Damage Reflect.",
+      basic:
+        "* Activating any Hull Healing Bridge Officer Ability or [[Intelligence Officer (specialization)#Bridge Officer Abilities|Intelligence]] Bridge Officer Ability will cause you to begin reflecting incoming damage from Energy Weapons back at your attackers as [[Damage_type_(space)#Disruptor| Disruptor Damage]].",
+      detailed:
+        "When activating any Hull Heal or Intel Bridge Officer Ability:\n* Apply &#039;&#039;Revenge&#039;&#039; to Self for 30 sec",
+      obtained: "Legendary D7 Intel Battlecruiser",
+      type: "faction-specific",
+      ships: [{ id: 2, name: "Legendary D7 Intel Battlecruiser" }],
     });
-    expect(mapped.listDescription).toBe("Damage boost");
-    expect(mapped.detailDescription).toBe("Detailed kill text");
-    expect(mapped.source).toBe("Jem'Hadar ships");
-    expect(mapped.ships).toEqual([{ id: 2, name: "Jem'Hadar Attack Ship" }]);
+    expect(mapped.listDescription).toBe(
+      "Hull Heal + Intel Boff Abilities add Energy Damage Reflect.",
+    );
+    expect(mapped.detailDescription).toBe(
+      "When activating any Hull Heal or Intel Bridge Officer Ability:\nApply Revenge to Self for 30 sec",
+    );
+    expect(mapped.detailDescription).not.toMatch(/\[\[|\]\]|''/);
+    expect(mapped.source).toBe("Legendary D7 Intel Battlecruiser");
+    expect(mapped.ships).toEqual([
+      { id: 2, name: "Legendary D7 Intel Battlecruiser" },
+    ]);
   });
 });
