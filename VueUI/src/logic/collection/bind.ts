@@ -140,3 +140,9 @@ export function bindScopeLabel(scope: BindScope): string {
   if (scope === "character") return "BtC";
   return "Bind unknown";
 }
+
+/** Full phrase for bind-choice dialogs, titles, and accessible names. */
+export function bindScopeChoiceCaption(scope: BindScope): string {
+  if (scope === "account") return "Unlocked for account";
+  return "Bound to this captain";
+}

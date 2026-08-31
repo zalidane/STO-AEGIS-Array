@@ -767,6 +767,7 @@ watch(
 
 .acquisition-collect :deep(.collect-toggle__meta) {
   justify-content: flex-start;
+  text-align: left;
 }
 
 .detail-card--panel {

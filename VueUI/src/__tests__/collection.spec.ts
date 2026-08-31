@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   allowsAccountUnlockFromCost,
+  bindScopeChoiceCaption,
   bindScopeFromBoundTo,
   bindScopeFromShipCost,
   bindScopeForKind,
+  bindScopeLabel,
   defaultBindForKind,
   inheritBindFromGrantingShips,
   resolveBindScope,
@@ -72,6 +74,15 @@ describe("bindScope", () => {
     expect(bindScopeFromBoundTo("character")).toBe("character");
     expect(bindScopeFromBoundTo(null)).toBe("unknown");
     expect(bindScopeFromBoundTo("yes")).toBe("unknown");
+  });
+
+  it("keeps list captions short and reserves full phrases for choice copy", () => {
+    expect(bindScopeLabel("account")).toBe("BtA");
+    expect(bindScopeLabel("character")).toBe("BtC");
+    expect(bindScopeLabel("unknown")).toBe("Bind unknown");
+    expect(bindScopeChoiceCaption("account")).toBe("Unlocked for account");
+    expect(bindScopeChoiceCaption("character")).toBe("Bound to this captain");
+    expect(bindScopeChoiceCaption("unknown")).toBe("Bound to this captain");
   });
 
   it("defaults personal traits to character; ships and grants need acquisition data", () => {

@@ -249,21 +249,21 @@ const activeGroup = computed(
             </div>
           </div>
           <div class="collection-row__actions" @click.stop>
-            <CompareToggle
-              v-if="row.entry.kind === 'ship'"
-              compact
-              :ship-id="row.entry.catalogId"
-            />
-            <v-btn
-              v-if="row.entry.kind === 'ship'"
-              :to="`/ships/${row.entry.catalogId}/loadout`"
-              size="small"
-              variant="text"
-              color="primary"
-              @click.stop
-            >
-              Build
-            </v-btn>
+            <div v-if="row.entry.kind === 'ship'" class="collection-row__toolbar">
+              <CompareToggle
+                compact
+                :ship-id="row.entry.catalogId"
+              />
+              <v-btn
+                :to="`/ships/${row.entry.catalogId}/loadout`"
+                size="small"
+                variant="text"
+                color="primary"
+                @click.stop
+              >
+                Build
+              </v-btn>
+            </div>
             <CollectToggle
               :kind="row.entry.kind"
               :catalog-id="row.entry.catalogId"
@@ -347,9 +347,15 @@ const activeGroup = computed(
 
 .collection-row__actions {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.35rem;
   flex-shrink: 0;
+}
+
+.collection-row__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .collection-row__name {

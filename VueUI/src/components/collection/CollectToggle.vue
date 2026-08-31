@@ -3,7 +3,7 @@ import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useCollectionStore } from "@/stores/collection";
 import type { BindScope, CatalogKind } from "@/logic/collection/types";
-import { bindScopeLabel } from "@/logic/collection/bind";
+import { bindScopeChoiceCaption, bindScopeLabel } from "@/logic/collection/bind";
 import {
   bindChoiceFromCost,
   FALLBACK_BIND_CHOICE_PROMPT,
@@ -126,6 +126,10 @@ function openBindPicker() {
   bindOpen.value = true;
 }
 
+const bindChoiceCaption = computed(() =>
+  bindScopeChoiceCaption(effectiveBind.value),
+);
+
 const dialogPrompt = computed(() => {
   if (props.bindChoicePrompt?.trim()) return props.bindChoicePrompt.trim();
   const fromCost = bindChoiceFromCost(props.cost, {
@@ -158,15 +162,11 @@ const dialogPrompt = computed(() => {
         v-if="allowAccountUnlock"
         type="button"
         class="collect-toggle__bind collect-toggle__bind--choice"
+        :title="bindChoiceCaption"
+        :aria-label="bindChoiceCaption"
         @click="openBindPicker"
       >
-        {{
-          effectiveBind === "account"
-            ? "Unlocked for account"
-            : allowAccountUnlock
-              ? "Bound to this captain"
-              : bindScopeLabel(effectiveBind)
-        }}
+        {{ bindScopeLabel(effectiveBind) }}
       </button>
       <span v-else class="collect-toggle__bind">{{ bindScopeLabel(effectiveBind) }}</span>
       <span v-if="otherLabel" class="collect-toggle__others">{{ otherLabel }}</span>
@@ -206,10 +206,10 @@ const dialogPrompt = computed(() => {
             variant="flat"
             @click="chooseBind('account')"
           >
-            Unlocked for account
+            {{ bindScopeChoiceCaption("account") }}
           </v-btn>
           <v-btn variant="outlined" @click="chooseBind('character')">
-            Bound to this captain
+            {{ bindScopeChoiceCaption("character") }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -234,10 +234,18 @@ const dialogPrompt = computed(() => {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.4rem;
+  box-sizing: border-box;
+  width: 0;
+  min-width: 100%;
   font-size: 0.7rem;
   letter-spacing: 0.08em;
+  text-align: right;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.55);
+}
+
+.collect-toggle__bind {
+  white-space: nowrap;
 }
 
 .collect-toggle__bind--choice {
@@ -254,6 +262,8 @@ const dialogPrompt = computed(() => {
 }
 
 .collect-toggle__others {
+  min-width: 0;
   color: #7dd3fc;
+  overflow-wrap: anywhere;
 }
 </style>
