@@ -800,8 +800,7 @@ const loading = computed(
         <h1 class="loadout-header__title">{{ ship.name }}</h1>
         <p class="loadout-header__lede">
           Seat collected gear into this hull’s legal slots. No DPS is predicted
-          — this is inventory on a ship, not a combat sim. Optionally attach a
-          combat log to see measured DPS per fight.
+          — this is inventory on a ship, not a combat sim.
         </p>
       </header>
 
@@ -852,13 +851,6 @@ const loading = computed(
           </div>
         </div>
 
-        <CombatLogPanel
-          :captain-name="activeCharacter.name"
-          :parse="activeLoadout.combatParse"
-          @parsed="store.saveCombatParse(activeLoadout.id, $event)"
-          @clear="store.removeCombatParse(activeLoadout.id)"
-        />
-
         <v-alert v-if="warnings.length" type="warning" variant="tonal" class="mb-4">
           {{ warnings.length }} seated item{{ warnings.length === 1 ? "" : "s" }}
           {{ warnings.length === 1 ? "is" : "are" }} missing from this captain’s
@@ -866,13 +858,21 @@ const loading = computed(
         </v-alert>
 
         <div class="loadout-board">
-          <CaptainTraitsPanel
-            class="captain-traits-board"
-            title="Captain space traits"
-            :subtitle="captainSubtitle"
-            :sections="captainTraitBoard"
-            @pick="openCaptainPicker"
-          />
+          <div class="loadout-primary">
+            <CaptainTraitsPanel
+              class="captain-traits-board"
+              title="Captain space traits"
+              :subtitle="captainSubtitle"
+              :sections="captainTraitBoard"
+              @pick="openCaptainPicker"
+            />
+            <CombatLogPanel
+              :captain-name="activeCharacter.name"
+              :parse="activeLoadout.combatParse"
+              @parsed="store.saveCombatParse(activeLoadout.id, $event)"
+              @clear="store.removeCombatParse(activeLoadout.id)"
+            />
+          </div>
 
           <div class="loadout-slots">
             <section
@@ -1303,6 +1303,13 @@ const loading = computed(
   align-items: start;
 }
 
+.loadout-primary {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
 .captain-traits-board {
   min-width: 0;
 }
@@ -1596,7 +1603,7 @@ const loading = computed(
     grid-template-columns: minmax(0, 1fr) 18rem;
   }
 
-  .captain-traits-board {
+  .loadout-primary {
     grid-column: 1 / -1;
   }
 }
@@ -1606,7 +1613,7 @@ const loading = computed(
     grid-template-columns: 1fr;
   }
 
-  .captain-traits-board {
+  .loadout-primary {
     grid-column: auto;
   }
 }
