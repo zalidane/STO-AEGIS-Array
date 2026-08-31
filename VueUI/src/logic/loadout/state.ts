@@ -8,6 +8,7 @@ import {
   loadoutOwnershipKey,
 } from "./setBonus";
 import { inheritModsFromPreviousSameKind, modsForNewFill } from "./slotQuality";
+import type { CombatParseSummary } from "@/logic/combatlog/types";
 import type {
   CollectionLoadout,
   EquipResult,
@@ -132,6 +133,30 @@ export function deleteLoadout(
     ...state,
     loadouts: state.loadouts.filter((loadout) => loadout.id !== loadoutId),
   };
+}
+
+export function attachCombatParse(
+  state: CollectionState,
+  loadoutId: string,
+  parse: CombatParseSummary,
+  clock: CollectionClock = defaultCollectionClock(),
+): CollectionState {
+  return replaceLoadout(state, loadoutId, (loadout) => ({
+    ...loadout,
+    updatedAt: clock.now(),
+    combatParse: parse,
+  }));
+}
+
+export function clearCombatParse(
+  state: CollectionState,
+  loadoutId: string,
+  clock: CollectionClock = defaultCollectionClock(),
+): CollectionState {
+  return replaceLoadout(state, loadoutId, (loadout) => {
+    const { combatParse: _dropped, ...rest } = loadout;
+    return { ...rest, updatedAt: clock.now() };
+  });
 }
 
 export function unequipLoadoutSlot(

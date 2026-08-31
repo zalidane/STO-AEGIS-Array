@@ -9,6 +9,7 @@ import type {
 } from "./types";
 import { createEmptyCollectionState, defaultCollectionClock } from "./types";
 import type { BindScope } from "./types";
+import { isCombatParseSummary } from "@/logic/combatlog/parseLog";
 import type { CollectionLoadout } from "@/logic/loadout/types";
 import { careerById, factionById, raceById } from "@/logic/captain/identity";
 import {
@@ -418,7 +419,7 @@ export function hydrateCollectionState(
     entries: Array.isArray(value.entries) ? value.entries.filter(isEntry) : [],
     loadouts:
       version === 2 && Array.isArray(value.loadouts)
-        ? value.loadouts.filter(isLoadout)
+        ? value.loadouts.filter(isLoadout).map(sanitizeLoadoutParse)
         : [],
   };
 }
@@ -478,6 +479,13 @@ function isLoadout(value: unknown): value is CollectionLoadout {
     Array.isArray(loadout.slots) &&
     loadout.slots.every(isSlotFill)
   );
+}
+
+function sanitizeLoadoutParse(loadout: CollectionLoadout): CollectionLoadout {
+  if (loadout.combatParse == null) return loadout;
+  if (isCombatParseSummary(loadout.combatParse)) return loadout;
+  const { combatParse: _dropped, ...rest } = loadout;
+  return rest;
 }
 
 function isSlotFill(value: unknown): value is CollectionLoadout["slots"][number] {

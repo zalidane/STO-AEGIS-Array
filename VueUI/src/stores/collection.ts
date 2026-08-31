@@ -17,6 +17,8 @@ import {
 } from "@/logic/collection/state";
 import {
   applyLoadout,
+  attachCombatParse,
+  clearCombatParse,
   createLoadout,
   deleteLoadout,
   equipLoadoutSlot,
@@ -25,6 +27,7 @@ import {
   unequipLoadoutSlot,
   updateLoadoutSlotMods,
 } from "@/logic/loadout/state";
+import type { CombatParseSummary } from "@/logic/combatlog/types";
 import {
   copyShareToCaptain,
   type ShareShipRef,
@@ -51,7 +54,14 @@ export const useCollectionStore = defineStore("collection", () => {
   const state = ref<CollectionState>(createEmptyCollectionState());
 
   function persist() {
-    repository.save(state.value);
+    try {
+      repository.save(state.value);
+    } catch (err) {
+      if (isQuotaExceeded(err)) {
+        throw new DOMException("Storage quota exceeded", "QuotaExceededError");
+      }
+      throw err;
+    }
   }
 
   function load() {
@@ -209,6 +219,16 @@ export const useCollectionStore = defineStore("collection", () => {
     persist();
   }
 
+  function saveCombatParse(loadoutId: string, parse: CombatParseSummary) {
+    state.value = attachCombatParse(state.value, loadoutId, parse);
+    persist();
+  }
+
+  function removeCombatParse(loadoutId: string) {
+    state.value = clearCombatParse(state.value, loadoutId);
+    persist();
+  }
+
   function equipCaptainTrait(
     input: {
       slotId: string;
@@ -268,8 +288,19 @@ export const useCollectionStore = defineStore("collection", () => {
     equipSlot,
     unequipSlot,
     updateSlotMods,
+    saveCombatParse,
+    removeCombatParse,
     equipCaptainTrait,
     unequipCaptainTrait,
     copySharedLoadout,
   };
 });
+
+function isQuotaExceeded(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const name = "name" in err ? String(err.name) : "";
+  if (name === "QuotaExceededError" || name === "NS_ERROR_DOM_QUOTA_REACHED") {
+    return true;
+  }
+  return "code" in err && err.code === 22;
+}
