@@ -1,3 +1,5 @@
+import type { CombatParseSummary } from "@/logic/combatlog/types";
+
 export type LoadoutCatalogKind = "item" | "starshipTrait" | "trait";
 
 export type LoadoutSlotFill = {
@@ -19,6 +21,8 @@ export type CollectionLoadout = {
   createdAt: string;
   updatedAt: string;
   slots: LoadoutSlotFill[];
+  /** Measured parse summary. Raw combatlog.log is never stored. */
+  combatParse?: CombatParseSummary;
 };
 
 export type LoadoutItem = {

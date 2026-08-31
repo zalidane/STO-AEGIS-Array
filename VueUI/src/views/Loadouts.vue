@@ -8,6 +8,7 @@ import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import { useCollectionStore } from "@/stores/collection";
 import { buildHullSlots } from "@/logic/loadout/hullSlots";
 import { loadoutsForCharacter } from "@/logic/loadout/state";
+import { formatCombatDps, peakFightDps } from "@/logic/combatlog";
 import { getShipImageUrl } from "@/utils/shipImage";
 
 const store = useCollectionStore();
@@ -33,6 +34,8 @@ const rows = computed(() =>
       image: getShipImageUrl(ship?.image),
       filled: loadout.slots.length,
       total,
+      peakDps: peakFightDps(loadout.combatParse),
+      fightCount: loadout.combatParse?.fights.length ?? 0,
       to: `/ships/${loadout.shipId}/loadout?loadout=${loadout.id}`,
     };
   }),
@@ -74,6 +77,10 @@ const rows = computed(() =>
             {{ row.shipName }}
             <span v-if="row.total > 0">
               · {{ row.filled }}/{{ row.total }} slots seated
+            </span>
+            <span v-if="row.fightCount > 0">
+              · {{ formatCombatDps(row.peakDps) }} DPS
+              ({{ row.fightCount }} combat{{ row.fightCount === 1 ? "" : "s" }})
             </span>
           </div>
         </div>

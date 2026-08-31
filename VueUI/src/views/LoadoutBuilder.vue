@@ -19,6 +19,7 @@ import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
 import CaptainTraitsPanel from "@/components/loadout/CaptainTraitsPanel.vue";
 import ShareBuildDialog from "@/components/loadout/ShareBuildDialog.vue";
+import CombatLogPanel from "@/components/loadout/CombatLogPanel.vue";
 import { useCollectionStore } from "@/stores/collection";
 import { useShareStore } from "@/stores/share";
 import {
@@ -799,7 +800,8 @@ const loading = computed(
         <h1 class="loadout-header__title">{{ ship.name }}</h1>
         <p class="loadout-header__lede">
           Seat collected gear into this hull’s legal slots. No DPS is predicted
-          — this is inventory on a ship, not a combat sim.
+          — this is inventory on a ship, not a combat sim. Optionally attach a
+          combat log to see measured DPS per fight.
         </p>
       </header>
 
@@ -849,6 +851,13 @@ const loading = computed(
             </v-btn>
           </div>
         </div>
+
+        <CombatLogPanel
+          :captain-name="activeCharacter.name"
+          :parse="activeLoadout.combatParse"
+          @parsed="store.saveCombatParse(activeLoadout.id, $event)"
+          @clear="store.removeCombatParse(activeLoadout.id)"
+        />
 
         <v-alert v-if="warnings.length" type="warning" variant="tonal" class="mb-4">
           {{ warnings.length }} seated item{{ warnings.length === 1 ? "" : "s" }}
