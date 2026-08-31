@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import {
   COMBAT_PARSE_ERRORS,
+  COMBAT_LOG_INFO_TITLE,
   combatLogFileError,
+  combatLogInfoParagraphs,
   formatCombatDps,
   formatCombatDuration,
   parseCombatLog,
@@ -23,6 +25,11 @@ const emit = defineEmits<{
 const fileInput = ref<HTMLInputElement | null>(null);
 const error = ref("");
 const busy = ref(false);
+const infoOpen = ref(false);
+
+const infoParagraphs = computed(() =>
+  combatLogInfoParagraphs(props.captainName),
+);
 
 function openPicker() {
   error.value = "";
@@ -59,14 +66,16 @@ async function onFileChange(event: Event) {
 <template>
   <section class="combat-log">
     <header class="combat-log__header">
-      <div>
+      <div class="combat-log__heading">
         <h2 class="combat-log__title">Combat log</h2>
-        <p class="combat-log__lede">
-          Optional. Upload this PC client’s combatlog.log. The parser stays in
-          the browser, keeps {{ captainName }}, and does not store the raw file.
-          Map names are not in the log — fights split on idle gaps. If the game
-          is running, copy the log out of the GameClient folder first.
-        </p>
+        <v-btn
+          icon="mdi-information-outline"
+          size="x-small"
+          variant="text"
+          color="primary"
+          aria-label="About combat logs"
+          @click="infoOpen = true"
+        />
       </div>
       <div class="combat-log__actions">
         <input
@@ -83,7 +92,7 @@ async function onFileChange(event: Event) {
           :loading="busy"
           @click="openPicker"
         >
-          {{ parse ? "Replace log" : "Upload combatlog.log" }}
+          {{ parse ? "Replace log" : "Upload log" }}
         </v-btn>
         <v-btn
           v-if="parse"
@@ -92,7 +101,7 @@ async function onFileChange(event: Event) {
           color="error"
           @click="emit('clear')"
         >
-          Remove parse
+          Remove
         </v-btn>
       </div>
     </header>
@@ -123,40 +132,56 @@ async function onFileChange(event: Event) {
         <p class="fight-card__role">{{ fight.participation }}</p>
       </article>
     </div>
+
+    <v-dialog v-model="infoOpen" max-width="460">
+      <v-card>
+        <v-card-title>{{ COMBAT_LOG_INFO_TITLE }}</v-card-title>
+        <v-card-text>
+          <p
+            v-for="(paragraph, index) in infoParagraphs"
+            :key="index"
+            class="combat-log__info-p"
+          >
+            {{ paragraph }}
+          </p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="infoOpen = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </section>
 </template>
 
 <style scoped>
 .combat-log {
-  margin-bottom: 1.25rem;
-  padding: 1rem 1.05rem;
+  position: relative;
+  padding: 0.85rem 1rem 1rem;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(125, 211, 252, 0.22);
   background: #101b2a;
 }
 
 .combat-log__header {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.85rem;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 0.65rem;
   margin-bottom: 0.75rem;
 }
 
-.combat-log__title {
-  margin: 0 0 0.35rem;
-  font-size: 0.82rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+.combat-log__heading {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
 }
 
-.combat-log__lede {
+.combat-log__title {
   margin: 0;
-  max-width: 42rem;
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 0.88rem;
-  line-height: 1.45;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7dd3fc;
 }
 
 .combat-log__actions {
@@ -181,9 +206,18 @@ async function onFileChange(event: Event) {
 }
 
 .combat-log__fights {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.combat-log__info-p {
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+.combat-log__info-p:last-child {
+  margin-bottom: 0;
 }
 
 .fight-card {

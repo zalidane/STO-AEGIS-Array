@@ -19,6 +19,7 @@ import {
   rankNotes,
   combatLogFileError,
   readCombatLogText,
+  combatLogInfoParagraphs,
 } from "@/logic/combatlog";
 import {
   parseCombatLine,
@@ -497,5 +498,20 @@ describe("combat log file read", () => {
     await expect(
       readCombatLogText(new Blob(["26:08:30:12:00:00.0::Jenis"], { type: "text/plain" })),
     ).resolves.toBe("26:08:30:12:00:00.0::Jenis");
+  });
+});
+
+describe("combatLogInfoParagraphs", () => {
+  it("names the captain and covers upload, privacy, and locked-file notes", () => {
+    const paragraphs = combatLogInfoParagraphs("Jenis");
+    expect(paragraphs.join(" ")).toContain("Jenis");
+    expect(paragraphs.join(" ")).toMatch(/combatlog\.log/i);
+    expect(paragraphs.some((line) => /does not store the raw file/i.test(line))).toBe(
+      true,
+    );
+    expect(paragraphs.some((line) => /GameClient/i.test(line))).toBe(true);
+    expect(paragraphs.some((line) => /does not predict DPS/i.test(line))).toBe(
+      true,
+    );
   });
 });
