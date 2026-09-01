@@ -139,7 +139,7 @@ async function runExtract(options: {
     force: options.forceImages,
   });
   console.log(
-    "Image extract complete. Files land in VueUI/public/images/{items,ships,traits,starship-traits}/.",
+    "Image extract complete. Files land in VueUI/public/images/{items,ships,traits,starship-traits,tray-skills}/.",
   );
 }
 

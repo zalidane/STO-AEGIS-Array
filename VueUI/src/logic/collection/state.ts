@@ -502,6 +502,9 @@ function isSlotFill(value: unknown): value is CollectionLoadout["slots"][number]
   }
   if (fill.quality != null && typeof fill.quality !== "string") return false;
   if (fill.mark != null && typeof fill.mark !== "string") return false;
+  if (fill.abilityRank != null && typeof fill.abilityRank !== "number") {
+    return false;
+  }
   return true;
 }
 

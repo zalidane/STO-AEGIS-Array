@@ -4,7 +4,7 @@ import { decodeHtmlEntities } from "@/utils/decodeHtmlEntities";
 
 const INVISIBLE_CHARS = /[\u200e\u200f\u200b\ufeff]/g;
 
-export type WikiImageKind = "items" | "ships" | "traits" | "starship-traits";
+export type WikiImageKind = "items" | "ships" | "traits" | "starship-traits" | "tray-skills";
 
 /** Decode wiki/HTML noise and return a canonical `Name with spaces.ext` stem. */
 function normalizedFileStem(raw: string): string {
@@ -100,4 +100,25 @@ export function getStarshipTraitImageUrl(
   const stem = iconName?.trim() || name?.trim();
   if (!stem) return null;
   return wikiPublicUrl("starship-traits", wikiIconFilename(stem));
+}
+
+/** Keep in sync with Extractor `abilityIconStem`. */
+export function traySkillIconLookupName(name: string): string {
+  const decoded = normalizedFileStem(name);
+  return decoded.replace(/:/g, "").replace(/\s+/g, " ").trim();
+}
+
+export function getTraySkillImageUrl(
+  name: string | null | undefined,
+  storedFilename?: string | null,
+): string | null {
+  if (storedFilename?.trim()) {
+    return wikiPublicUrl("tray-skills", wikiLocalFilename(storedFilename));
+  }
+  const stem = name?.trim() ? traySkillIconLookupName(name) : "";
+  if (!stem) return null;
+  return wikiPublicUrl(
+    "tray-skills",
+    wikiLocalFilename(`${stem} icon (Federation).png`),
+  );
 }

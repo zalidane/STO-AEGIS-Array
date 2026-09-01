@@ -2,7 +2,7 @@ import { decodeHtmlEntities } from "../utils/decodeHtmlEntities";
 
 const INVISIBLE_CHARS = /[\u200e\u200f\u200b\ufeff]/g;
 
-export type ImageKind = "items" | "ships" | "traits" | "starship-traits";
+export type ImageKind = "items" | "ships" | "traits" | "starship-traits" | "tray-skills";
 
 export type ImageTarget = {
   kind: ImageKind;
@@ -24,6 +24,27 @@ export function iconFileTitle(nameOrFile: string): string {
     return `File:${title}`;
   }
   return `File:${title} icon.png`;
+}
+
+/**
+ * Wiki ability files omit `:` (`Beams: Fire at Will` → `Beams Fire at Will`).
+ * Keep in sync with VueUI `traySkillIconLookupName`.
+ */
+export function abilityIconStem(name: string): string {
+  const decoded = decodeHtmlEntities(name).replace(INVISIBLE_CHARS, "").trim();
+  return decoded.replace(/:/g, "").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Federation first ({{abilityicon}} default), then the factionless AoY file.
+ */
+export function traySkillIconFileTitles(name: string): string[] {
+  const stem = abilityIconStem(name);
+  if (!stem) return [];
+  return uniqueNames([
+    `File:${stem} icon (Federation).png`,
+    `File:${stem} icon.png`,
+  ]);
 }
 
 /**

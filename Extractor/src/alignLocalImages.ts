@@ -33,12 +33,15 @@ async function main() {
     (await readJson<Array<{ name: string; image?: string | null }>>(
       resolve(cargoDir, "Infobox.json"),
     )) ?? [];
+  const traySkills =
+    (await readJson<Array<{ name: string }>>(resolve(cargoDir, "TraySkill.json"))) ?? [];
 
   const targets = catalogImageTargets({
     ships,
     traits,
     starshipTraits,
     infoboxes,
+    traySkills,
   });
   const { renamed, recased } = await alignCatalogImageFiles(imagesDir, targets);
   console.log(`Aligned ${renamed} of ${targets.length} catalog image files in ${imagesDir}`);

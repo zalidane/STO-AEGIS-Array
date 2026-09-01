@@ -549,6 +549,11 @@ describe("matchSetBonuses", () => {
         required: 3,
         complete: false,
         passives: "+Hull",
+        pieces: [
+          "Temporal Defense Initiative Deflector",
+          "Temporal Defense Initiative Engine",
+        ],
+        missing: [],
       },
     ]);
   });

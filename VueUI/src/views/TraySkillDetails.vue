@@ -9,6 +9,8 @@ import {
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import DetailFieldList from "@/components/shared/DetailFieldList.vue";
+import WikiIcon from "@/components/shared/WikiIcon.vue";
+import { getTraySkillImageUrl } from "@/utils/wikiImage";
 
 const route = useRoute();
 const id = computed(() => Number(route.params.id));
@@ -55,7 +57,14 @@ const fields = computed(() => {
     <loading-panel v-if="loading" :message="'Tray Skill Details'" />
     <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
     <template v-else-if="skill">
-      <h3>{{ skill.name }}</h3>
+      <h3 class="tray-skill-title">
+        <WikiIcon
+          :src="getTraySkillImageUrl(skill.name, skill.image)"
+          :alt="skill.name"
+          :size="40"
+        />
+        {{ skill.name }}
+      </h3>
       <h5>{{ skill.system }} • {{ skill.type }}</h5>
       <v-card class="mt-4">
         <v-card-title>Details</v-card-title>
@@ -65,3 +74,11 @@ const fields = computed(() => {
     <v-alert v-else type="warning">Tray skill not found</v-alert>
   </v-container>
 </template>
+
+<style scoped>
+.tray-skill-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+</style>

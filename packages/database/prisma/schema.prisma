@@ -236,6 +236,7 @@ model TraySkill {
   rank3info       String?
   rank4info       String?
   rank5info       String?
+  image           String? // stamped after image extract
   rawData         Json
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

@@ -22,6 +22,7 @@ type TraySkill {
   rank4info: String
   rank5info: String
   rawData: JSON!
+  image: String
   createdAt: DateTime!
   updatedAt: DateTime!
 }

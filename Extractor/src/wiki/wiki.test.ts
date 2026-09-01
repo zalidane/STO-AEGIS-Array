@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isCloudflareBlock, looksLikeHtml } from "./cloudflare";
 import { cookieHeader, mergeCookies, parseSetCookieHeaders } from "./cookies";
-import { iconFileTitle, itemIconNameCandidates, localFilename, matchKey, normalizeWikiFileTitle } from "./filenames";
-import { applyImageIndexToInfoboxes, catalogImageTargets } from "./imageTargets";
+import { applyImageIndexToInfoboxes, applyImageIndexToTraySkills, catalogImageTargets } from "./imageTargets";
 import { decideImageFetch } from "./imageSync";
 import { loadWikiConfig } from "./config";
 import { backoffDelayMs, parseRetryAfterSeconds } from "./rateLimit";
+import { iconFileTitle, itemIconNameCandidates, localFilename, matchKey, normalizeWikiFileTitle, traySkillIconFileTitles } from "./filenames";
 
 describe("normalizeWikiFileTitle", () => {
   it("strips File: prefix noise and invisible marks", () => {
@@ -85,6 +85,17 @@ describe("normalizeWikiFileTitle", () => {
     );
   });
 
+  it("builds tray-skill ability icon titles with colons stripped", () => {
+    assert.deepEqual(traySkillIconFileTitles("Beams: Fire at Will"), [
+      "File:Beams Fire at Will icon (Federation).png",
+      "File:Beams Fire at Will icon.png",
+    ]);
+    assert.equal(
+      localFilename("File:Beams Fire at Will icon (Federation).png"),
+      "Beams_Fire_at_Will_icon_(Federation).png",
+    );
+  });
+
   it("decodes HTML apostrophes and strips them from public filenames", () => {
     assert.equal(
       localFilename("File:Amarie Smuggler&#039;s Heavy Escort.jpg"),
@@ -116,6 +127,7 @@ describe("catalogImageTargets", () => {
           name: "Omni-Directional Antichroniton Infused Tetryon Beam Array Mk XII",
         },
       ],
+      traySkills: [{ name: "Beams: Fire at Will" }],
     });
 
     const titles = targets.map((row) => `${row.kind}:${row.wikiTitle}`).sort();
@@ -127,6 +139,8 @@ describe("catalogImageTargets", () => {
       "ships:File:Fed Ship Achilles.png",
       "starship-traits:File:1.21 Terrawatts icon.png",
       "traits:File:A Good Day to Die icon.png",
+      "tray-skills:File:Beams Fire at Will icon (Federation).png",
+      "tray-skills:File:Beams Fire at Will icon.png",
     ]);
   });
 });
@@ -184,6 +198,57 @@ describe("applyImageIndexToInfoboxes", () => {
       stamped[0]?.image,
       "Omni-Directional_Antichroniton_Infused_Tetryon_Beam_Array_icon.png",
     );
+  });
+});
+
+describe("applyImageIndexToTraySkills", () => {
+  it("prefers the Federation icon and leaves misses null", () => {
+    const stamped = applyImageIndexToTraySkills(
+      [{ name: "Beams: Fire at Will" }, { name: "Missing Power" }],
+      [
+        {
+          kind: "tray-skills",
+          wikiTitle: "File:Beams Fire at Will icon (Federation).png",
+          localFilename: "Beams_Fire_at_Will_icon_(Federation).png",
+          status: "downloaded",
+        },
+        {
+          kind: "tray-skills",
+          wikiTitle: "File:Missing Power icon (Federation).png",
+          localFilename: "Missing_Power_icon_(Federation).png",
+          status: "missing",
+        },
+        {
+          kind: "tray-skills",
+          wikiTitle: "File:Missing Power icon.png",
+          localFilename: "Missing_Power_icon.png",
+          status: "missing",
+        },
+      ],
+    );
+    assert.equal(stamped[0]?.image, "Beams_Fire_at_Will_icon_(Federation).png");
+    assert.equal(stamped[1]?.image, null);
+  });
+
+  it("falls back to the factionless ability icon", () => {
+    const stamped = applyImageIndexToTraySkills(
+      [{ name: "Overwhelm Power Regulators" }],
+      [
+        {
+          kind: "tray-skills",
+          wikiTitle: "File:Overwhelm Power Regulators icon (Federation).png",
+          localFilename: "Overwhelm_Power_Regulators_icon_(Federation).png",
+          status: "missing",
+        },
+        {
+          kind: "tray-skills",
+          wikiTitle: "File:Overwhelm Power Regulators icon.png",
+          localFilename: "Overwhelm_Power_Regulators_icon.png",
+          status: "exists",
+        },
+      ],
+    );
+    assert.equal(stamped[0]?.image, "Overwhelm_Power_Regulators_icon.png");
   });
 });
 

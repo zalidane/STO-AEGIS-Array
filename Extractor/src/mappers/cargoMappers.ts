@@ -285,6 +285,7 @@ export function mapTraySkill(row: RawTraySkill) {
     rank3info: row.rank3info,
     rank4info: row.rank4info,
     rank5info: row.rank5info,
+    image: row.image ?? null,
     rawData: row,
   };
 }
