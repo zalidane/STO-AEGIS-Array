@@ -22,6 +22,7 @@ import {
   stripItemFromCharacterLoadouts,
   stripLoadoutsForCharacter,
 } from "@/logic/loadout/state";
+import { sanitizeBoffSeatCareers } from "@/logic/loadout/boffPowers";
 
 function characterName(
   state: CollectionState,
@@ -482,9 +483,14 @@ function isLoadout(value: unknown): value is CollectionLoadout {
 }
 
 function sanitizeLoadoutParse(loadout: CollectionLoadout): CollectionLoadout {
-  if (loadout.combatParse == null) return loadout;
-  if (isCombatParseSummary(loadout.combatParse)) return loadout;
-  const { combatParse: _dropped, ...rest } = loadout;
+  const careers = sanitizeBoffSeatCareers(loadout.boffSeatCareers);
+  const withCareers: CollectionLoadout =
+    careers === undefined && loadout.boffSeatCareers === undefined
+      ? loadout
+      : { ...loadout, boffSeatCareers: careers };
+  if (withCareers.combatParse == null) return withCareers;
+  if (isCombatParseSummary(withCareers.combatParse)) return withCareers;
+  const { combatParse: _dropped, ...rest } = withCareers;
   return rest;
 }
 

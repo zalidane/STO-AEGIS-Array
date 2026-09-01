@@ -9,7 +9,7 @@ import type {
 export const SHARE_SCHEMA_VERSION = 1 as const;
 export const MIN_PUBLIC_FILLS = 8;
 
-export type ShareCatalogKind = "item" | "starshipTrait";
+export type ShareCatalogKind = "item" | "starshipTrait" | "traySkill";
 
 export type ShareSlot = {
   slotId: string;
@@ -25,6 +25,7 @@ export type SharePayload = {
   shipName: string;
   title: string;
   slots: ShareSlot[];
+  boffSeatCareers?: CollectionLoadout["boffSeatCareers"];
 };
 
 export type ShareCatalogItem = Pick<
@@ -33,7 +34,7 @@ export type ShareCatalogItem = Pick<
 >;
 
 function isShareKind(kind: LoadoutCatalogKind): kind is ShareCatalogKind {
-  return kind === "item" || kind === "starshipTrait";
+  return kind === "item" || kind === "starshipTrait" || kind === "traySkill";
 }
 
 function itemByFill(
@@ -76,6 +77,9 @@ export function encodeSharePayload(input: {
     shipName: input.shipName.trim(),
     title: input.title.trim() || "Build",
     slots,
+    ...(input.loadout.boffSeatCareers
+      ? { boffSeatCareers: { ...input.loadout.boffSeatCareers } }
+      : {}),
   };
 }
 

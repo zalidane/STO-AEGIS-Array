@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
   cleanTraitDescriptionText,
+  displayTraitEnvironment,
+  displayTraitType,
   filterTraitBrowserItems,
   firstNonEmpty,
   mapPersonalTraitToBrowserItem,
   mapStarshipTraitToBrowserItem,
   resolveSelectedTrait,
   traitBrowserMetaChips,
+  uniqueTraitFacetValues,
   type TraitBrowserItem,
 } from "@/logic/traitBrowser";
 
@@ -99,12 +102,50 @@ describe("traitBrowser", () => {
     ).toBe("spending time cloaked or in Dark Mode");
   });
 
+  it("flattens Absolute Candor piped wiki links in cargo HTML", () => {
+    expect(
+      cleanTraitDescriptionText(
+        "When controlled, remove Control effects (20 sec recharge) &lt;br&gt;+100% [[Exploit attack|Exploit]] Damage",
+      ),
+    ).toBe(
+      "When controlled, remove Control effects (20 sec recharge)\n+100% Exploit Damage",
+    );
+  });
+
   it("filters by name and description text", () => {
     expect(filterTraitBrowserItems(items, "arrest").map((i) => i.id)).toEqual([
       1,
     ]);
     expect(filterTraitBrowserItems(items, "damage").map((i) => i.id)).toEqual([
       2,
+    ]);
+  });
+
+  it("filters by type and environment facets", () => {
+    expect(
+      filterTraitBrowserItems(items, "", { types: ["char"] }).map((i) => i.id),
+    ).toEqual([1]);
+    expect(
+      filterTraitBrowserItems(items, "", { environments: ["ground"] }).map(
+        (i) => i.id,
+      ),
+    ).toEqual([1]);
+    expect(
+      filterTraitBrowserItems(items, "kill", { types: ["char"] }).map(
+        (i) => i.id,
+      ),
+    ).toEqual([]);
+    expect(uniqueTraitFacetValues(items, "type")).toEqual(["char", "starship"]);
+    expect(uniqueTraitFacetValues(items, "environment")).toEqual(["ground"]);
+  });
+
+  it("labels cargo type codes for filters and chips", () => {
+    expect(displayTraitType("char")).toBe("Personal");
+    expect(displayTraitType("boff")).toBe("Bridge officer");
+    expect(displayTraitEnvironment("ground")).toBe("Ground");
+    expect(traitBrowserMetaChips(items[0])).toEqual([
+      { label: "Type", value: "Personal" },
+      { label: "Environment", value: "Ground" },
     ]);
   });
 

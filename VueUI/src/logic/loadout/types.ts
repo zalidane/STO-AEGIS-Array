@@ -1,6 +1,6 @@
 import type { CombatParseSummary } from "@/logic/combatlog/types";
 
-export type LoadoutCatalogKind = "item" | "starshipTrait" | "trait";
+export type LoadoutCatalogKind = "item" | "starshipTrait" | "trait" | "traySkill";
 
 export type LoadoutSlotFill = {
   slotId: string;
@@ -21,6 +21,8 @@ export type CollectionLoadout = {
   createdAt: string;
   updatedAt: string;
   slots: LoadoutSlotFill[];
+  /** Universal seat career picks, keyed by station index. */
+  boffSeatCareers?: Record<string, "Tactical" | "Engineering" | "Science">;
   /** Measured parse summary. Raw combatlog.log is never stored. */
   combatParse?: CombatParseSummary;
 };
@@ -40,6 +42,8 @@ export type LoadoutItem = {
   environment?: string | null;
   career?: string | null;
   required?: string | null;
+  /** Tray-skill rank labels (rank1…rank5) for BOff power fitting. */
+  ranks?: Array<string | null | undefined>;
 };
 
 export type LoadoutEquipContext = {

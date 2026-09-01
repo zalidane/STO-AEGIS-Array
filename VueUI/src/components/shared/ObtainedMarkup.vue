@@ -132,8 +132,10 @@ function toPath(
     switch (route.name) {
       case "ship-details":
         return `/ships/${id}`;
+      case "item-details":
+        return `/items/${id}`;
       case "infobox-details":
-        return `/infoboxes/${id}`;
+        return `/items/${id}`;
       case "trait-details":
         return `/traits/${id}`;
       case "starship-trait-details":
@@ -181,7 +183,7 @@ watch(
             normalizeLookupKey(item.name) === normalizeLookupKey(page),
         );
         if (exact) {
-          nextRoutes[page] = `/infoboxes/${exact.id}`;
+          nextRoutes[page] = `/items/${exact.id}`;
           continue;
         }
 
@@ -268,7 +270,7 @@ function factionLetterFromToken(
             </RouterLink>
             <span
               v-else
-              class="obtained-link obtained-link--plain obtained-ship-name"
+              class="obtained-ship-name"
               :class="shipLinkClass(ship.page)"
               :title="ship.page"
             >
@@ -304,7 +306,6 @@ function factionLetterFromToken(
 
             <span
               v-else-if="token.type === 'link'"
-              class="obtained-link obtained-link--plain"
               :class="shipLinkClass(token.page)"
               :title="token.page"
             >{{ token.label }}</span>
@@ -401,9 +402,5 @@ function factionLetterFromToken(
 
 .obtained-link:hover {
   text-decoration: underline;
-}
-
-.obtained-link--plain {
-  font-weight: 500;
 }
 </style>

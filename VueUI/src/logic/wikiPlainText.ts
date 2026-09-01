@@ -17,7 +17,7 @@ export function normalizeWikiPlainText(raw: string): string {
 
 function flattenWikiLinks(value: string): string {
   let previous = "";
-  let result = value;
+  let result = value.replace(/\{\{!\}\}/g, "|");
   while (result !== previous) {
     previous = result;
     result = result.replace(/\[\[(?:File|Image):[^\]]*\]\]/gi, "");
@@ -29,6 +29,11 @@ function flattenWikiLinks(value: string): string {
       /\[\[([^\]|#]+)(?:#[^\]|]*)?\]\]/g,
       (_match, page: string) => page.replace(/_/g, " ").trim(),
     );
+    result = result.replace(/\[\[([^[\]]+)\]\]/g, (_match, inner: string) => {
+      const pipe = inner.lastIndexOf("|");
+      const label = pipe >= 0 ? inner.slice(pipe + 1) : inner;
+      return label.replace(/_/g, " ").replace(/#.*$/, "").trim();
+    });
     result = result.replace(
       /\[https?:\/\/[^\s\]]+\s+([^\]]+)\]/gi,
       "$1",

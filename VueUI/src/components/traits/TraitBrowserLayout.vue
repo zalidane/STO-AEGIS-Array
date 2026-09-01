@@ -4,10 +4,14 @@ import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import TraitDetailCard from "@/components/traits/TraitDetailCard.vue";
 import CollectToggle from "@/components/collection/CollectToggle.vue";
 import {
+  displayTraitEnvironment,
+  displayTraitType,
   filterTraitBrowserItems,
   resolveSelectedTrait,
+  uniqueTraitFacetValues,
   type TraitBrowserItem,
 } from "@/logic/traitBrowser";
+import { toggleInclusiveValue } from "@/logic/shipsBinder";
 import type { BindScope, CatalogKind } from "@/logic/collection/types";
 import { defaultBindForKind } from "@/logic/collection/bind";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
@@ -25,13 +29,34 @@ const props = defineProps<{
   collectBind?: BindScope | ((item: TraitBrowserItem) => BindScope);
   collectAccountUnlock?: boolean | ((item: TraitBrowserItem) => boolean);
   collectBindChoicePrompt?: string | ((item: TraitBrowserItem) => string);
+  /** Type and environment chips, matching the ship registry filters. */
+  facetFilters?: boolean;
 }>();
 
 const search = ref("");
 const selectedId = ref<number | null>(null);
+const selectedTypes = ref<string[]>([]);
+const selectedEnvironments = ref<string[]>([]);
+
+const availableTypes = computed(() =>
+  uniqueTraitFacetValues(props.items, "type"),
+);
+const availableEnvironments = computed(() =>
+  uniqueTraitFacetValues(props.items, "environment"),
+);
+
+const showTypeFilters = computed(
+  () => props.facetFilters && availableTypes.value.length > 1,
+);
+const showEnvironmentFilters = computed(
+  () => props.facetFilters && availableEnvironments.value.length > 1,
+);
 
 const filteredItems = computed(() =>
-  filterTraitBrowserItems(props.items, search.value),
+  filterTraitBrowserItems(props.items, search.value, {
+    types: selectedTypes.value,
+    environments: selectedEnvironments.value,
+  }),
 );
 
 const selected = computed(() =>
@@ -57,6 +82,25 @@ watch(
 
 function selectItem(id: number) {
   selectedId.value = id;
+}
+
+function toggleType(type: string) {
+  selectedTypes.value = toggleInclusiveValue(selectedTypes.value, type);
+}
+
+function toggleEnvironment(environment: string) {
+  selectedEnvironments.value = toggleInclusiveValue(
+    selectedEnvironments.value,
+    environment,
+  );
+}
+
+function clearTypeFilters() {
+  selectedTypes.value = [];
+}
+
+function clearEnvironmentFilters() {
+  selectedEnvironments.value = [];
 }
 
 function collectBindFor(item: TraitBrowserItem): BindScope {
@@ -110,6 +154,71 @@ const selectedCollectBindChoicePrompt = computed(() => {
     </v-alert>
 
     <template v-else>
+      <section
+        v-if="showTypeFilters || showEnvironmentFilters"
+        class="trait-browser__filters"
+        aria-label="Trait filters"
+      >
+        <div class="trait-browser__filters-label">Filter by:</div>
+        <div
+          v-if="showTypeFilters"
+          class="trait-browser__filter-group"
+          role="group"
+          aria-label="Type"
+        >
+          <button
+            type="button"
+            class="trait-browser__chip"
+            :class="{ 'trait-browser__chip--active': selectedTypes.length === 0 }"
+            @click="clearTypeFilters"
+          >
+            All types
+          </button>
+          <button
+            v-for="type in availableTypes"
+            :key="type"
+            type="button"
+            class="trait-browser__chip"
+            :class="{
+              'trait-browser__chip--active': selectedTypes.includes(type),
+            }"
+            @click="toggleType(type)"
+          >
+            {{ displayTraitType(type) }}
+          </button>
+        </div>
+        <div
+          v-if="showEnvironmentFilters"
+          class="trait-browser__filter-group"
+          role="group"
+          aria-label="Environment"
+        >
+          <button
+            type="button"
+            class="trait-browser__chip"
+            :class="{
+              'trait-browser__chip--active': selectedEnvironments.length === 0,
+            }"
+            @click="clearEnvironmentFilters"
+          >
+            All
+          </button>
+          <button
+            v-for="environment in availableEnvironments"
+            :key="environment"
+            type="button"
+            class="trait-browser__chip"
+            :class="{
+              'trait-browser__chip--active':
+                selectedEnvironments.includes(environment),
+            }"
+            @click="toggleEnvironment(environment)"
+          >
+            {{ displayTraitEnvironment(environment) }}
+          </button>
+        </div>
+      </section>
+
       <v-text-field
         v-model="search"
         label="Search"
@@ -121,7 +230,7 @@ const selectedCollectBindChoicePrompt = computed(() => {
       <div class="trait-browser__layout">
         <aside class="trait-browser__list-pane">
           <div v-if="filteredItems.length === 0" class="trait-browser__empty">
-            No results match your search.
+            No results match the current search and filters.
           </div>
 
           <div
@@ -183,6 +292,58 @@ const selectedCollectBindChoicePrompt = computed(() => {
 </template>
 
 <style scoped>
+.trait-browser__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-bottom: 1rem;
+  padding: 12px;
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  background: rgba(6, 14, 24, 0.72);
+}
+
+.trait-browser__filters-label {
+  color: #7dd3fc;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.trait-browser__filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trait-browser__chip {
+  appearance: none;
+  border: 1px solid rgba(125, 211, 252, 0.55);
+  background: transparent;
+  color: #7dd3fc;
+  padding: 7px 10px;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  line-height: 1;
+  transition:
+    background 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.trait-browser__chip:hover {
+  background: color-mix(in srgb, #7dd3fc 16%, transparent);
+}
+
+.trait-browser__chip--active {
+  background: #7dd3fc;
+  color: #041018;
+  border-color: #7dd3fc;
+}
+
 .trait-browser__layout {
   display: grid;
   grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);

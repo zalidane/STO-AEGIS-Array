@@ -86,27 +86,90 @@ export function traitBrowserMetaChips(
     return item.meta.filter((chip) => Boolean(chip.value?.trim()));
   }
   return [
-    { label: "Type", value: item.type ?? "" },
-    { label: "Environment", value: item.environment ?? "" },
+    { label: "Type", value: displayTraitType(item.type) ?? "" },
+    { label: "Environment", value: displayTraitEnvironment(item.environment) ?? "" },
     { label: "Career", value: item.career ?? "" },
   ].filter((chip) => Boolean(chip.value.trim()));
+}
+
+const TRAIT_TYPE_LABELS: Record<string, string> = {
+  char: "Personal",
+  boff: "Bridge officer",
+  doff: "Duty officer",
+  reputation: "Reputation",
+  activereputation: "Active reputation",
+};
+
+export function displayTraitType(
+  type: string | null | undefined,
+): string | null {
+  const trimmed = type?.trim();
+  if (!trimmed) return null;
+  return TRAIT_TYPE_LABELS[trimmed.toLowerCase()] ?? trimmed;
+}
+
+export function displayTraitEnvironment(
+  environment: string | null | undefined,
+): string | null {
+  const trimmed = environment?.trim();
+  if (!trimmed) return null;
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
+export type TraitBrowserFacets = {
+  types?: readonly string[];
+  environments?: readonly string[];
+};
+
+function matchesFacet(
+  selected: readonly string[] | undefined,
+  value: string | null,
+): boolean {
+  if (!selected?.length) return true;
+  const trimmed = value?.trim();
+  if (!trimmed) return false;
+  return selected.includes(trimmed);
+}
+
+export function uniqueTraitFacetValues(
+  items: readonly TraitBrowserItem[],
+  field: "type" | "environment",
+): string[] {
+  const set = new Set<string>();
+  for (const item of items) {
+    const trimmed = item[field]?.trim();
+    if (trimmed) set.add(trimmed);
+  }
+  return [...set].sort((a, b) => {
+    const left = (field === "type" ? displayTraitType(a) : displayTraitEnvironment(a)) ?? a;
+    const right = (field === "type" ? displayTraitType(b) : displayTraitEnvironment(b)) ?? b;
+    return left.localeCompare(right);
+  });
 }
 
 export function filterTraitBrowserItems(
   items: readonly TraitBrowserItem[],
   search: string,
+  facets?: TraitBrowserFacets,
 ): TraitBrowserItem[] {
   const needle = search.trim().toLowerCase();
-  if (!needle) return [...items];
+  const types = facets?.types ?? [];
+  const environments = facets?.environments ?? [];
 
   return items.filter((item) => {
+    if (!matchesFacet(types, item.type)) return false;
+    if (!matchesFacet(environments, item.environment)) return false;
+    if (!needle) return true;
+
     const haystack = [
       item.name,
       item.listDescription,
       item.detailDescription,
       item.source,
       item.type,
+      displayTraitType(item.type),
       item.environment,
+      displayTraitEnvironment(item.environment),
       item.career,
       ...(item.meta ?? []).flatMap((chip) => [chip.label, chip.value]),
       ...(item.textBlocks ?? []).flatMap((block) => [

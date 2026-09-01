@@ -10,14 +10,17 @@ import {
   ShipsDocument,
   StarshipTraitsDocument,
   TraitsDocument,
+  TraySkillsDocument,
   type InfoboxesQuery,
   type StarshipTraitsQuery,
   type TraitsQuery,
+  type TraySkillsQuery,
 } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
 import CaptainTraitsPanel from "@/components/loadout/CaptainTraitsPanel.vue";
+import BoffStationsPanel from "@/components/loadout/BoffStationsPanel.vue";
 import ShareBuildDialog from "@/components/loadout/ShareBuildDialog.vue";
 import CombatLogPanel from "@/components/loadout/CombatLogPanel.vue";
 import { useCollectionStore } from "@/stores/collection";
@@ -91,6 +94,20 @@ import {
   slotUsesItemMods,
   type ItemQuality,
 } from "@/logic/loadout/slotQuality";
+import {
+  BOFF_CATALOG_KIND,
+  boffPowerDisplayName,
+  boffRankAbbrev,
+  boffSlotIds,
+  buildBoffStations,
+  powerFitsBoffSlot,
+  stationForSlot,
+  type BoffPlayableCareer,
+  type BoffPowerSource,
+  type BoffStationSlot,
+} from "@/logic/loadout/boffPowers";
+import { getBoffSeatColors, toBoffSeatView } from "@/mappers/boffColors";
+import { abbreviateBoffPart } from "@/utils/formatters";
 import { getItemImageUrl, getStarshipTraitImageUrl, getTraitImageUrl } from "@/utils/wikiImage";
 
 const EQUIP_ERROR: Record<string, string> = {
@@ -129,6 +146,9 @@ const { result: traitsResult, loading: traitsLoading } = useQuery(
 );
 const { result: personalTraitsResult, loading: personalTraitsLoading } =
   useQuery(TraitsDocument);
+const { result: traySkillsResult, loading: traySkillsLoading } = useQuery(
+  TraySkillsDocument,
+);
 const { result: setsResult } = useQuery(SetBonusesDocument);
 
 const ship = computed(() => shipResult.value?.ship ?? null);
@@ -152,6 +172,7 @@ const catalogItems = computed<LoadoutItem[]>(() => [
   ...(itemsResult.value?.infoboxes ?? []).map(toLoadoutItem),
   ...(traitsResult.value?.starshipTraits ?? []).map(toLoadoutTrait),
   ...(personalTraitsResult.value?.traits ?? []).map(toLoadoutPersonalTrait),
+  ...(traySkillsResult.value?.traySkills ?? []).map(toLoadoutTraySkill),
 ]);
 
 const itemByKey = computed(() => {
@@ -217,12 +238,22 @@ const setBonuses = computed(() =>
   matchSetBonuses(equippedItems.value, setsResult.value?.setBonuses ?? []),
 );
 
+const boffStations = computed(() =>
+  buildBoffStations(
+    ship.value?.boffs,
+    activeLoadout.value?.boffSeatCareers,
+  ),
+);
+
 const warnings = computed(() => {
   const loadout = activeLoadout.value;
   if (!loadout) return [];
   return orphanedFills(
     loadout,
-    new Set(hullSlots.value.map((slot) => slot.id)),
+    new Set([
+      ...hullSlots.value.map((slot) => slot.id),
+      ...boffSlotIds(boffStations.value),
+    ]),
     ownedKeys.value,
   );
 });
@@ -230,6 +261,7 @@ const warnings = computed(() => {
 const pickerOpen = ref(false);
 const pickerHullSlot = ref<HullSlot | null>(null);
 const pickerCaptainSlot = ref<CaptainTraitSlot | null>(null);
+const pickerBoffSlot = ref<BoffStationSlot | null>(null);
 const pickerSearch = ref("");
 const pickerError = ref("");
 const draftName = ref("");
@@ -254,13 +286,23 @@ const activeShare = computed(() =>
     : null,
 );
 
-const pickerLabel = computed(
-  () => pickerCaptainSlot.value?.label ?? pickerHullSlot.value?.label ?? "",
-);
+const pickerLabel = computed(() => {
+  if (pickerBoffSlot.value) {
+    const located = stationForSlot(boffStations.value, pickerBoffSlot.value.id);
+    const seat = located
+      ? `${boffRankAbbrev(located.station.seat.rank)} ${abbreviateBoffPart(located.station.seat.career)}`
+      : "BOff";
+    return `${seat} · ${pickerBoffSlot.value.rankLabel}`;
+  }
+  return pickerCaptainSlot.value?.label ?? pickerHullSlot.value?.label ?? "";
+});
 
 const pickerHasFill = computed(() => {
   if (pickerCaptainSlot.value) {
     return Boolean(itemInCaptainSlot(pickerCaptainSlot.value));
+  }
+  if (pickerBoffSlot.value) {
+    return Boolean(itemInSlot(pickerBoffSlot.value.id));
   }
   if (pickerHullSlot.value) {
     return Boolean(itemInSlot(pickerHullSlot.value.id));
@@ -272,12 +314,21 @@ const pickerCandidates = computed(() => {
   const query = (pickerSearch.value ?? "").trim().toLowerCase();
   const captainSlot = pickerCaptainSlot.value;
   const hullSlot = pickerHullSlot.value;
+  const boffSlot = pickerBoffSlot.value;
   const pool = captainSlot
     ? fittingCaptainTraits(captainSlot, onlyCollected.value, captainSlot.id)
-    : hullSlot
-      ? fittingItems(hullSlot.kind, onlyCollected.value, hullSlot.id)
-      : [];
+    : boffSlot
+      ? fittingBoffPowers(boffSlot)
+      : hullSlot
+        ? fittingItems(hullSlot.kind, onlyCollected.value, hullSlot.id)
+        : [];
   const matched = pool.filter((item) => matchesPickerQuery(item, query));
+  if (boffSlot) {
+    return matched.map((item) => ({
+      ...item,
+      name: boffPowerDisplayName(asBoffPower(item), boffSlot.rank),
+    }));
+  }
   if (!hullSlot || captainSlot) return matched;
   return rankPickerCandidates(
     matched,
@@ -389,6 +440,82 @@ function toLoadoutPersonalTrait(row: TraitsQuery["traits"][number]): LoadoutItem
     required: row.required,
     who: row.source,
   };
+}
+
+function toLoadoutTraySkill(
+  row: TraySkillsQuery["traySkills"][number],
+): LoadoutItem {
+  return {
+    id: row.id,
+    name: row.name,
+    type: row.type,
+    image: getTraitImageUrl(row.name),
+    catalogKind: BOFF_CATALOG_KIND,
+    environment: row.region,
+    searchText: [row.description, row.system].filter(Boolean).join(" "),
+    ranks: [
+      row.rank1rank,
+      row.rank2rank,
+      row.rank3rank,
+      row.rank4rank,
+      row.rank5rank,
+    ],
+  };
+}
+
+function asBoffPower(item: LoadoutItem): BoffPowerSource {
+  return {
+    id: item.id,
+    name: item.name,
+    type: item.type,
+    region: item.environment ?? null,
+    ranks: item.ranks ?? [],
+  };
+}
+
+function boffPowerContext() {
+  return {
+    stations: boffStations.value,
+    powers: catalogItems.value
+      .filter((item) => item.catalogKind === BOFF_CATALOG_KIND)
+      .map(asBoffPower),
+  };
+}
+
+function fittingBoffPowers(slot: BoffStationSlot): LoadoutItem[] {
+  const located = stationForSlot(boffStations.value, slot.id);
+  if (!located) return [];
+  return catalogItems.value.filter((item) => {
+    if (item.catalogKind !== BOFF_CATALOG_KIND) return false;
+    return powerFitsBoffSlot(asBoffPower(item), slot, located.station);
+  });
+}
+
+function boffStationBoard() {
+  return boffStations.value.map((station) => {
+    const view = toBoffSeatView(station.raw);
+    const colors = getBoffSeatColors(station.seat);
+    return {
+      station,
+      label: view.label,
+      careerLabel: `${boffRankAbbrev(station.seat.rank)} ${abbreviateBoffPart(station.seat.career)}`,
+      specLabel: view.specializationLabel,
+      careerTheme: colors.career,
+      specTheme: colors.specialization,
+      slots: station.slots.map((slot) => {
+        const item = itemInSlot(slot.id);
+        return {
+          slot,
+          item: item
+            ? {
+                name: boffPowerDisplayName(asBoffPower(item), slot.rank),
+                image: item.image,
+              }
+            : null,
+        };
+      }),
+    };
+  });
 }
 
 function seatedFills() {
@@ -648,6 +775,7 @@ watch(
 function openPicker(slot: HullSlot) {
   pickerHullSlot.value = slot;
   pickerCaptainSlot.value = null;
+  pickerBoffSlot.value = null;
   pickerSearch.value = "";
   pickerError.value = "";
   pickerOpen.value = true;
@@ -657,12 +785,49 @@ function openCaptainPicker(slot: CaptainTraitSlot) {
   if (slot.locked) return;
   pickerCaptainSlot.value = slot;
   pickerHullSlot.value = null;
+  pickerBoffSlot.value = null;
   pickerSearch.value = "";
   pickerError.value = "";
   pickerOpen.value = true;
 }
 
+function openBoffPicker(slot: BoffStationSlot) {
+  pickerBoffSlot.value = slot;
+  pickerCaptainSlot.value = null;
+  pickerHullSlot.value = null;
+  pickerSearch.value = "";
+  pickerError.value = "";
+  pickerOpen.value = true;
+}
+
+function onBoffCareer(stationIndex: number, career: BoffPlayableCareer) {
+  const loadout = activeLoadout.value;
+  if (!loadout) return;
+  store.setBoffSeatCareer(
+    { loadoutId: loadout.id, stationIndex, career },
+    boffPowerContext(),
+  );
+}
+
 function chooseItem(item: LoadoutItem) {
+  const boffSlot = pickerBoffSlot.value;
+  if (boffSlot) {
+    const loadout = activeLoadout.value;
+    if (!loadout) return;
+    const result = store.equipBoffPower(
+      { loadoutId: loadout.id, slotId: boffSlot.id, itemId: item.id },
+      boffPowerContext(),
+    );
+    if (!result.ok) {
+      pickerError.value =
+        result.reason === "equip-limit"
+          ? "That power is already on this officer."
+          : equipMessage(result.reason);
+      return;
+    }
+    pickerOpen.value = false;
+    return;
+  }
   const captainSlot = pickerCaptainSlot.value;
   if (captainSlot) {
     if (captainSlot.storage === "loadout") {
@@ -746,6 +911,11 @@ function clearPickerSlot() {
     pickerOpen.value = false;
     return;
   }
+  if (pickerBoffSlot.value) {
+    clearSlot(pickerBoffSlot.value.id);
+    pickerOpen.value = false;
+    return;
+  }
   if (!pickerHullSlot.value) return;
   clearSlot(pickerHullSlot.value.id);
   pickerOpen.value = false;
@@ -783,7 +953,8 @@ const loading = computed(
     shipLoading.value ||
     itemsLoading.value ||
     traitsLoading.value ||
-    personalTraitsLoading.value,
+    personalTraitsLoading.value ||
+    traySkillsLoading.value,
 );
 </script>
 
@@ -865,6 +1036,13 @@ const loading = computed(
               :subtitle="captainSubtitle"
               :sections="captainTraitBoard"
               @pick="openCaptainPicker"
+            />
+            <BoffStationsPanel
+              v-if="boffStations.length"
+              class="boff-stations-board"
+              :stations="boffStationBoard()"
+              @pick="openBoffPicker"
+              @set-career="(station, career) => onBoffCareer(station.index, career)"
             />
             <CombatLogPanel
               :captain-name="activeCharacter.name"
@@ -1144,6 +1322,7 @@ const loading = computed(
         <v-card-title class="picker-title">
           <span>Equip {{ pickerLabel }}</span>
           <v-switch
+            v-if="!pickerBoffSlot"
             v-model="onlyCollected"
             color="primary"
             density="compact"
@@ -1154,7 +1333,13 @@ const loading = computed(
         <v-card-text>
           <v-text-field
             :model-value="pickerSearch"
-            :label="onlyCollected ? 'Search collection' : 'Search items'"
+            :label="
+              pickerBoffSlot
+                ? 'Search powers'
+                : onlyCollected
+                  ? 'Search collection'
+                  : 'Search items'
+            "
             hide-details
             class="mb-3"
             clearable
@@ -1164,7 +1349,24 @@ const loading = computed(
             {{ pickerError }}
           </v-alert>
           <div v-if="pickerCandidates.length === 0" class="side-card__hint">
-            <template v-if="pickerCaptainSlot && onlyCollected">
+            <template v-if="pickerBoffSlot">
+              <template
+                v-if="
+                  stationForSlot(boffStations, pickerBoffSlot.id)?.station
+                    .needsCareerChoice &&
+                  !stationForSlot(boffStations, pickerBoffSlot.id)?.station
+                    .careerChoice
+                "
+              >
+                Choose this Universal seat’s career (TAC, ENG, or SCI) before
+                picking powers. Specialization powers stay available on hybrid
+                seats.
+              </template>
+              <template v-else>
+                No space powers fit this rank, career, and specialization.
+              </template>
+            </template>
+            <template v-else-if="pickerCaptainSlot && onlyCollected">
               No collected traits fit this slot for this captain. Class and
               race lock some personal traits. Turn off Only Collected to browse
               the full catalog.
@@ -1192,7 +1394,9 @@ const loading = computed(
               <div class="slot-card__meta">
                 {{ displayInfoboxType(item.type) }}
                 <span v-if="item.rarity"> · {{ item.rarity }}</span>
-                <span v-if="!itemIsOwned(item)"> · Not collected</span>
+                <span v-if="!pickerBoffSlot && !itemIsOwned(item)">
+                  · Not collected
+                </span>
               </div>
             </div>
           </button>
@@ -1310,7 +1514,8 @@ const loading = computed(
   min-width: 0;
 }
 
-.captain-traits-board {
+.captain-traits-board,
+.boff-stations-board {
   min-width: 0;
 }
 
