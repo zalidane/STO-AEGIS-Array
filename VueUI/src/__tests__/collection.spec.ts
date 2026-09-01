@@ -19,14 +19,19 @@ import {
   collectItem,
   collectMany,
   collectionStatus,
+  createAccount,
   createCharacter,
+  deleteAccount,
   deleteCharacter,
+  hydrateCollectionState,
   ownedCopyCount,
+  setActiveCharacter,
   setEntryBind,
   uncollectItem,
   uncollectMany,
   visibleEntriesForActiveCharacter,
 } from "@/logic/collection/state";
+import { unusedAccountName } from "@/logic/collection/accounts";
 import {
   catalogKindFromSearchType,
   splitHitsByOwnership,
@@ -38,6 +43,7 @@ import {
 } from "@/logic/collection/kindTabs";
 import {
   createEmptyCollectionState,
+  MIGRATED_DEFAULT_ACCOUNT_ID,
   type CollectionClock,
   type CollectionState,
 } from "@/logic/collection/types";
@@ -230,6 +236,18 @@ describe("collection state", () => {
     const state = withCaptains();
     expect(state.characters.map((c) => c.name)).toEqual(["Alice", "Bob"]);
     expect(state.activeCharacterId).toBe("id-2");
+    expect(state.accounts).toEqual([
+      expect.objectContaining({
+        id: MIGRATED_DEFAULT_ACCOUNT_ID,
+        name: "PC",
+        platform: "pc",
+      }),
+    ]);
+    expect(
+      state.characters.every(
+        (character) => character.accountId === MIGRATED_DEFAULT_ACCOUNT_ID,
+      ),
+    ).toBe(true);
   });
 
   it("lets each captain collect their own BtA copy, and shows the other copy", () => {
@@ -388,6 +406,166 @@ describe("collection state", () => {
     expect(state.characters.map((c) => c.name)).toEqual(["Alice"]);
     expect(state.activeCharacterId).toBe("id-1");
     expect(state.entries).toEqual([]);
+  });
+});
+
+describe("STO account folders", () => {
+  it("does not create a blank PC folder when the first account is Xbox", () => {
+    resetClock();
+    let state = createEmptyCollectionState();
+    state = createAccount(state, { name: "Xbox", platform: "xbox" }, clock);
+    expect(state.accounts.map((account) => account.platform)).toEqual(["xbox"]);
+    expect(state.activeAccountId).toBe("id-1");
+    expect(state.activeCharacterId).toBeNull();
+
+    state = createCharacter(state, "Carol", clock);
+    expect(state.accounts).toHaveLength(1);
+    expect(state.characters[0]).toMatchObject({
+      id: "id-2",
+      name: "Carol",
+      accountId: "id-1",
+    });
+  });
+
+  it("allows the same captain name on different STO accounts", () => {
+    let state = withCaptains();
+    state = createAccount(state, { name: "Xbox", platform: "xbox" }, clock);
+    state = createCharacter(state, "Alice", clock);
+    expect(
+      state.characters.filter((character) => character.name === "Alice"),
+    ).toHaveLength(2);
+    expect(state.characters.map((character) => character.accountId)).toEqual([
+      MIGRATED_DEFAULT_ACCOUNT_ID,
+      MIGRATED_DEFAULT_ACCOUNT_ID,
+      "id-3",
+    ]);
+  });
+
+  it("hides bound-to-account copies that live on another STO account", () => {
+    let state = withCaptains();
+    state = collectItem(
+      state,
+      { kind: "ship", catalogId: 10, bind: "account" },
+      clock,
+    );
+    state = createAccount(state, { name: "Xbox", platform: "xbox" }, clock);
+    state = createCharacter(state, "Carol", clock);
+
+    const onXbox = collectionStatus(state, {
+      kind: "ship",
+      catalogId: 10,
+      bind: "account",
+    });
+    expect(onXbox.ownedByActive).toBe(false);
+    expect(onXbox.otherAccountCopies).toEqual([]);
+    expect(
+      visibleEntriesForActiveCharacter(state, () => "account"),
+    ).toEqual([]);
+
+    state = setActiveCharacter(state, "id-1");
+    const onPc = collectionStatus(state, {
+      kind: "ship",
+      catalogId: 10,
+      bind: "account",
+    });
+    expect(onPc.ownedByActive).toBe(false);
+    expect(onPc.otherAccountCopies).toEqual([
+      { characterId: "id-2", characterName: "Bob", isActive: false },
+    ]);
+  });
+
+  it("deletes an account's captains, entries, and loadouts together", () => {
+    let state = withCaptains();
+    state = collectItem(state, { kind: "ship", catalogId: 10 }, clock);
+    state = createAccount(state, { name: "Xbox", platform: "xbox" }, clock);
+    const xboxId = state.activeAccountId;
+    state = createCharacter(state, "Carol", clock);
+    state = collectItem(state, { kind: "ship", catalogId: 99 }, clock);
+
+    state = deleteAccount(state, xboxId!);
+    expect(state.accounts.map((account) => account.id)).toEqual([
+      MIGRATED_DEFAULT_ACCOUNT_ID,
+    ]);
+    expect(state.characters.map((character) => character.name)).toEqual([
+      "Alice",
+      "Bob",
+    ]);
+    expect(state.entries.map((entry) => entry.catalogId)).toEqual([10]);
+    expect(state.activeAccountId).toBe(MIGRATED_DEFAULT_ACCOUNT_ID);
+    expect(state.activeCharacterId).toBe("id-1");
+  });
+
+  it("hydrates v1 and v2 saves onto a default PC account", () => {
+    const fromV1 = hydrateCollectionState({
+      version: 1,
+      activeCharacterId: "c1",
+      characters: [
+        { id: "c1", name: "Alice", createdAt: "2026-08-22T00:00:00.000Z" },
+      ],
+      entries: [],
+    });
+    expect(fromV1.version).toBe(3);
+    expect(fromV1.accounts).toEqual([
+      expect.objectContaining({
+        id: MIGRATED_DEFAULT_ACCOUNT_ID,
+        name: "PC",
+        platform: "pc",
+      }),
+    ]);
+    expect(fromV1.characters[0]?.accountId).toBe(MIGRATED_DEFAULT_ACCOUNT_ID);
+    expect(fromV1.activeAccountId).toBe(MIGRATED_DEFAULT_ACCOUNT_ID);
+
+    const fromV2 = hydrateCollectionState({
+      version: 2,
+      activeCharacterId: "c1",
+      characters: [
+        { id: "c1", name: "Alice", createdAt: "2026-08-22T00:00:00.000Z" },
+      ],
+      entries: [],
+      loadouts: [],
+    });
+    expect(fromV2.version).toBe(3);
+    expect(fromV2.characters[0]?.accountId).toBe(MIGRATED_DEFAULT_ACCOUNT_ID);
+  });
+
+  it("numbers a second PC folder and keeps its bound-to-account copies isolated", () => {
+    let state = withCaptains();
+    expect(unusedAccountName(state, "pc")).toBe("PC 2");
+    expect(unusedAccountName(state, "steam")).toBe("Steam");
+
+    state = collectItem(
+      state,
+      { kind: "ship", catalogId: 10, bind: "account" },
+      clock,
+    );
+    state = createAccount(state, { name: "", platform: "pc" }, clock);
+    expect(state.accounts.map((account) => account.name)).toEqual(["PC", "PC 2"]);
+    expect(state.accounts[1]?.platform).toBe("pc");
+
+    state = createCharacter(state, "Alice", clock);
+    const onSecondPc = collectionStatus(state, {
+      kind: "ship",
+      catalogId: 10,
+      bind: "account",
+    });
+    expect(onSecondPc.ownedByActive).toBe(false);
+    expect(onSecondPc.otherAccountCopies).toEqual([]);
+  });
+
+  it("creates Steam, Epic, and Arc folders as distinct STO accounts", () => {
+    resetClock();
+    let state = createEmptyCollectionState();
+    state = createAccount(state, { name: "Steam", platform: "steam" }, clock);
+    state = createAccount(state, { name: "Epic", platform: "epic" }, clock);
+    state = createAccount(state, { name: "Arc", platform: "arc" }, clock);
+    expect(state.accounts.map((account) => account.platform)).toEqual([
+      "steam",
+      "epic",
+      "arc",
+    ]);
+    expect(createAccount(state, { name: "Steam", platform: "steam" }, clock)).toBe(
+      state,
+    );
   });
 });
 

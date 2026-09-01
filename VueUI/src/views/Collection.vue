@@ -45,7 +45,7 @@ import CompareLaunch from "@/components/compare/CompareLaunch.vue";
 const route = useRoute();
 const router = useRouter();
 const store = useCollectionStore();
-const { activeCharacter, state } = storeToRefs(store);
+const { activeCharacter, activeAccount, state } = storeToRefs(store);
 
 const { result: shipsResult } = useQuery(ShipsDocument);
 const { result: traitsResult } = useQuery(TraitsDocument);
@@ -197,8 +197,10 @@ const activeGroup = computed(
       <p class="collection-header__lede">
         {{
           activeCharacter
-            ? `Items marked collected for ${activeCharacter.name}. Bound-to-account pieces from other captains stay visible.`
-            : "Create a captain in the header to start a collection on this device."
+            ? `Items marked collected for ${activeCharacter.name}${
+                activeAccount ? ` on ${activeAccount.name}` : ""
+              }. Bound-to-account pieces from other captains on this STO account stay visible.`
+            : "Create an account folder and a captain in the header to start a collection on this device."
         }}
       </p>
       <CompareLaunch class="mt-3" />

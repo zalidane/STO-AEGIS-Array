@@ -4,15 +4,19 @@ import {
   collectItem,
   collectMany as collectManyItems,
   collectionStatus,
+  createAccount,
   createCharacter,
+  deleteAccount,
   deleteCharacter,
   entryBindForActive,
   getActiveCharacter,
   renameCharacter,
+  setActiveAccount,
   setActiveCharacter,
   setEntryBind,
   uncollectItem,
   uncollectMany as uncollectManyItems,
+  updateAccount,
   updateCharacter,
 } from "@/logic/collection/state";
 import {
@@ -48,9 +52,15 @@ import {
 } from "@/logic/loadout/captainTraitState";
 import type { CaptainTraitFill } from "@/logic/loadout/captainTraits";
 import {
+  accountsWithCaptains,
+  getActiveAccount,
+} from "@/logic/collection/accounts";
+import {
   createEmptyCollectionState,
   type CatalogKind,
+  type CollectionPlatform,
   type CollectionState,
+  type CreateAccountInput,
 } from "@/logic/collection/types";
 import type { BindScope, CreateCharacterInput } from "@/logic/collection/types";
 import { getCollectionRepository } from "@/models/collection";
@@ -77,8 +87,36 @@ export const useCollectionStore = defineStore("collection", () => {
   load();
 
   const characters = computed(() => state.value.characters);
+  const accounts = computed(() => state.value.accounts);
+  const accountGroups = computed(() => accountsWithCaptains(state.value));
   const activeCharacter = computed(() => getActiveCharacter(state.value));
   const activeCharacterId = computed(() => state.value.activeCharacterId);
+  const activeAccount = computed(() => getActiveAccount(state.value));
+  const activeAccountId = computed(() => state.value.activeAccountId);
+
+  function addAccount(input: CreateAccountInput) {
+    state.value = createAccount(state.value, input);
+    persist();
+    return getActiveAccount(state.value);
+  }
+
+  function editAccount(
+    accountId: string,
+    patch: { name?: string; platform?: CollectionPlatform },
+  ) {
+    state.value = updateAccount(state.value, accountId, patch);
+    persist();
+  }
+
+  function removeAccount(accountId: string) {
+    state.value = deleteAccount(state.value, accountId);
+    persist();
+  }
+
+  function selectAccount(accountId: string | null) {
+    state.value = setActiveAccount(state.value, accountId);
+    persist();
+  }
 
   function addCharacter(input: string | CreateCharacterInput) {
     state.value = createCharacter(state.value, input);
@@ -98,6 +136,7 @@ export const useCollectionStore = defineStore("collection", () => {
       career?: CreateCharacterInput["career"];
       faction?: string;
       race?: string;
+      accountId?: string;
     },
   ) {
     state.value = updateCharacter(state.value, characterId, patch);
@@ -299,10 +338,18 @@ export const useCollectionStore = defineStore("collection", () => {
   return {
     state,
     characters,
+    accounts,
+    accountGroups,
     activeCharacter,
     activeCharacterId,
+    activeAccount,
+    activeAccountId,
     loadouts,
     load,
+    addAccount,
+    editAccount,
+    removeAccount,
+    selectAccount,
     addCharacter,
     updateCharacterName,
     updateCharacterIdentity,

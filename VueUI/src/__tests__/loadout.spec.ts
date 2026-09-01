@@ -559,8 +559,8 @@ describe("matchSetBonuses", () => {
   });
 });
 
-describe("hydrateCollectionState v1 to v2", () => {
-  it("keeps captains and adds an empty loadouts array", () => {
+describe("hydrateCollectionState v1 to v3", () => {
+  it("keeps captains, adds loadouts, and assigns a default PC account", () => {
     const migrated = hydrateCollectionState({
       version: 1,
       activeCharacterId: "c1",
@@ -569,8 +569,16 @@ describe("hydrateCollectionState v1 to v2", () => {
       ],
       entries: [],
     });
-    expect(migrated.version).toBe(2);
+    expect(migrated.version).toBe(3);
     expect(migrated.characters).toHaveLength(1);
+    expect(migrated.characters[0]?.accountId).toBe("account-default");
+    expect(migrated.accounts).toEqual([
+      expect.objectContaining({
+        id: "account-default",
+        name: "PC",
+        platform: "pc",
+      }),
+    ]);
     expect(migrated.loadouts).toEqual([]);
   });
 
