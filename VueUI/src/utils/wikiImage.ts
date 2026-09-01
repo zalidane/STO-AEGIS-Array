@@ -28,6 +28,31 @@ export function wikiIconFilename(nameOrFile: string): string {
   return wikiLocalFilename(`${title} icon.png`);
 }
 
+/** Keep in sync with Extractor `itemIconNameCandidates`. */
+const ITEM_MOD_SUFFIX = /(?:\s*\[[^\]]+\](?:x\d+)?)+\s*$/i;
+const ITEM_MARK_SUFFIX =
+  /\s+(?:Mk|Mark)\s*(?:∞|XV|XIV|XIII|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I|\d+)\s*$/i;
+
+function stripTrailingModsAndInfinity(name: string): string {
+  let current = name.trim();
+  for (;;) {
+    const next = current
+      .replace(ITEM_MOD_SUFFIX, "")
+      .replace(/\s*∞\s*$/u, "")
+      .trim();
+    if (next === current) return current;
+    current = next;
+  }
+}
+
+/** Wiki item icons omit Mk XII and [Acc]/[Dmg] suffixes from Cargo names. */
+export function itemIconLookupName(name: string): string {
+  const decoded = normalizedFileStem(name);
+  const withoutMods = stripTrailingModsAndInfinity(decoded);
+  const withoutMark = withoutMods.replace(ITEM_MARK_SUFFIX, "").trim();
+  return withoutMark || withoutMods || decoded;
+}
+
 /** encodeURIComponent leaves `'` unescaped; percent-encode it so img src cannot truncate. */
 function encodeWikiFilename(filename: string): string {
   return encodeURIComponent(filename).replace(/'/g, "%27");
@@ -54,7 +79,7 @@ export function getItemImageUrl(
     return wikiPublicUrl("items", wikiLocalFilename(image));
   }
   if (name?.trim()) {
-    return wikiPublicUrl("items", wikiIconFilename(name));
+    return wikiPublicUrl("items", wikiIconFilename(itemIconLookupName(name)));
   }
   return null;
 }

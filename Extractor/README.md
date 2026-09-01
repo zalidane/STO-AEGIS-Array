@@ -89,7 +89,7 @@ Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon 
 
 ## Images
 
-Catalog rows map to wiki files (`File:{Name} icon.png` for items/traits, Cargo `image` for ships). Those titles are matched against [Category:Official images](https://stowiki.net/wiki/Category:Official_images) (Cryptic-provided files tagged by `{{STO official image}}`, ~4,500 files), then any remainder is resolved with MediaWiki `imageinfo`. Files land in:
+Catalog rows map to wiki files (`File:{Name} icon.png` for items/traits, Cargo `image` for ships). Item Cargo names often include `Mk XII` and `[Acc]`/`[Dmg]x2` suffixes that the wiki file does not; extract tries the full name first, then those stripped titles. Those titles are matched against [Category:Official images](https://stowiki.net/wiki/Category:Official_images) (Cryptic-provided files tagged by `{{STO official image}}`, ~4,500 files), then any remainder is resolved with MediaWiki `imageinfo`. Files land in:
 
 - `VueUI/public/images/items/`
 - `VueUI/public/images/traits/`

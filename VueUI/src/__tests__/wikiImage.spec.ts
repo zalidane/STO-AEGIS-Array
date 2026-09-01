@@ -3,6 +3,7 @@ import {
   getItemImageUrl,
   getTraitImageUrl,
   getWikiImageUrl,
+  itemIconLookupName,
   wikiIconFilename,
   wikiLocalFilename,
 } from "@/utils/wikiImage";
@@ -76,6 +77,19 @@ describe("wikiImage", () => {
     expect(getItemImageUrl(null, "Phaser Beam Array")).toBe(
       "/images/items/Phaser_Beam_Array_icon.png",
     );
+    expect(
+      getItemImageUrl(
+        null,
+        "Omni-Directional Antichroniton Infused Tetryon Beam Array Mk XII",
+      ),
+    ).toBe(
+      "/images/items/Omni-Directional_Antichroniton_Infused_Tetryon_Beam_Array_icon.png",
+    );
+    expect(
+      itemIconLookupName(
+        "Omni-Directional Phaser Beam Array Mk XII [Acc] [Arc] [Dmg]",
+      ),
+    ).toBe("Omni-Directional Phaser Beam Array");
     expect(getTraitImageUrl("A Good Day to Die", null)).toBe(
       "/images/traits/A_Good_Day_to_Die_icon.png",
     );
