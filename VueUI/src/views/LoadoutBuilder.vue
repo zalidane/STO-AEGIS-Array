@@ -50,7 +50,9 @@ import {
   itemHasOpenCopy,
   loadoutOwnershipKey,
   matchSetBonuses,
+  shortSetPieceName,
 } from "@/logic/loadout/setBonus";
+import { normalizeWikiPlainText } from "@/logic/wikiPlainText";
 import { ownedKeysIncludingHullGrants } from "@/logic/loadout/hullGrants";
 import {
   buildCaptainTraitSlots,
@@ -100,7 +102,7 @@ import {
   boffRankAbbrev,
   boffSlotIds,
   buildBoffStations,
-  powerFitsBoffSlot,
+  powerRankIndexesForSlot,
   stationForSlot,
   type BoffPlayableCareer,
   type BoffPowerSource,
@@ -108,7 +110,7 @@ import {
 } from "@/logic/loadout/boffPowers";
 import { getBoffSeatColors, toBoffSeatView } from "@/mappers/boffColors";
 import { abbreviateBoffPart } from "@/utils/formatters";
-import { getItemImageUrl, getStarshipTraitImageUrl, getTraitImageUrl } from "@/utils/wikiImage";
+import { getItemImageUrl, getStarshipTraitImageUrl, getTraitImageUrl, getTraySkillImageUrl } from "@/utils/wikiImage";
 
 const EQUIP_ERROR: Record<string, string> = {
   "no-character": "Create a captain first.",
@@ -235,7 +237,11 @@ const equippedItems = computed(() =>
 );
 
 const setBonuses = computed(() =>
-  matchSetBonuses(equippedItems.value, setsResult.value?.setBonuses ?? []),
+  matchSetBonuses(
+    equippedItems.value,
+    setsResult.value?.setBonuses ?? [],
+    catalogItems.value,
+  ),
 );
 
 const boffStations = computed(() =>
@@ -324,10 +330,15 @@ const pickerCandidates = computed(() => {
         : [];
   const matched = pool.filter((item) => matchesPickerQuery(item, query));
   if (boffSlot) {
-    return matched.map((item) => ({
+    const named = pool.map((item) => ({
       ...item,
-      name: boffPowerDisplayName(asBoffPower(item), boffSlot.rank),
+      name: boffPowerDisplayName(
+        asBoffPower(item),
+        boffSlot.rank,
+        item.abilityRank,
+      ),
     }));
+    return named.filter((item) => matchesPickerQuery(item, query));
   }
   if (!hullSlot || captainSlot) return matched;
   return rankPickerCandidates(
@@ -449,7 +460,7 @@ function toLoadoutTraySkill(
     id: row.id,
     name: row.name,
     type: row.type,
-    image: getTraitImageUrl(row.name),
+    image: getTraySkillImageUrl(row.name, row.image),
     catalogKind: BOFF_CATALOG_KIND,
     environment: row.region,
     searchText: [row.description, row.system].filter(Boolean).join(" "),
@@ -485,10 +496,19 @@ function boffPowerContext() {
 function fittingBoffPowers(slot: BoffStationSlot): LoadoutItem[] {
   const located = stationForSlot(boffStations.value, slot.id);
   if (!located) return [];
-  return catalogItems.value.filter((item) => {
-    if (item.catalogKind !== BOFF_CATALOG_KIND) return false;
-    return powerFitsBoffSlot(asBoffPower(item), slot, located.station);
-  });
+  const rows: LoadoutItem[] = [];
+  for (const item of catalogItems.value) {
+    if (item.catalogKind !== BOFF_CATALOG_KIND) continue;
+    const power = asBoffPower(item);
+    for (const abilityRank of powerRankIndexesForSlot(
+      power,
+      slot,
+      located.station,
+    )) {
+      rows.push({ ...item, abilityRank });
+    }
+  }
+  return rows;
 }
 
 function boffStationBoard() {
@@ -503,12 +523,17 @@ function boffStationBoard() {
       careerTheme: colors.career,
       specTheme: colors.specialization,
       slots: station.slots.map((slot) => {
+        const fill = fillForSlot(activeLoadout.value, slot.id);
         const item = itemInSlot(slot.id);
         return {
           slot,
           item: item
             ? {
-                name: boffPowerDisplayName(asBoffPower(item), slot.rank),
+                name: boffPowerDisplayName(
+                  asBoffPower(item),
+                  slot.rank,
+                  fill?.abilityRank,
+                ),
                 image: item.image,
               }
             : null,
@@ -809,13 +834,22 @@ function onBoffCareer(stationIndex: number, career: BoffPlayableCareer) {
   );
 }
 
+function pickerCandidateKey(item: LoadoutItem): string {
+  return `${loadoutOwnershipKey(item.catalogKind, item.id)}:${item.abilityRank ?? ""}`;
+}
+
 function chooseItem(item: LoadoutItem) {
   const boffSlot = pickerBoffSlot.value;
   if (boffSlot) {
     const loadout = activeLoadout.value;
     if (!loadout) return;
     const result = store.equipBoffPower(
-      { loadoutId: loadout.id, slotId: boffSlot.id, itemId: item.id },
+      {
+        loadoutId: loadout.id,
+        slotId: boffSlot.id,
+        itemId: item.id,
+        abilityRank: item.abilityRank,
+      },
       boffPowerContext(),
     );
     if (!result.ok) {
@@ -1297,9 +1331,14 @@ const loading = computed(
             <section class="side-card">
               <h2 class="slot-group__title">Set bonuses</h2>
               <p v-if="setBonuses.length === 0" class="side-card__hint">
-                Seat two or more pieces that share a set name to see bonuses.
+                Seat two or more set pieces, or unique consoles from the same
+                ship family, to see bonuses. Wiki bonus text is incomplete.
               </p>
-              <div v-for="set in setBonuses" :key="set.id" class="set-row">
+              <div
+                v-for="set in setBonuses"
+                :key="`${set.id}:${set.name}`"
+                class="set-row"
+              >
                 <div class="set-row__name">
                   {{ set.name }}
                   <span class="set-row__count">
@@ -1309,7 +1348,21 @@ const loading = computed(
                 <div class="set-row__status">
                   {{ set.complete ? "Complete" : "Partial" }}
                 </div>
-                <p v-if="set.passives" class="side-card__text">{{ set.passives }}</p>
+                <ul class="set-row__pieces">
+                  <li v-for="piece in set.pieces" :key="piece">
+                    {{ shortSetPieceName(piece) }}
+                  </li>
+                </ul>
+                <p v-if="set.missing.length > 0" class="side-card__hint">
+                  Missing:
+                  {{ set.missing.map(shortSetPieceName).join(", ") }}
+                </p>
+                <p v-if="set.passives" class="side-card__text">
+                  {{ normalizeWikiPlainText(set.passives) }}
+                </p>
+                <p v-else class="side-card__hint">
+                  Bonus effects are not in wiki cargo yet.
+                </p>
               </div>
             </section>
           </aside>
@@ -1383,7 +1436,7 @@ const loading = computed(
           </div>
           <button
             v-for="item in pickerCandidates"
-            :key="loadoutOwnershipKey(item.catalogKind, item.id)"
+            :key="pickerCandidateKey(item)"
             type="button"
             class="picker-row"
             @click="chooseItem(item)"
@@ -1779,6 +1832,13 @@ const loading = computed(
   font-size: 0.78rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.set-row__pieces {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .picker-row {

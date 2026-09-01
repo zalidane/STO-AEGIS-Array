@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import type { WikiClient } from "../wiki/client";
 import type { ImageInfo } from "../wiki/client";
 import { matchKey } from "../wiki/filenames";
-import { catalogImageTargets, applyImageIndexToInfoboxes, type CatalogImageSource } from "../wiki/imageTargets";
+import { catalogImageTargets, applyImageIndexToInfoboxes, applyImageIndexToTraySkills, type CatalogImageSource } from "../wiki/imageTargets";
 import { decideImageFetch } from "../wiki/imageSync";
 import { alignCatalogImageFiles } from "../wiki/localImageFiles";
 import type { ImageTarget } from "../wiki/filenames";
@@ -70,8 +70,10 @@ export async function extractImages(
     (await readJsonFile<Array<{ name: string; image?: string | null }>>(
       join(options.cargoDir, "Infobox.json"),
     )) ?? [];
+  const traySkills =
+    (await readJsonFile<Array<{ name: string }>>(join(options.cargoDir, "TraySkill.json"))) ?? [];
 
-  const targets = catalogImageTargets({ ships, traits, starshipTraits, infoboxes });
+  const targets = catalogImageTargets({ ships, traits, starshipTraits, infoboxes, traySkills });
   console.log(`Images: ${targets.length} unique catalog files`);
 
   if (targets.length === 0) {
@@ -171,6 +173,13 @@ export async function extractImages(
     await writeFile(join(options.cargoDir, "Infobox.json"), JSON.stringify(stamped, null, 2));
     const withImage = stamped.filter((row) => row.image).length;
     console.log(`Images: stamped ${withImage}/${stamped.length} infobox image filenames into Infobox.json`);
+  }
+
+  if (traySkills.length > 0) {
+    const stamped = applyImageIndexToTraySkills(traySkills, index);
+    await writeFile(join(options.cargoDir, "TraySkill.json"), JSON.stringify(stamped, null, 2));
+    const withImage = stamped.filter((row) => row.image).length;
+    console.log(`Images: stamped ${withImage}/${stamped.length} tray-skill image filenames into TraySkill.json`);
   }
 
   console.log(

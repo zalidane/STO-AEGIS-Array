@@ -151,21 +151,32 @@ function normalizeProfession(value: string | null | undefined): string {
   return text;
 }
 
+export function matchingPowerRankIndexes(
+  power: Pick<BoffPowerSource, "ranks">,
+  slotRank: BoffOfficerRank,
+): number[] {
+  const indexes: number[] = [];
+  for (let index = 0; index < power.ranks.length; index += 1) {
+    if (canonicalOfficerRank(power.ranks[index]) === slotRank) {
+      indexes.push(index);
+    }
+  }
+  return indexes;
+}
+
 export function matchingPowerRankIndex(
   power: Pick<BoffPowerSource, "ranks">,
   slotRank: BoffOfficerRank,
 ): number | null {
-  for (let index = 0; index < power.ranks.length; index += 1) {
-    if (canonicalOfficerRank(power.ranks[index]) === slotRank) return index;
-  }
-  return null;
+  return matchingPowerRankIndexes(power, slotRank)[0] ?? null;
 }
 
 export function boffPowerDisplayName(
   power: Pick<BoffPowerSource, "name" | "ranks">,
   slotRank: BoffOfficerRank,
+  rankIndex?: number | null,
 ): string {
-  const index = matchingPowerRankIndex(power, slotRank);
+  const index = rankIndex ?? matchingPowerRankIndex(power, slotRank);
   const roman = index != null ? RANK_ROMANS[index] : null;
   return roman ? `${power.name} ${roman}` : power.name;
 }
@@ -189,15 +200,27 @@ export function powerProfessionAllowed(
   return profession === career.toLowerCase();
 }
 
+export function powerRankIndexesForSlot(
+  power: BoffPowerSource,
+  slot: Pick<BoffStationSlot, "rank" | "stationIndex">,
+  station: Pick<BoffStation, "index" | "seat" | "careerChoice">,
+  rankIndex?: number | null,
+): number[] {
+  if (slot.stationIndex !== station.index) return [];
+  if (!powerRegionIsSpace(power.region)) return [];
+  if (!powerProfessionAllowed(power.type, station)) return [];
+  const indexes = matchingPowerRankIndexes(power, slot.rank);
+  if (rankIndex == null) return indexes;
+  return indexes.includes(rankIndex) ? [rankIndex] : [];
+}
+
 export function powerFitsBoffSlot(
   power: BoffPowerSource,
   slot: Pick<BoffStationSlot, "rank" | "stationIndex">,
   station: Pick<BoffStation, "index" | "seat" | "careerChoice">,
+  rankIndex?: number | null,
 ): boolean {
-  if (slot.stationIndex !== station.index) return false;
-  if (!powerRegionIsSpace(power.region)) return false;
-  if (matchingPowerRankIndex(power, slot.rank) == null) return false;
-  return powerProfessionAllowed(power.type, station);
+  return powerRankIndexesForSlot(power, slot, station, rankIndex).length > 0;
 }
 
 export function buildBoffStations(

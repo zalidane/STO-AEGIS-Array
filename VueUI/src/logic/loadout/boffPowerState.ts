@@ -87,13 +87,23 @@ export function pruneBoffPowerFills(
     if (!located) return false;
     const power = byId.get(fill.itemId);
     if (!power) return false;
-    return powerFitsBoffSlot(power, located.slot, located.station);
+    return powerFitsBoffSlot(
+      power,
+      located.slot,
+      located.station,
+      fill.abilityRank,
+    );
   });
 }
 
 export function equipBoffPowerSlot(
   state: CollectionState,
-  input: { loadoutId: string; slotId: string; itemId: number },
+  input: {
+    loadoutId: string;
+    slotId: string;
+    itemId: number;
+    abilityRank?: number;
+  },
   context: BoffPowerEquipContext,
   clock: CollectionClock = defaultCollectionClock(),
 ): BoffPowerEquipResult {
@@ -107,7 +117,7 @@ export function equipBoffPowerSlot(
   const power = context.powers.find((row) => row.id === input.itemId);
   if (!power) return { ok: false, reason: "unknown-item" };
 
-  if (!powerFitsBoffSlot(power, located.slot, located.station)) {
+  if (!powerFitsBoffSlot(power, located.slot, located.station, input.abilityRank)) {
     return { ok: false, reason: "illegal-slot" };
   }
 
@@ -117,7 +127,12 @@ export function equipBoffPowerSlot(
       fill.itemId === input.itemId &&
       fillCatalogKind(fill) === BOFF_CATALOG_KIND,
   );
-  if (alreadyHere) return { ok: true, loadout };
+  if (
+    alreadyHere &&
+    alreadyHere.abilityRank === input.abilityRank
+  ) {
+    return { ok: true, loadout };
+  }
 
   if (sameSkillOnStation(loadout, located.station, input.itemId, input.slotId)) {
     return { ok: false, reason: "equip-limit" };
@@ -132,6 +147,7 @@ export function equipBoffPowerSlot(
         slotId: input.slotId,
         itemId: input.itemId,
         catalogKind: BOFF_CATALOG_KIND,
+        ...(input.abilityRank != null ? { abilityRank: input.abilityRank } : {}),
       },
     ],
   };

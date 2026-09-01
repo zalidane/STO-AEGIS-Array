@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getItemImageUrl,
   getTraitImageUrl,
+  getTraySkillImageUrl,
   getWikiImageUrl,
   itemIconLookupName,
   wikiIconFilename,
@@ -96,5 +97,14 @@ describe("wikiImage", () => {
     expect(getTraitImageUrl("Adaptive Defense", "Adaptive Defense (space)")).toBe(
       "/images/traits/Adaptive_Defense_(space)_icon.png",
     );
+    expect(
+      getTraySkillImageUrl("Beams: Fire at Will"),
+    ).toBe("/images/tray-skills/Beams_Fire_at_Will_icon_(Federation).png");
+    expect(
+      getTraySkillImageUrl(
+        "Overwhelm Power Regulators",
+        "Overwhelm_Power_Regulators_icon.png",
+      ),
+    ).toBe("/images/tray-skills/Overwhelm_Power_Regulators_icon.png");
   });
 });

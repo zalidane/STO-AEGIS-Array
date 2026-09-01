@@ -80,6 +80,42 @@ describe("encodeSharePayload", () => {
     expect(JSON.stringify(payload)).not.toContain("itemId");
     expect(payload.slots[0]?.quality).toBe("epic");
   });
+
+  it("keeps tray-skill roman rank when II and III share an officer rank", () => {
+    const payload = encodeSharePayload({
+      shipName: "Atlantis Temporal Destroyer",
+      title: "Shear",
+      loadout: {
+        ...loadout,
+        slots: [
+          {
+            slotId: "boff-0-commander",
+            itemId: 30,
+            catalogKind: "traySkill",
+            abilityRank: 2,
+          },
+        ],
+      },
+      items: [
+        {
+          id: 30,
+          name: "Recursive Shearing",
+          type: "Temporal Operative",
+          catalogKind: "traySkill",
+        },
+      ],
+    });
+    expect(payload.slots[0]?.abilityRank).toBe(2);
+    const resolved = resolveShareSlots(payload, [
+      {
+        id: 99,
+        name: "Recursive Shearing",
+        type: "Temporal Operative",
+        catalogKind: "traySkill",
+      },
+    ]);
+    expect(resolved.slots[0]?.abilityRank).toBe(2);
+  });
 });
 
 describe("resolveShareSlots", () => {

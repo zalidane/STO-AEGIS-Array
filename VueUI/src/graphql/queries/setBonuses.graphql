@@ -2,7 +2,9 @@ query SetBonuses {
   setBonuses {
     id
     name
+    setPage
     reqItems
     passives
+    procs
   }
 }

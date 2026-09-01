@@ -210,4 +210,6 @@ export interface RawTraySkill {
   rank3info: string | null;
   rank4info: string | null;
   rank5info: string | null;
+  /** Stamped after image extract — not a Cargo column. */
+  image?: string | null;
 }

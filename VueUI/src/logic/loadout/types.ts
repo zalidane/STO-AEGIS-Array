@@ -11,6 +11,8 @@ export type LoadoutSlotFill = {
   quality?: string;
   /** Seated copy mark level, e.g. XII or ∞. */
   mark?: string;
+  /** 0-based tray-skill rank (I=0). Used when II and III share an officer rank. */
+  abilityRank?: number;
 };
 
 export type CollectionLoadout = {
@@ -44,6 +46,8 @@ export type LoadoutItem = {
   required?: string | null;
   /** Tray-skill rank labels (rank1…rank5) for BOff power fitting. */
   ranks?: Array<string | null | undefined>;
+  /** Picker/seated roman rank index when a power has two versions at one officer rank. */
+  abilityRank?: number;
 };
 
 export type LoadoutEquipContext = {

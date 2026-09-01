@@ -89,14 +89,15 @@ Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon 
 
 ## Images
 
-Catalog rows map to wiki files (`File:{Name} icon.png` for items/traits, Cargo `image` for ships). Item Cargo names often include `Mk XII` and `[Acc]`/`[Dmg]x2` suffixes that the wiki file does not; extract tries the full name first, then those stripped titles. Those titles are matched against [Category:Official images](https://stowiki.net/wiki/Category:Official_images) (Cryptic-provided files tagged by `{{STO official image}}`, ~4,500 files), then any remainder is resolved with MediaWiki `imageinfo`. Files land in:
+Catalog rows map to wiki files (`File:{Name} icon.png` for items/traits, Cargo `image` for ships). Item Cargo names often include `Mk XII` and `[Acc]`/`[Dmg]x2` suffixes that the wiki file does not; extract tries the full name first, then those stripped titles. Tray skills use wiki ability filenames: colons are stripped (`Beams: Fire at Will` → `Beams Fire at Will`), then `File:{Name} icon (Federation).png`, with `File:{Name} icon.png` as a fallback for factionless icons. Those titles are matched against [Category:Official images](https://stowiki.net/wiki/Category:Official_images) (Cryptic-provided files tagged by `{{STO official image}}`, ~4,500 files), then any remainder is resolved with MediaWiki `imageinfo`. Files land in:
 
 - `VueUI/public/images/items/`
 - `VueUI/public/images/traits/`
 - `VueUI/public/images/starship-traits/`
 - `VueUI/public/images/ships/`
+- `VueUI/public/images/tray-skills/`
 
-`output/OfficialImages.json` and `output/imageIndex.json` record what was found. After the first full download, incremental extracts skip files already in `VueUI/public/images/` and skip titles already recorded as missing on the wiki. Only catalog rows with no local file (new items, or a previous failed download) hit the wiki. After image extract, resolved filenames are stamped onto `Infobox.json` as `image`. Re-import (`npm run import`) so GraphQL/UI can look up `/images/items/{filename}`. Missing wiki files stay as UI placeholders. Use `--force-images` if a previously missing file was later added on the wiki.
+`output/OfficialImages.json` and `output/imageIndex.json` record what was found. After the first full download, incremental extracts skip files already in `VueUI/public/images/` and skip titles already recorded as missing on the wiki. Only catalog rows with no local file (new items, or a previous failed download) hit the wiki. After image extract, resolved filenames are stamped onto `Infobox.json` and `TraySkill.json` as `image`. Re-import (`npm run import`) so GraphQL/UI can look up `/images/items/{filename}` or `/images/tray-skills/{filename}`. Missing wiki files stay as UI placeholders. Use `--force-images` if a previously missing file was later added on the wiki.
 
 Ship renders can be large; files over 8MB are skipped. Item/trait icons are tiny. Commit whichever images you want in git — binaries are not required for the DB import.
 

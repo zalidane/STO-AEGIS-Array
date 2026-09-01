@@ -256,7 +256,12 @@ export const useCollectionStore = defineStore("collection", () => {
   }
 
   function equipBoffPower(
-    input: { loadoutId: string; slotId: string; itemId: number },
+    input: {
+      loadoutId: string;
+      slotId: string;
+      itemId: number;
+      abilityRank?: number;
+    },
     context: BoffPowerEquipContext,
   ) {
     const result = equipBoffPowerSlot(state.value, input, context);

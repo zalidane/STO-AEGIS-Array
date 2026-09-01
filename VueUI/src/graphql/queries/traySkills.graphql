@@ -17,6 +17,7 @@ query TraySkills {
     rank3rank
     rank4rank
     rank5rank
+    image
   }
 }
 
@@ -46,6 +47,7 @@ query TraySkill($id: Int!) {
     rank5info
     createdAt
     updatedAt
+    image
   }
 }
 

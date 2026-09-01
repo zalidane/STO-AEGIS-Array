@@ -41,7 +41,7 @@ MIT project code and are generally **not** covered by the wiki’s CC BY-NC-SA
 grant for community-authored text.
 
 - Source wiki: [stowiki.net](https://stowiki.net/)
-- Local layout: `items/`, `ships/`, `traits/`, `starship-traits/`
+- Local layout: `items/`, `ships/`, `traits/`, `starship-traits/`, `tray-skills/`
 - Manifests: `Extractor/output/OfficialImages.json`, `Extractor/output/imageIndex.json`
 
 See also [`VueUI/public/images/NOTICE`](VueUI/public/images/NOTICE).

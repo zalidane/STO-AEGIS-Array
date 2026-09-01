@@ -12,6 +12,7 @@ import {
   buildBoffStations,
   canonicalOfficerRank,
   matchingPowerRankIndex,
+  matchingPowerRankIndexes,
   powerFitsBoffSlot,
   type BoffPowerSource,
 } from "@/logic/loadout/boffPowers";
@@ -74,6 +75,14 @@ const emergencyPower: BoffPowerSource = {
   type: "Engineering",
   region: "Space",
   ranks: ["Ensign", "Lieutenant", "Lieutenant Commander"],
+};
+
+const recursiveShearing: BoffPowerSource = {
+  id: 6,
+  name: "Recursive Shearing",
+  type: "Temporal Operative",
+  region: "Space",
+  ranks: ["Lt Commander", "Commander", "Commander"],
 };
 
 describe("canonicalOfficerRank", () => {
@@ -164,6 +173,29 @@ describe("powerFitsBoffSlot", () => {
     expect(
       powerFitsBoffSlot(tacticalTeam, unset[0].slots[0], unset[0]),
     ).toBe(false);
+  });
+
+  it("lists Recursive Shearing II and III on a Commander Temporal seat", () => {
+    const [temporal] = buildBoffStations(
+      "Commander Science-Temporal Operative",
+      {},
+    );
+    const commander = temporal.slots[3];
+    expect(matchingPowerRankIndexes(recursiveShearing, "commander")).toEqual([
+      1, 2,
+    ]);
+    expect(powerFitsBoffSlot(recursiveShearing, commander, temporal)).toBe(
+      true,
+    );
+    expect(powerFitsBoffSlot(recursiveShearing, commander, temporal, 2)).toBe(
+      true,
+    );
+    expect(boffPowerDisplayName(recursiveShearing, "commander")).toBe(
+      "Recursive Shearing II",
+    );
+    expect(boffPowerDisplayName(recursiveShearing, "commander", 2)).toBe(
+      "Recursive Shearing III",
+    );
   });
 });
 
@@ -258,5 +290,38 @@ describe("equipBoffPowerSlot", () => {
     );
     expect(state.loadouts[0].slots).toEqual([]);
     expect(state.loadouts[0].boffSeatCareers).toEqual({ "0": "Engineering" });
+  });
+
+  it("seats Recursive Shearing III when II and III share Commander", () => {
+    let state = createLoadout(captainState(), { shipId: 7 }, clock);
+    const loadout = state.loadouts[0];
+    const stations = buildBoffStations(
+      "Commander Science-Temporal Operative",
+      {},
+    );
+    const context = { stations, powers: [recursiveShearing] };
+    const commander = stations[0].slots[3];
+
+    const seated = equipBoffPowerSlot(
+      state,
+      {
+        loadoutId: loadout.id,
+        slotId: commander.id,
+        itemId: 6,
+        abilityRank: 2,
+      },
+      context,
+      clock,
+    );
+    expect(seated.ok).toBe(true);
+    if (!seated.ok) return;
+    expect(seated.loadout.slots).toEqual([
+      {
+        slotId: commander.id,
+        itemId: 6,
+        catalogKind: "traySkill",
+        abilityRank: 2,
+      },
+    ]);
   });
 });

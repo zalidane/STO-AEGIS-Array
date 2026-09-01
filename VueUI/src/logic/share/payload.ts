@@ -18,6 +18,7 @@ export type ShareSlot = {
   type?: string | null;
   quality?: string;
   mark?: string;
+  abilityRank?: number;
 };
 
 export type SharePayload = {
@@ -70,6 +71,7 @@ export function encodeSharePayload(input: {
     if (item.type) slot.type = item.type;
     if (fill.quality) slot.quality = fill.quality;
     if (fill.mark) slot.mark = fill.mark;
+    if (fill.abilityRank != null) slot.abilityRank = fill.abilityRank;
     slots.push(slot);
   }
   return {
@@ -128,6 +130,7 @@ export function resolveShareSlots(
     };
     if (slot.quality) fill.quality = slot.quality;
     if (slot.mark) fill.mark = slot.mark;
+    if (slot.abilityRank != null) fill.abilityRank = slot.abilityRank;
     slots.push(fill);
   }
   return { slots, unresolved };
