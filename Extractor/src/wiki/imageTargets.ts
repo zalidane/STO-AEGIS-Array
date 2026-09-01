@@ -1,5 +1,6 @@
 import {
   iconFileTitle,
+  itemIconNameCandidates,
   localFilename,
   matchKey,
   normalizeWikiFileTitle,
@@ -41,7 +42,9 @@ export function catalogImageTargets(source: CatalogImageSource): ImageTarget[] {
     add("starship-traits", trait["icon name"] || trait.name);
   }
   for (const item of source.infoboxes ?? []) {
-    add("items", item.name);
+    for (const stem of itemIconNameCandidates(item.name)) {
+      add("items", stem);
+    }
   }
 
   return [...byKey.values()];
@@ -71,8 +74,11 @@ export function applyImageIndexToInfoboxes<T extends { name: string }>(
     byKey.set(matchKey(row.wikiTitle), row.localFilename);
   }
 
-  return infoboxes.map((item) => ({
-    ...item,
-    image: byKey.get(matchKey(iconFileTitle(item.name))) ?? null,
-  }));
+  return infoboxes.map((item) => {
+    const filename =
+      itemIconNameCandidates(item.name)
+        .map((stem) => byKey.get(matchKey(iconFileTitle(stem))))
+        .find((hit) => hit != null) ?? null;
+    return { ...item, image: filename };
+  });
 }

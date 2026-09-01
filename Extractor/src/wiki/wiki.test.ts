@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isCloudflareBlock, looksLikeHtml } from "./cloudflare";
 import { cookieHeader, mergeCookies, parseSetCookieHeaders } from "./cookies";
-import { iconFileTitle, localFilename, matchKey, normalizeWikiFileTitle } from "./filenames";
+import { iconFileTitle, itemIconNameCandidates, localFilename, matchKey, normalizeWikiFileTitle } from "./filenames";
 import { applyImageIndexToInfoboxes, catalogImageTargets } from "./imageTargets";
 import { decideImageFetch } from "./imageSync";
 import { loadWikiConfig } from "./config";
@@ -34,6 +34,43 @@ describe("normalizeWikiFileTitle", () => {
     assert.equal(
       iconFileTitle("Adaptive Defense (space)"),
       "File:Adaptive Defense (space) icon.png",
+    );
+  });
+
+  it("strips Mk, modifiers, and trailing infinity from item icon lookups", () => {
+    assert.deepEqual(
+      itemIconNameCandidates(
+        "Omni-Directional Antichroniton Infused Tetryon Beam Array Mk XII",
+      ),
+      [
+        "Omni-Directional Antichroniton Infused Tetryon Beam Array Mk XII",
+        "Omni-Directional Antichroniton Infused Tetryon Beam Array",
+      ],
+    );
+    assert.deepEqual(
+      itemIconNameCandidates(
+        "Omni-Directional Phaser Beam Array Mk XII [Acc] [Arc] [Dmg]",
+      ),
+      [
+        "Omni-Directional Phaser Beam Array Mk XII [Acc] [Arc] [Dmg]",
+        "Omni-Directional Phaser Beam Array Mk XII",
+        "Omni-Directional Phaser Beam Array",
+      ],
+    );
+    assert.deepEqual(
+      itemIconNameCandidates("Adaptive Transphasic Torpedo Mk XII [Dmg]x3 [Borg]"),
+      [
+        "Adaptive Transphasic Torpedo Mk XII [Dmg]x3 [Borg]",
+        "Adaptive Transphasic Torpedo Mk XII",
+        "Adaptive Transphasic Torpedo",
+      ],
+    );
+    assert.deepEqual(
+      itemIconNameCandidates("Breen Cryoshaper Thermal Depletion Pistol [CrtH] [Dmg]x2 ∞"),
+      [
+        "Breen Cryoshaper Thermal Depletion Pistol [CrtH] [Dmg]x2 ∞",
+        "Breen Cryoshaper Thermal Depletion Pistol",
+      ],
     );
   });
 
@@ -73,11 +110,18 @@ describe("catalogImageTargets", () => {
       ],
       traits: [{ name: "A Good Day to Die", "icon name": null }],
       starshipTraits: [{ name: "1.21 Terrawatts", "icon name": "1.21 Terrawatts" }],
-      infoboxes: [{ name: "Phaser Beam Array" }],
+      infoboxes: [
+        { name: "Phaser Beam Array" },
+        {
+          name: "Omni-Directional Antichroniton Infused Tetryon Beam Array Mk XII",
+        },
+      ],
     });
 
     const titles = targets.map((row) => `${row.kind}:${row.wikiTitle}`).sort();
     assert.deepEqual(titles, [
+      "items:File:Omni-Directional Antichroniton Infused Tetryon Beam Array Mk XII icon.png",
+      "items:File:Omni-Directional Antichroniton Infused Tetryon Beam Array icon.png",
       "items:File:Phaser Beam Array icon.png",
       "ships:File:ExcelsiorPreRefitOverview.jpg",
       "ships:File:Fed Ship Achilles.png",
@@ -108,6 +152,38 @@ describe("applyImageIndexToInfoboxes", () => {
     );
     assert.equal(stamped[0]?.image, "Phaser_Beam_Array_icon.png");
     assert.equal(stamped[1]?.image, null);
+  });
+
+  it("stamps a Mk XII cargo name from the wiki icon that omitted the mark", () => {
+    const stamped = applyImageIndexToInfoboxes(
+      [
+        {
+          name: "Omni-Directional Antichroniton Infused Tetryon Beam Array Mk XII",
+        },
+      ],
+      [
+        {
+          kind: "items",
+          wikiTitle:
+            "File:Omni-Directional Antichroniton Infused Tetryon Beam Array Mk XII icon.png",
+          localFilename:
+            "Omni-Directional_Antichroniton_Infused_Tetryon_Beam_Array_Mk_XII_icon.png",
+          status: "missing",
+        },
+        {
+          kind: "items",
+          wikiTitle:
+            "File:Omni-Directional Antichroniton Infused Tetryon Beam Array icon.png",
+          localFilename:
+            "Omni-Directional_Antichroniton_Infused_Tetryon_Beam_Array_icon.png",
+          status: "downloaded",
+        },
+      ],
+    );
+    assert.equal(
+      stamped[0]?.image,
+      "Omni-Directional_Antichroniton_Infused_Tetryon_Beam_Array_icon.png",
+    );
   });
 });
 

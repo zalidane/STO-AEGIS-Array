@@ -26,6 +26,47 @@ export function iconFileTitle(nameOrFile: string): string {
   return `File:${title} icon.png`;
 }
 
+/**
+ * Cargo item names often include Mk XII and [Acc]/[Dmg]x2 suffixes.
+ * Wiki icons almost always omit those; keep the full name as the first lookup.
+ */
+const ITEM_MOD_SUFFIX = /(?:\s*\[[^\]]+\](?:x\d+)?)+\s*$/i;
+const ITEM_MARK_SUFFIX =
+  /\s+(?:Mk|Mark)\s*(?:∞|XV|XIV|XIII|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I|\d+)\s*$/i;
+
+function uniqueNames(names: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const stems: string[] = [];
+  for (const name of names) {
+    const trimmed = name.replace(/\s+/g, " ").trim();
+    const key = trimmed.toLowerCase();
+    if (!trimmed || seen.has(key)) continue;
+    seen.add(key);
+    stems.push(trimmed);
+  }
+  return stems;
+}
+
+function stripTrailingModsAndInfinity(name: string): string {
+  let current = name.trim();
+  for (;;) {
+    const next = current
+      .replace(ITEM_MOD_SUFFIX, "")
+      .replace(/\s*∞\s*$/u, "")
+      .trim();
+    if (next === current) return current;
+    current = next;
+  }
+}
+
+/** Exact cargo name, then without mods, then without Mk — first wiki hit wins. */
+export function itemIconNameCandidates(name: string): string[] {
+  const decoded = decodeHtmlEntities(name).replace(INVISIBLE_CHARS, "").trim();
+  const withoutMods = stripTrailingModsAndInfinity(decoded);
+  const withoutMark = withoutMods.replace(ITEM_MARK_SUFFIX, "").trim();
+  return uniqueNames([decoded, withoutMods, withoutMark]);
+}
+
 /** ASCII and Unicode apostrophes. Strip them so public paths stay POSIX/WAF-safe. */
 export const WIKI_APOSTROPHES = /['\u2018\u2019\u02BC]/g;
 
