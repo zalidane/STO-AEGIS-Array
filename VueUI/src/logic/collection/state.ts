@@ -1,13 +1,31 @@
 import type {
   CatalogKind,
+  CollectionAccount,
   CollectionCharacter,
   CollectionClock,
   CollectionEntry,
+  CollectionPlatform,
   CollectionState,
   CollectionStatus,
+  CreateAccountInput,
   CreateCharacterInput,
 } from "./types";
-import { createEmptyCollectionState, defaultCollectionClock } from "./types";
+import {
+  createEmptyCollectionState,
+  defaultCollectionClock,
+  MIGRATED_DEFAULT_ACCOUNT_ID,
+} from "./types";
+import {
+  accountIdForCharacter,
+  accountNameTaken,
+  charactersOnAccount,
+  ensureDefaultAccount,
+  getAccount,
+  isCollectionPlatform,
+  PLATFORM_LABELS,
+  sameStoAccount,
+  unusedAccountName,
+} from "./accounts";
 import type { BindScope } from "./types";
 import { isCombatParseSummary } from "@/logic/combatlog/parseLog";
 import type { CollectionLoadout } from "@/logic/loadout/types";
@@ -61,6 +79,114 @@ function parseCreateInput(
   };
 }
 
+export function createAccount(
+  state: CollectionState,
+  input: CreateAccountInput,
+  clock: CollectionClock = defaultCollectionClock(),
+): CollectionState {
+  const name = input.name.trim() || unusedAccountName(state, input.platform);
+  if (!name || accountNameTaken(state, { name })) return state;
+
+  const account: CollectionAccount = {
+    id: clock.id(),
+    name,
+    platform: input.platform,
+    createdAt: clock.now(),
+  };
+
+  return {
+    ...state,
+    accounts: [...state.accounts, account],
+    activeAccountId: account.id,
+    activeCharacterId: null,
+  };
+}
+
+export function updateAccount(
+  state: CollectionState,
+  accountId: string,
+  patch: { name?: string; platform?: CollectionPlatform },
+): CollectionState {
+  if (!state.accounts.some((account) => account.id === accountId)) {
+    return state;
+  }
+  const nextName = patch.name != null ? patch.name.trim() : undefined;
+  if (patch.name != null && !nextName) return state;
+
+  return {
+    ...state,
+    accounts: state.accounts.map((account) =>
+      account.id === accountId
+        ? {
+            ...account,
+            ...(nextName != null ? { name: nextName } : {}),
+            ...(patch.platform != null ? { platform: patch.platform } : {}),
+          }
+        : account,
+    ),
+  };
+}
+
+export function deleteAccount(
+  state: CollectionState,
+  accountId: string,
+): CollectionState {
+  const removedCaptains = new Set(
+    charactersOnAccount(state, accountId).map((character) => character.id),
+  );
+  const accounts = state.accounts.filter((account) => account.id !== accountId);
+  const characters = state.characters.filter(
+    (character) => character.accountId !== accountId,
+  );
+  const entries = state.entries.filter(
+    (entry) => !removedCaptains.has(entry.characterId),
+  );
+  const loadouts = state.loadouts.filter(
+    (loadout) => !removedCaptains.has(loadout.characterId),
+  );
+  const nextAccountId =
+    state.activeAccountId === accountId
+      ? (accounts[0]?.id ?? null)
+      : state.activeAccountId;
+  const activeCharacterId = removedCaptains.has(state.activeCharacterId ?? "")
+    ? (characters.find((character) => character.accountId === nextAccountId)
+        ?.id ??
+      characters[0]?.id ??
+      null)
+    : state.activeCharacterId;
+
+  return {
+    ...state,
+    accounts,
+    characters,
+    entries,
+    loadouts,
+    activeAccountId: nextAccountId,
+    activeCharacterId,
+  };
+}
+
+export function setActiveAccount(
+  state: CollectionState,
+  accountId: string | null,
+): CollectionState {
+  if (accountId != null && !getAccount(state, accountId)) return state;
+  const onAccount =
+    accountId != null
+      ? charactersOnAccount(state, accountId)
+      : [];
+  const keepCharacter =
+    state.activeCharacterId != null &&
+    onAccount.some((character) => character.id === state.activeCharacterId);
+  return {
+    ...state,
+    activeAccountId: accountId,
+    activeCharacterId: keepCharacter
+      ? state.activeCharacterId
+      : (onAccount[0]?.id ?? null),
+  };
+}
+
 export function createCharacter(
   state: CollectionState,
   input: string | CreateCharacterInput,
@@ -69,18 +195,27 @@ export function createCharacter(
   const parsed = parseCreateInput(input);
   if (!parsed.name) return state;
 
+  const withAccount = ensureDefaultAccount(state, clock);
+  const accountId =
+    (typeof input === "object" ? input.accountId : undefined) ??
+    withAccount.activeAccountId ??
+    withAccount.accounts[0]?.id;
+  if (!accountId || !getAccount(withAccount, accountId)) return state;
+
   const character: CollectionCharacter = {
     id: clock.id(),
     name: parsed.name,
     createdAt: clock.now(),
+    accountId,
     ...(parsed.identity ?? {}),
     traitSlots: [],
   };
 
   return {
-    ...state,
-    characters: [...state.characters, character],
+    ...withAccount,
+    characters: [...withAccount.characters, character],
     activeCharacterId: character.id,
+    activeAccountId: accountId,
   };
 }
 
@@ -100,6 +235,7 @@ export function updateCharacter(
     career?: CollectionCharacter["career"];
     faction?: string;
     race?: string;
+    accountId?: string;
   },
 ): CollectionState {
   if (!state.characters.some((character) => character.id === characterId)) {
@@ -107,6 +243,9 @@ export function updateCharacter(
   }
   const nextName = patch.name != null ? patch.name.trim() : undefined;
   if (patch.name != null && !nextName) return state;
+  if (patch.accountId != null && !getAccount(state, patch.accountId)) {
+    return state;
+  }
 
   return {
     ...state,
@@ -118,6 +257,7 @@ export function updateCharacter(
         ...(patch.career !== undefined ? { career: patch.career } : {}),
         ...(patch.faction !== undefined ? { faction: patch.faction } : {}),
         ...(patch.race !== undefined ? { race: patch.race } : {}),
+        ...(patch.accountId != null ? { accountId: patch.accountId } : {}),
       };
       const slots = buildCaptainTraitSlots({
         faction: next.faction,
@@ -128,6 +268,10 @@ export function updateCharacter(
         traitSlots: pruneCaptainTraitFills(next.traitSlots, slots),
       };
     }),
+    activeAccountId:
+      characterId === state.activeCharacterId && patch.accountId
+        ? patch.accountId
+        : state.activeAccountId,
   };
 }
 
@@ -149,12 +293,16 @@ export function deleteCharacter(
     state.activeCharacterId === characterId
       ? (characters[0]?.id ?? null)
       : state.activeCharacterId;
+  const remaining = characters.find(
+    (character) => character.id === activeCharacterId,
+  );
 
   return {
     ...withoutLoadouts,
     characters,
     entries,
     activeCharacterId,
+    activeAccountId: remaining?.accountId ?? state.activeAccountId,
   };
 }
 
@@ -168,7 +316,15 @@ export function setActiveCharacter(
     );
     if (!exists) return state;
   }
-  return { ...state, activeCharacterId: characterId };
+  const accountId =
+    characterId != null
+      ? accountIdForCharacter(state, characterId)
+      : state.activeAccountId;
+  return {
+    ...state,
+    activeCharacterId: characterId,
+    activeAccountId: accountId,
+  };
 }
 
 export function ownedCopyCount(
@@ -351,6 +507,10 @@ export function collectionStatus(
   const otherAccountCopies = matches
     .filter((entry) => entry.characterId !== activeId)
     .filter((entry) => (entry.bind ?? input.bind) === "account")
+    .filter(
+      (entry) =>
+        activeId != null && sameStoAccount(state, entry.characterId, activeId),
+    )
     .map((entry) => ({
       characterId: entry.characterId,
       characterName: characterName(state, entry.characterId),
@@ -360,7 +520,7 @@ export function collectionStatus(
   return { ownedByActive, otherAccountCopies };
 }
 
-/** Active captain's own entries plus BtA copies from other captains. */
+/** Active captain's own entries plus BtA copies from other captains on the same STO account. */
 export function visibleEntriesForActiveCharacter(
   state: CollectionState,
   bindForEntry: (entry: CollectionEntry) => BindScope,
@@ -370,7 +530,8 @@ export function visibleEntriesForActiveCharacter(
 
   return state.entries.filter((entry) => {
     if (entry.characterId === activeId) return true;
-    return bindForEntry(entry) === "account";
+    if (bindForEntry(entry) !== "account") return false;
+    return sameStoAccount(state, entry.characterId, activeId);
   });
 }
 
@@ -395,34 +556,74 @@ export function hydrateCollectionState(
   const value = raw as {
     version?: unknown;
     activeCharacterId?: unknown;
+    activeAccountId?: unknown;
+    accounts?: unknown;
     characters?: unknown;
     entries?: unknown;
     loadouts?: unknown;
   };
   const version = value.version;
   if (
-    (version !== 1 && version !== 2) ||
+    (version !== 1 && version !== 2 && version !== 3) ||
     !Array.isArray(value.characters) ||
     !Array.isArray(value.entries)
   ) {
     return createEmptyCollectionState();
   }
+  const characters = value.characters.filter(isCharacter);
+  const accounts = migrateAccounts(
+    Array.isArray(value.accounts) ? value.accounts.filter(isAccount) : [],
+    characters,
+  );
+  const withAccounts = characters.map((character) => ({
+    ...character,
+    accountId:
+      accounts.some((account) => account.id === character.accountId)
+        ? character.accountId
+        : (accounts[0]?.id ?? MIGRATED_DEFAULT_ACCOUNT_ID),
+  }));
+  const activeCharacterId =
+    typeof value.activeCharacterId === "string" ||
+    value.activeCharacterId === null
+      ? value.activeCharacterId
+      : null;
+  const activeFromCharacter = withAccounts.find(
+    (character) => character.id === activeCharacterId,
+  )?.accountId;
+  const activeAccountId =
+    typeof value.activeAccountId === "string" &&
+    accounts.some((account) => account.id === value.activeAccountId)
+      ? value.activeAccountId
+      : (activeFromCharacter ?? accounts[0]?.id ?? null);
+
   return {
-    version: 2,
-    activeCharacterId:
-      typeof value.activeCharacterId === "string" ||
-      value.activeCharacterId === null
-        ? value.activeCharacterId
-        : null,
-    characters: Array.isArray(value.characters)
-      ? value.characters.filter(isCharacter)
-      : [],
-    entries: Array.isArray(value.entries) ? value.entries.filter(isEntry) : [],
+    version: 3,
+    activeCharacterId,
+    activeAccountId,
+    accounts,
+    characters: withAccounts,
+    entries: value.entries.filter(isEntry),
     loadouts:
-      version === 2 && Array.isArray(value.loadouts)
+      (version === 2 || version === 3) && Array.isArray(value.loadouts)
         ? value.loadouts.filter(isLoadout).map(sanitizeLoadoutParse)
         : [],
   };
+}
+
+function migrateAccounts(
+  parsed: CollectionAccount[],
+  characters: CollectionCharacter[],
+): CollectionAccount[] {
+  if (parsed.length > 0) return parsed;
+  if (characters.length === 0) return [];
+  return [
+    {
+      id: MIGRATED_DEFAULT_ACCOUNT_ID,
+      name: PLATFORM_LABELS.pc,
+      platform: "pc",
+      createdAt: characters[0]?.createdAt ?? "2026-01-01T00:00:00.000Z",
+    },
+  ];
 }
 
 function isTraitFill(value: unknown): value is CaptainTraitFill {
@@ -435,6 +636,17 @@ function isTraitFill(value: unknown): value is CaptainTraitFill {
   );
 }
 
+function isAccount(value: unknown): value is CollectionAccount {
+  if (!value || typeof value !== "object") return false;
+  const account = value as CollectionAccount;
+  return (
+    typeof account.id === "string" &&
+    typeof account.name === "string" &&
+    typeof account.createdAt === "string" &&
+    isCollectionPlatform(account.platform)
+  );
+}
+
 function isCharacter(value: unknown): value is CollectionCharacter {
   if (!value || typeof value !== "object") return false;
   const character = value as CollectionCharacter;
@@ -443,6 +655,9 @@ function isCharacter(value: unknown): value is CollectionCharacter {
     typeof character.name !== "string" ||
     typeof character.createdAt !== "string"
   ) {
+    return false;
+  }
+  if (character.accountId != null && typeof character.accountId !== "string") {
     return false;
   }
   if (character.career != null && careerById(character.career) == null) {
