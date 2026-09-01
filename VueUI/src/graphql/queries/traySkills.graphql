@@ -12,6 +12,11 @@ query TraySkills {
     rechargeGlobal
     type
     region
+    rank1rank
+    rank2rank
+    rank3rank
+    rank4rank
+    rank5rank
   }
 }
 

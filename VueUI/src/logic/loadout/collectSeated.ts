@@ -14,7 +14,7 @@ export type CollectSeatedRequest = {
   allowDuplicate?: boolean;
 };
 
-function fillKind(fill: SeatedCollectFill): CatalogKind {
+function fillKind(fill: SeatedCollectFill): CatalogKind | "traySkill" {
   return fill.catalogKind ?? "item";
 }
 
@@ -52,6 +52,7 @@ export function collectRequestsForSeated(input: {
 
   for (const fill of input.fills) {
     const kind = fillKind(fill);
+    if (kind === "traySkill") continue;
     const key = ownershipKey(kind, fill.itemId);
     seatedCounts.set(key, (seatedCounts.get(key) ?? 0) + 1);
     needed.set(key, { kind, catalogId: fill.itemId });

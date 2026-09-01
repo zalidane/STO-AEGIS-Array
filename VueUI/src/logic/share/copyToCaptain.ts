@@ -47,6 +47,7 @@ export function copyShareToCaptain(
       shipId: ship.id,
       name: input.payload.title,
       slots,
+      boffSeatCareers: input.payload.boffSeatCareers,
     },
     clock,
   );

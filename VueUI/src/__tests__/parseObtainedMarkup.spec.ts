@@ -96,6 +96,21 @@ describe("parseObtainedMarkup", () => {
       ),
     ).toBe(true);
   });
+
+  it("extracts Adaptive Defense pack labels without leftover wiki markup", () => {
+    const raw =
+      "Available from the &lt;span class=&quot;veryrare&quot;&gt;&amp;#91;[[Genetic Resequencer - Space Trait: Adaptive Defense|&lt;span class=&quot;veryrare&quot;&gt;Genetic Resequencer - Space Trait: Adaptive Defense&lt;/span&gt;]]&amp;#93;&lt;/span&gt; pack, which is a random reward of the [[Borg Lock Box]] and the [[Exchange]].";
+    const tokens = parseObtainedMarkup(raw);
+    const labels = tokens
+      .filter((token) => token.type === "link")
+      .map((token) => token.label);
+    expect(labels.join(" ")).not.toMatch(/\[\[|\]\]|<span/i);
+    expect(labels).toContain(
+      "Genetic Resequencer - Space Trait: Adaptive Defense",
+    );
+    expect(labels).toContain("Borg Lock Box");
+    expect(labels).toContain("Exchange");
+  });
 });
 
 describe("resolveObtainedLink", () => {
@@ -116,7 +131,7 @@ describe("resolveObtainedLink", () => {
         shipsByName,
         infoboxesByName,
       }),
-    ).toEqual({ name: "infobox-details", params: { id: 46172 } });
+    ).toEqual({ name: "item-details", params: { id: 46172 } });
 
     expect(
       resolveObtainedLink("Discovery: Emerald Chain Lock Box", {

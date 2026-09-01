@@ -27,6 +27,12 @@ import {
   unequipLoadoutSlot,
   updateLoadoutSlotMods,
 } from "@/logic/loadout/state";
+import {
+  equipBoffPowerSlot,
+  setBoffSeatCareer as setBoffSeatCareerState,
+  type BoffPowerEquipContext,
+} from "@/logic/loadout/boffPowerState";
+import type { BoffPlayableCareer } from "@/logic/loadout/boffPowers";
 import type { CombatParseSummary } from "@/logic/combatlog/types";
 import {
   copyShareToCaptain,
@@ -249,6 +255,29 @@ export const useCollectionStore = defineStore("collection", () => {
     persist();
   }
 
+  function equipBoffPower(
+    input: { loadoutId: string; slotId: string; itemId: number },
+    context: BoffPowerEquipContext,
+  ) {
+    const result = equipBoffPowerSlot(state.value, input, context);
+    if (!result.ok) return result;
+    state.value = applyLoadout(state.value, result.loadout);
+    persist();
+    return result;
+  }
+
+  function setBoffSeatCareer(
+    input: {
+      loadoutId: string;
+      stationIndex: number;
+      career: BoffPlayableCareer | null;
+    },
+    context: BoffPowerEquipContext,
+  ) {
+    state.value = setBoffSeatCareerState(state.value, input, context);
+    persist();
+  }
+
   function copySharedLoadout(input: {
     payload: SharePayload;
     items: ReadonlyArray<ShareCatalogItem>;
@@ -292,6 +321,8 @@ export const useCollectionStore = defineStore("collection", () => {
     removeCombatParse,
     equipCaptainTrait,
     unequipCaptainTrait,
+    equipBoffPower,
+    setBoffSeatCareer,
     copySharedLoadout,
   };
 });

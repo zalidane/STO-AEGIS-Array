@@ -82,7 +82,12 @@ export function createLoadout(
 /** Copy a published snapshot onto this captain. Always mints a new local UUID. */
 export function importSharedLoadout(
   state: CollectionState,
-  input: { shipId: number; name?: string; slots: LoadoutSlotFill[] },
+  input: {
+    shipId: number;
+    name?: string;
+    slots: LoadoutSlotFill[];
+    boffSeatCareers?: CollectionLoadout["boffSeatCareers"];
+  },
   clock: CollectionClock = defaultCollectionClock(),
 ): CollectionState {
   const characterId = state.activeCharacterId;
@@ -102,6 +107,9 @@ export function importSharedLoadout(
     createdAt: now,
     updatedAt: now,
     slots: input.slots.map((fill) => ({ ...fill })),
+    ...(input.boffSeatCareers
+      ? { boffSeatCareers: { ...input.boffSeatCareers } }
+      : {}),
   };
 
   return {
@@ -363,9 +371,9 @@ export function orphanedFills(
   hullSlotIds: ReadonlySet<string>,
   ownedKeys: ReadonlySet<string>,
 ): LoadoutSlotFill[] {
-  return loadout.slots.filter(
-    (fill) =>
-      !hullSlotIds.has(fill.slotId) ||
-      !ownedKeys.has(loadoutOwnershipKey(fill.catalogKind, fill.itemId)),
-  );
+  return loadout.slots.filter((fill) => {
+    if (!hullSlotIds.has(fill.slotId)) return true;
+    if (fillCatalogKind(fill) === "traySkill") return false;
+    return !ownedKeys.has(loadoutOwnershipKey(fillCatalogKind(fill), fill.itemId));
+  });
 }
