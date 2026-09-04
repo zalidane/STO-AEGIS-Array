@@ -16,7 +16,9 @@ export type SetBonusSource = {
   procs?: string | null;
 };
 
-export type SetBonusItem = Pick<LoadoutItem, "name" | "who" | "type">;
+export type SetBonusItem = Pick<LoadoutItem, "name" | "who"> & {
+  type?: string | null;
+};
 
 export type ActiveSetBonus = {
   id: number;

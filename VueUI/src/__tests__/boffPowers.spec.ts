@@ -15,6 +15,7 @@ import {
   matchingPowerRankIndexes,
   powerFitsBoffSlot,
   type BoffPowerSource,
+  type BoffStation,
 } from "@/logic/loadout/boffPowers";
 import {
   equipBoffPowerSlot,
@@ -35,6 +36,15 @@ let clockIds = 0;
 function captainState(): CollectionState {
   clockIds = 0;
   return createCharacter(createEmptyCollectionState(), "Alice", clock);
+}
+
+function defined<T>(value: T | undefined): T {
+  if (value === undefined) throw new Error("expected a defined value");
+  return value;
+}
+
+function stationSlot(station: BoffStation, index: number) {
+  return defined(station.slots[index]);
 }
 
 const tacticalTeam: BoffPowerSource = {
@@ -85,6 +95,14 @@ const recursiveShearing: BoffPowerSource = {
   ranks: ["Lt Commander", "Commander", "Commander"],
 };
 
+const jamTargetingSensors: BoffPowerSource = {
+  id: 7,
+  name: "Jam Targeting Sensors",
+  type: "Science",
+  region: "Space",
+  ranks: ["Ensign", "Lieutenant", "Lieutenant Commander"],
+};
+
 describe("canonicalOfficerRank", () => {
   it("normalizes wiki rank spellings and ignores kit/captain ranks", () => {
     expect(canonicalOfficerRank("Lt. Commander")).toBe("lieutenant commander");
@@ -112,18 +130,18 @@ describe("abilityRanksForSeat", () => {
 });
 
 describe("boff rank labels", () => {
-  it("abbreviates seat and slot ranks as ens., lt, ltc, cdr", () => {
-    const [commander] = buildBoffStations("Commander Tactical", {});
+  it("abbreviates seat and slot ranks as ENS, LT, LTC, CDR", () => {
+    const commander = defined(buildBoffStations("Commander Tactical", {})[0]);
     expect(commander.slots.map((slot) => slot.rankLabel)).toEqual([
-      "ens.",
-      "lt",
-      "ltc",
-      "cdr",
+      "ENS",
+      "LT",
+      "LTC",
+      "CDR",
     ]);
-    expect(boffRankAbbrev("Ensign")).toBe("ens.");
-    expect(boffRankAbbrev("Lieutenant")).toBe("lt");
-    expect(boffRankAbbrev("Lieutenant Commander")).toBe("ltc");
-    expect(boffRankAbbrev("Commander")).toBe("cdr");
+    expect(boffRankAbbrev("Ensign")).toBe("ENS");
+    expect(boffRankAbbrev("Lieutenant")).toBe("LT");
+    expect(boffRankAbbrev("Lieutenant Commander")).toBe("LTC");
+    expect(boffRankAbbrev("Commander")).toBe("CDR");
   });
 });
 
@@ -132,21 +150,23 @@ describe("powerFitsBoffSlot", () => {
     "Commander Tactical-Miracle Worker,Lieutenant Universal,Ensign Science",
     { "1": "Tactical" },
   );
-  const tacCmdr = stations[0];
-  const uniLt = stations[1];
-  const sciEns = stations[2];
+  const tacCmdr = defined(stations[0]);
+  const uniLt = defined(stations[1]);
+  const sciEns = defined(stations[2]);
 
   it("matches rank, space region, and career or spec", () => {
     expect(
-      powerFitsBoffSlot(tacticalTeam, tacCmdr.slots[0], tacCmdr),
+      powerFitsBoffSlot(tacticalTeam, stationSlot(tacCmdr, 0), tacCmdr),
     ).toBe(true);
     expect(
-      powerFitsBoffSlot(acetonBeam, tacCmdr.slots[2], tacCmdr),
+      powerFitsBoffSlot(acetonBeam, stationSlot(tacCmdr, 2), tacCmdr),
     ).toBe(false);
     expect(
-      powerFitsBoffSlot(alignShields, tacCmdr.slots[0], tacCmdr),
+      powerFitsBoffSlot(alignShields, stationSlot(tacCmdr, 0), tacCmdr),
     ).toBe(true);
-    expect(powerFitsBoffSlot(ambush, tacCmdr.slots[3], tacCmdr)).toBe(false);
+    expect(powerFitsBoffSlot(ambush, stationSlot(tacCmdr, 3), tacCmdr)).toBe(
+      false,
+    );
     expect(
       matchingPowerRankIndex(acetonBeam, "lieutenant commander"),
     ).toBe(0);
@@ -156,31 +176,32 @@ describe("powerFitsBoffSlot", () => {
   });
 
   it("lets a chosen Universal career take that profession’s powers", () => {
-    expect(powerFitsBoffSlot(tacticalTeam, uniLt.slots[0], uniLt)).toBe(true);
-    expect(powerFitsBoffSlot(emergencyPower, uniLt.slots[0], uniLt)).toBe(
+    expect(powerFitsBoffSlot(tacticalTeam, stationSlot(uniLt, 0), uniLt)).toBe(
+      true,
+    );
+    expect(powerFitsBoffSlot(emergencyPower, stationSlot(uniLt, 0), uniLt)).toBe(
       false,
     );
   });
 
   it("keeps Science seats on Science powers", () => {
-    expect(powerFitsBoffSlot(tacticalTeam, sciEns.slots[0], sciEns)).toBe(
+    expect(powerFitsBoffSlot(tacticalTeam, stationSlot(sciEns, 0), sciEns)).toBe(
       false,
     );
   });
 
   it("blocks career powers on Universal until a career is chosen", () => {
-    const unset = buildBoffStations("Lieutenant Universal", {});
+    const unset = defined(buildBoffStations("Lieutenant Universal", {})[0]);
     expect(
-      powerFitsBoffSlot(tacticalTeam, unset[0].slots[0], unset[0]),
+      powerFitsBoffSlot(tacticalTeam, stationSlot(unset, 0), unset),
     ).toBe(false);
   });
 
   it("lists Recursive Shearing II and III on a Commander Temporal seat", () => {
-    const [temporal] = buildBoffStations(
-      "Commander Science-Temporal Operative",
-      {},
+    const temporal = defined(
+      buildBoffStations("Commander Science-Temporal Operative", {})[0],
     );
-    const commander = temporal.slots[3];
+    const commander = stationSlot(temporal, 3);
     expect(matchingPowerRankIndexes(recursiveShearing, "commander")).toEqual([
       1, 2,
     ]);
@@ -200,51 +221,20 @@ describe("powerFitsBoffSlot", () => {
 });
 
 describe("equipBoffPowerSlot", () => {
-  it("seats a fitting power and rejects a duplicate on the same officer", () => {
+  it("seats different ranks of the same power on one officer", () => {
     let state = createLoadout(captainState(), { shipId: 7 }, clock);
-    const loadout = state.loadouts[0];
-    const stations = buildBoffStations("Commander Tactical", {});
-    const context = { stations, powers: [tacticalTeam, emergencyPower] };
+    const loadout = defined(state.loadouts[0]);
+    const station = defined(buildBoffStations("Commander Science", {})[0]);
+    const context = {
+      stations: [station],
+      powers: [jamTargetingSensors, emergencyPower],
+    };
+    const ensign = stationSlot(station, 0);
+    const lieutenant = stationSlot(station, 1);
 
     const first = equipBoffPowerSlot(
       state,
-      { loadoutId: loadout.id, slotId: stations[0].slots[0].id, itemId: 1 },
-      context,
-      clock,
-    );
-    expect(first.ok).toBe(true);
-    if (!first.ok) return;
-    state = applyLoadout(state, first.loadout);
-
-    const dup = equipBoffPowerSlot(
-      state,
-      { loadoutId: loadout.id, slotId: stations[0].slots[1].id, itemId: 1 },
-      context,
-      clock,
-    );
-    expect(dup).toEqual({ ok: false, reason: "equip-limit" });
-
-    const other = equipBoffPowerSlot(
-      state,
-      { loadoutId: loadout.id, slotId: stations[0].slots[1].id, itemId: 5 },
-      context,
-      clock,
-    );
-    expect(other.ok).toBe(false);
-  });
-
-  it("allows the same power on two different officers", () => {
-    let state = createLoadout(captainState(), { shipId: 7 }, clock);
-    const loadout = state.loadouts[0];
-    const stations = buildBoffStations(
-      "Lieutenant Tactical,Ensign Tactical",
-      {},
-    );
-    const context = { stations, powers: [tacticalTeam] };
-
-    const first = equipBoffPowerSlot(
-      state,
-      { loadoutId: loadout.id, slotId: stations[0].slots[0].id, itemId: 1 },
+      { loadoutId: loadout.id, slotId: ensign.id, itemId: 7 },
       context,
       clock,
     );
@@ -254,7 +244,54 @@ describe("equipBoffPowerSlot", () => {
 
     const second = equipBoffPowerSlot(
       state,
-      { loadoutId: loadout.id, slotId: stations[1].slots[0].id, itemId: 1 },
+      { loadoutId: loadout.id, slotId: lieutenant.id, itemId: 7 },
+      context,
+      clock,
+    );
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    expect(second.loadout.slots).toEqual([
+      { slotId: ensign.id, itemId: 7, catalogKind: "traySkill" },
+      { slotId: lieutenant.id, itemId: 7, catalogKind: "traySkill" },
+    ]);
+
+    const mismatched = equipBoffPowerSlot(
+      state,
+      { loadoutId: loadout.id, slotId: stationSlot(station, 2).id, itemId: 5 },
+      context,
+      clock,
+    );
+    expect(mismatched).toEqual({ ok: false, reason: "illegal-slot" });
+  });
+
+  it("allows the same power on two different officers", () => {
+    let state = createLoadout(captainState(), { shipId: 7 }, clock);
+    const loadout = defined(state.loadouts[0]);
+    const stations = buildBoffStations(
+      "Lieutenant Tactical,Ensign Tactical",
+      {},
+    );
+    const firstStation = defined(stations[0]);
+    const secondStation = defined(stations[1]);
+    const context = { stations, powers: [tacticalTeam] };
+
+    const first = equipBoffPowerSlot(
+      state,
+      { loadoutId: loadout.id, slotId: stationSlot(firstStation, 0).id, itemId: 1 },
+      context,
+      clock,
+    );
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    state = applyLoadout(state, first.loadout);
+
+    const second = equipBoffPowerSlot(
+      state,
+      {
+        loadoutId: loadout.id,
+        slotId: stationSlot(secondStation, 0).id,
+        itemId: 1,
+      },
       context,
       clock,
     );
@@ -263,13 +300,17 @@ describe("equipBoffPowerSlot", () => {
 
   it("clears career powers when a Universal seat changes profession", () => {
     let state = createLoadout(captainState(), { shipId: 7 }, clock);
-    const loadout = state.loadouts[0];
+    const loadout = defined(state.loadouts[0]);
     const stations = buildBoffStations("Commander Universal", { "0": "Tactical" });
     const context = { stations, powers: [tacticalTeam] };
 
     const seated = equipBoffPowerSlot(
       state,
-      { loadoutId: loadout.id, slotId: stations[0].slots[0].id, itemId: 1 },
+      {
+        loadoutId: loadout.id,
+        slotId: stationSlot(defined(stations[0]), 0).id,
+        itemId: 1,
+      },
       context,
       clock,
     );
@@ -288,19 +329,21 @@ describe("equipBoffPowerSlot", () => {
       },
       clock,
     );
-    expect(state.loadouts[0].slots).toEqual([]);
-    expect(state.loadouts[0].boffSeatCareers).toEqual({ "0": "Engineering" });
+    expect(defined(state.loadouts[0]).slots).toEqual([]);
+    expect(defined(state.loadouts[0]).boffSeatCareers).toEqual({
+      "0": "Engineering",
+    });
   });
 
   it("seats Recursive Shearing III when II and III share Commander", () => {
     let state = createLoadout(captainState(), { shipId: 7 }, clock);
-    const loadout = state.loadouts[0];
+    const loadout = defined(state.loadouts[0]);
     const stations = buildBoffStations(
       "Commander Science-Temporal Operative",
       {},
     );
     const context = { stations, powers: [recursiveShearing] };
-    const commander = stations[0].slots[3];
+    const commander = stationSlot(defined(stations[0]), 3);
 
     const seated = equipBoffPowerSlot(
       state,

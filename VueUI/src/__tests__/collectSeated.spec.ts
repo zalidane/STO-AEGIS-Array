@@ -60,4 +60,20 @@ describe("collectRequestsForSeated", () => {
       }),
     ).toEqual([]);
   });
+
+  it("skips seated BOff powers", () => {
+    expect(
+      collectRequestsForSeated({
+        fills: [{ itemId: 7, catalogKind: "traySkill" }],
+        items: [
+          {
+            id: 7,
+            catalogKind: "traySkill",
+            equiplimit: null,
+          },
+        ],
+        ownedCount: () => 0,
+      }),
+    ).toEqual([]);
+  });
 });
