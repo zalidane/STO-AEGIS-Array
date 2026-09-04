@@ -23,8 +23,7 @@ export type BoffPowerEquipFailure =
   | "unknown-loadout"
   | "unknown-slot"
   | "unknown-item"
-  | "illegal-slot"
-  | "equip-limit";
+  | "illegal-slot";
 
 export type BoffPowerEquipResult =
   | { ok: true; loadout: CollectionLoadout }
@@ -56,22 +55,6 @@ function activeLoadout(
     state.loadouts.find(
       (row) => row.id === loadoutId && row.characterId === characterId,
     ) ?? null
-  );
-}
-
-function sameSkillOnStation(
-  loadout: CollectionLoadout,
-  station: BoffStation,
-  itemId: number,
-  exceptSlotId: string,
-): boolean {
-  const ids = new Set(station.slots.map((slot) => slot.id));
-  return loadout.slots.some(
-    (fill) =>
-      ids.has(fill.slotId) &&
-      fill.slotId !== exceptSlotId &&
-      fill.itemId === itemId &&
-      fillCatalogKind(fill) === BOFF_CATALOG_KIND,
   );
 }
 
@@ -132,10 +115,6 @@ export function equipBoffPowerSlot(
     alreadyHere.abilityRank === input.abilityRank
   ) {
     return { ok: true, loadout };
-  }
-
-  if (sameSkillOnStation(loadout, located.station, input.itemId, input.slotId)) {
-    return { ok: false, reason: "equip-limit" };
   }
 
   const nextLoadout: CollectionLoadout = {

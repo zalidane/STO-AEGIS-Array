@@ -14,8 +14,12 @@ export type CollectSeatedRequest = {
   allowDuplicate?: boolean;
 };
 
-function fillKind(fill: SeatedCollectFill): CatalogKind | "traySkill" {
-  return fill.catalogKind ?? "item";
+function collectibleKind(
+  kind: LoadoutCatalogKind | undefined,
+): CatalogKind | null {
+  const resolved = kind ?? "item";
+  if (resolved === "traySkill") return null;
+  return resolved;
 }
 
 function isUniqueCollectible(
@@ -42,17 +46,18 @@ export function collectRequestsForSeated(input: {
   bindFor?: (kind: CatalogKind, catalogId: number) => BindScope | undefined;
 }): CollectSeatedRequest[] {
   const catalog = new Map(
-    input.items.map((item) => [
-      ownershipKey(item.catalogKind ?? "item", item.id),
-      item,
-    ]),
+    input.items.flatMap((item) => {
+      const kind = collectibleKind(item.catalogKind);
+      if (!kind) return [];
+      return [[ownershipKey(kind, item.id), item] as const];
+    }),
   );
   const needed = new Map<string, { kind: CatalogKind; catalogId: number }>();
   const seatedCounts = new Map<string, number>();
 
   for (const fill of input.fills) {
-    const kind = fillKind(fill);
-    if (kind === "traySkill") continue;
+    const kind = collectibleKind(fill.catalogKind);
+    if (!kind) continue;
     const key = ownershipKey(kind, fill.itemId);
     seatedCounts.set(key, (seatedCounts.get(key) ?? 0) + 1);
     needed.set(key, { kind, catalogId: fill.itemId });

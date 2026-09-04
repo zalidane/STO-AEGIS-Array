@@ -937,10 +937,7 @@ function chooseItem(item: LoadoutItem) {
       boffPowerContext(),
     );
     if (!result.ok) {
-      pickerError.value =
-        result.reason === "equip-limit"
-          ? "That power is already on this officer."
-          : equipMessage(result.reason);
+      pickerError.value = equipMessage(result.reason);
       return;
     }
     pickerOpen.value = false;
@@ -1267,7 +1264,7 @@ const loading = computed(
                       class="equip-slot__suffixes"
                       :sockets="suffixSockets(slot)"
                       :disabled="!itemInSlot(slot.id)"
-                      :aria-prefix="slot.label"
+                      :ariaPrefix="slot.label"
                       @pick="(index, token) => onSlotModifierChange(slot, index, token)"
                     />
                   </div>
