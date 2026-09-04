@@ -106,6 +106,10 @@ describe("normalizeWikiFileTitle", () => {
       "Rom_Ship_Tliss_Temporal.png",
     );
     assert.equal(
+      localFilename("File:Fresh From R&R icon.png"),
+      "Fresh_From_RR_icon.png",
+    );
+    assert.equal(
       localFilename("File:obeliskcarrier.jpg"),
       "obeliskcarrier.jpg",
     );

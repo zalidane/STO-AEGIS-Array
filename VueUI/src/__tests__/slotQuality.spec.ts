@@ -5,6 +5,7 @@ import {
   inheritModsFromPreviousSameKind,
   modsForNewFill,
   normalizeMark,
+  previousSameKindFill,
   qualityColor,
   qualityFromRarity,
   slotUsesItemMods,
@@ -29,7 +30,7 @@ describe("slotQuality", () => {
     expect(slotUsesItemMods("starshipTrait")).toBe(false);
   });
 
-  it("inherits quality and mark from the previous same-kind fill", () => {
+  it("inherits quality, mark, and suffix mods from the previous same-kind fill", () => {
     const fills: LoadoutSlotFill[] = [
       {
         slotId: "foreWeapon-0",
@@ -37,14 +38,23 @@ describe("slotQuality", () => {
         catalogKind: "item",
         quality: "Epic",
         mark: "Mk XII",
+        modifiers: ["[Dmg]", "[CrtH]", "[Pen]"],
       },
     ];
+    expect(
+      previousSameKindFill(slots, fills, { kind: "foreWeapon", index: 1 })
+        ?.itemId,
+    ).toBe(1);
     expect(
       inheritModsFromPreviousSameKind(slots, fills, {
         kind: "foreWeapon",
         index: 1,
       }),
-    ).toEqual({ quality: "Epic", mark: "Mk XII" });
+    ).toEqual({
+      quality: "Epic",
+      mark: "Mk XII",
+      modifiers: ["[Dmg]", "[CrtH]", "[Pen]"],
+    });
     expect(
       inheritModsFromPreviousSameKind(slots, fills, {
         kind: "aftWeapon",

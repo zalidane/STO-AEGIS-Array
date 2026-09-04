@@ -19,12 +19,14 @@ import {
   bindScopeFromCatalog,
 } from "@/logic/collection/catalogBind";
 import type { BindScope } from "@/logic/collection/types";
+import { useAlignItemCatalog } from "@/composables/useAlignItemCatalog";
 
 defineOptions({ name: "Items" });
 
 useKeepAliveScrollRestore();
 
 const { result, loading, error } = useQuery(InfoboxesDocument);
+useAlignItemCatalog(() => result.value?.infoboxes);
 const { result: shipsResult } = useQuery(ShipsDocument);
 
 const equipment = computed(() =>

@@ -11,6 +11,7 @@ describe("alignLocalImageFile", () => {
     try {
       await writeFile(join(dir, "Amarie_Smuggler's_Heavy_Escort.jpg"), "a");
       await writeFile(join(dir, "Obeliskcarrier.jpg"), "b");
+      await writeFile(join(dir, "Fresh_From_R&R_icon.png"), "c");
 
       const index = await readImageDirIndex(dir);
       const apostrophe = await alignLocalImageFile(
@@ -19,12 +20,19 @@ describe("alignLocalImageFile", () => {
         index,
       );
       const casing = await alignLocalImageFile(dir, "obeliskcarrier.jpg", index);
+      const ampersand = await alignLocalImageFile(
+        dir,
+        "Fresh_From_RR_icon.png",
+        index,
+      );
 
       assert.equal(apostrophe.renamedFrom, "Amarie_Smuggler's_Heavy_Escort.jpg");
       assert.equal(casing.renamedFrom, "Obeliskcarrier.jpg");
+      assert.equal(ampersand.renamedFrom, "Fresh_From_R&R_icon.png");
       const names = await readdir(dir);
       assert.deepEqual(names.sort(), [
         "Amarie_Smugglers_Heavy_Escort.jpg",
+        "Fresh_From_RR_icon.png",
         "obeliskcarrier.jpg",
       ]);
     } finally {

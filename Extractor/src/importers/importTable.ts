@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 
 import type { PrismaClient } from "@sto-aegis/database";
 import type { ImportConfig } from "./importConfig.js";
+import { planIdentityReplace } from "./identityReplace.js";
 import { validateCargoJson } from "../utils/validateCargoJson.js";
 
 export async function importTable<
@@ -34,7 +35,7 @@ export async function importTable<
     config.strategy ?? (config.uniqueFields?.length ? "upsert" : "replace");
 
   if (strategy === "replace") {
-    await replaceAll(model, rows, config.mapper);
+    await replaceAll(model, rows, config.mapper, config.identityFields);
   } else {
     if (!config.uniqueFields?.length) {
       console.error(
@@ -81,16 +82,53 @@ async function upsertAll<
   }
 }
 
+const IDENTITY_UPDATE_BATCH = 50;
+
 async function replaceAll<
   TRaw extends Record<string, unknown>,
   TMapped extends Record<string, unknown>,
->(model: any, rows: TRaw[], mapper: (row: TRaw) => TMapped) {
-  await model.deleteMany();
-  if (rows.length === 0) return;
+>(
+  model: any,
+  rows: TRaw[],
+  mapper: (row: TRaw) => TMapped,
+  identityFields?: readonly (keyof TMapped)[],
+) {
+  if (!identityFields?.length) {
+    await model.deleteMany();
+    if (rows.length === 0) return;
+    await model.createMany({
+      data: rows.map((row) => mapper(row)),
+    });
+    return;
+  }
 
-  await model.createMany({
-    data: rows.map((row) => mapper(row)),
+  const incoming = rows.map((row) => mapper(row));
+  const existing = await model.findMany({
+    select: {
+      id: true,
+      ...Object.fromEntries(identityFields.map((field) => [field, true])),
+    },
   });
+  const plan = planIdentityReplace(
+    existing,
+    incoming,
+    identityFields.map(String),
+  );
+
+  if (plan.deleteIds.length > 0) {
+    await model.deleteMany({ where: { id: { in: plan.deleteIds } } });
+  }
+
+  for (let i = 0; i < plan.update.length; i += IDENTITY_UPDATE_BATCH) {
+    const chunk = plan.update.slice(i, i + IDENTITY_UPDATE_BATCH);
+    await Promise.all(
+      chunk.map(({ id, data }) => model.update({ where: { id }, data })),
+    );
+  }
+
+  if (plan.create.length > 0) {
+    await model.createMany({ data: plan.create });
+  }
 }
 
 export function buildWhere<TMapped extends Record<string, unknown>>(

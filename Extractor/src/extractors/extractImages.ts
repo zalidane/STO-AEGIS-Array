@@ -84,7 +84,7 @@ export async function extractImages(
   const aligned = await alignCatalogImageFiles(options.imagesDir, targets);
   if (aligned.renamed > 0) {
     console.log(
-      `Images: renamed ${aligned.renamed} files onto apostrophe-free, case-accurate public names`,
+      `Images: renamed ${aligned.renamed} files onto apostrophe- and ampersand-free, case-accurate public names`,
     );
   }
 

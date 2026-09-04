@@ -135,6 +135,17 @@ describe("traitBrowser", () => {
         (i) => i.id,
       ),
     ).toEqual([]);
+    expect(
+      filterTraitBrowserItems(items, "", {
+        hideCollected: true,
+        collectedIds: new Set([1]),
+      }).map((i) => i.id),
+    ).toEqual([2]);
+    expect(
+      filterTraitBrowserItems(items, "", { hideCollected: true }).map(
+        (i) => i.id,
+      ),
+    ).toEqual([1, 2]);
     expect(uniqueTraitFacetValues(items, "type")).toEqual(["char", "starship"]);
     expect(uniqueTraitFacetValues(items, "environment")).toEqual(["ground"]);
   });

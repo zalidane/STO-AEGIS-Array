@@ -7,6 +7,7 @@ import {
   itemFitsHullSlot,
   loadoutOwnershipKey,
 } from "./setBonus";
+import { seatedSuffixModifiers, trimModifiersForQuality } from "./slotModifiers";
 import { inheritModsFromPreviousSameKind, modsForNewFill } from "./slotQuality";
 import type { CombatParseSummary } from "@/logic/combatlog/types";
 import type {
@@ -279,9 +280,24 @@ export function equipLoadoutSlot(
     rarity: item.rarity,
     itemType: item.type,
   });
+  const modifiers = seatedSuffixModifiers({
+    kind: slot.kind,
+    itemType: item.type,
+    itemName: item.name,
+    quality: mods.quality,
+    selected: mods.modifiers,
+    catalog: context.modifiers,
+  });
   const nextSlots: LoadoutSlotFill[] = [
     ...loadout.slots.filter((fill) => fill.slotId !== input.slotId),
-    { slotId: input.slotId, itemId: item.id, catalogKind, ...mods },
+    {
+      slotId: input.slotId,
+      itemId: item.id,
+      catalogKind,
+      ...(mods.quality ? { quality: mods.quality } : {}),
+      ...(mods.mark ? { mark: mods.mark } : {}),
+      ...(modifiers?.length ? { modifiers } : {}),
+    },
   ];
   const nextLoadout: CollectionLoadout = {
     ...loadout,
@@ -297,7 +313,13 @@ export function equipLoadoutSlot(
 
 export function updateLoadoutSlotMods(
   state: CollectionState,
-  input: { loadoutId: string; slotId: string; quality?: string; mark?: string },
+  input: {
+    loadoutId: string;
+    slotId: string;
+    quality?: string;
+    mark?: string;
+    modifiers?: string[];
+  },
   clock: CollectionClock = defaultCollectionClock(),
 ): CollectionState {
   return replaceLoadout(state, input.loadoutId, (loadout) => {
@@ -306,15 +328,23 @@ export function updateLoadoutSlotMods(
     return {
       ...loadout,
       updatedAt: clock.now(),
-      slots: loadout.slots.map((row) =>
-        row.slotId === input.slotId
-          ? {
-              ...row,
-              ...(input.quality != null ? { quality: input.quality } : {}),
-              ...(input.mark != null ? { mark: input.mark } : {}),
-            }
-          : row,
-      ),
+      slots: loadout.slots.map((row) => {
+        if (row.slotId !== input.slotId) return row;
+        const quality = input.quality ?? row.quality;
+        const sourceModifiers =
+          input.modifiers !== undefined ? input.modifiers : row.modifiers;
+        const modifiers =
+          input.modifiers !== undefined || input.quality != null
+            ? trimModifiersForQuality(sourceModifiers, quality)
+            : row.modifiers;
+        const { modifiers: _dropped, ...rest } = row;
+        return {
+          ...rest,
+          ...(input.quality != null ? { quality: input.quality } : {}),
+          ...(input.mark != null ? { mark: input.mark } : {}),
+          ...(modifiers?.length ? { modifiers } : {}),
+        };
+      }),
     };
   });
 }

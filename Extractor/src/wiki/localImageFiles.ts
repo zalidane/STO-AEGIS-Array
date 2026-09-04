@@ -46,7 +46,7 @@ export type AlignResult = {
   renamedFrom: string | null;
 };
 
-/** Point a catalog filename at the matching on-disk file, renaming if case or apostrophes differ. */
+/** Point a catalog filename at the matching on-disk file, renaming if case, apostrophes, or ampersands differ. */
 export async function alignLocalImageFile(
   dir: string,
   canonicalFilename: string,

@@ -7,7 +7,7 @@ import type { ShipsQuery } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import ShipBinderCard from "@/components/ships/ShipBinderCard.vue";
-import { getFactionColor } from "@/mappers/factionColors";
+import ShipsListFiltersBar from "@/components/ships/ShipsListFiltersBar.vue";
 import {
   BINDER_SIDE_SIZE,
   clampBinderPage,
@@ -18,15 +18,13 @@ import {
   readStoredShipsListState,
   serializeShipsListQuery,
   shipsListQueryIsEmpty,
-  toggleInclusiveValue,
-  uniqueSortedStrings,
-  uniqueSortedTiers,
   writeStoredShipsListState,
+  type ShipsListFilters,
   type ShipsListState,
 } from "@/logic/shipsBinder";
-import { currencyDisplayLabel } from "@/utils/parsers/shipCost";
 import { useKeepAliveScrollRestore } from "@/composables/useKeepAliveScrollRestore";
 import CompareLaunch from "@/components/compare/CompareLaunch.vue";
+import { useCollectionStore } from "@/stores/collection";
 
 defineOptions({ name: "Ships" });
 
@@ -34,6 +32,7 @@ useKeepAliveScrollRestore();
 
 const router = useRouter();
 const route = useRoute();
+const collectionStore = useCollectionStore();
 
 type Ship = ShipsQuery["ships"][number];
 
@@ -49,44 +48,43 @@ const selectedTypes = ref<string[]>([...hydratedState.types]);
 const selectedFactions = ref<string[]>([...hydratedState.factions]);
 const selectedTiers = ref<number[]>([...hydratedState.tiers]);
 const selectedCosts = ref<string[]>([...hydratedState.costs]);
+const hideCollected = ref(hydratedState.hideCollected === true);
+const hideFleet = ref(hydratedState.hideFleet === true);
 const page = ref(hydratedState.page);
 const syncingFromRoute = ref(false);
-/** Type filter drawer; closed by default. */
-const openTypeDrawer = ref<string[]>([]);
 
-function onSearchUpdate(value: string | null) {
-  search.value = value ?? "";
-  page.value = 1;
-}
+const shipFilters = computed<ShipsListFilters>({
+  get: () => ({
+    search: search.value,
+    types: selectedTypes.value,
+    factions: selectedFactions.value,
+    tiers: selectedTiers.value,
+    costs: selectedCosts.value,
+    hideCollected: hideCollected.value,
+    hideFleet: hideFleet.value,
+  }),
+  set: (next) => {
+    search.value = next.search;
+    selectedTypes.value = [...next.types];
+    selectedFactions.value = [...next.factions];
+    selectedTiers.value = [...next.tiers];
+    selectedCosts.value = [...(next.costs ?? [])];
+    hideCollected.value = Boolean(next.hideCollected);
+    hideFleet.value = Boolean(next.hideFleet);
+    page.value = 1;
+  },
+});
 
-const availableTypes = computed(() =>
-  uniqueSortedStrings(ships.value.map((ship) => ship.type)),
-);
-
-const availableFactions = computed(() =>
-  uniqueSortedStrings(ships.value.map((ship) => ship.factionLede)),
-);
-
-const availableTiers = computed(() =>
-  uniqueSortedTiers(ships.value.map((ship) => ship.tier)),
-);
-
-const currentFilters = computed(() => ({
-  search: search.value,
-  types: selectedTypes.value,
-  factions: selectedFactions.value,
-  tiers: selectedTiers.value,
-  costs: selectedCosts.value,
-}));
+const collectedShipIds = computed(() => collectionStore.ownedCatalogIds("ship"));
 
 const filteredShips = computed(() =>
-  filterShips(ships.value, currentFilters.value),
+  filterShips(ships.value, shipFilters.value, collectedShipIds.value),
 );
 
 const binder = computed(() => getBinderPage(filteredShips.value, page.value));
 
 const listState = computed<ShipsListState>(() => ({
-  ...currentFilters.value,
+  ...shipFilters.value,
   page: binder.value.page,
 }));
 
@@ -129,6 +127,8 @@ watch(
     selectedFactions.value = [...parsed.factions];
     selectedTiers.value = [...parsed.tiers];
     selectedCosts.value = [...parsed.costs];
+    hideCollected.value = parsed.hideCollected === true;
+    hideFleet.value = parsed.hideFleet === true;
     page.value = parsed.page;
     queueMicrotask(() => {
       syncingFromRoute.value = false;
@@ -139,68 +139,6 @@ watch(
 watch(filteredShips, (items) => {
   page.value = clampBinderPage(page.value, items.length);
 });
-
-function factionButtonLabel(faction: string): string {
-  if (/klingon/i.test(faction)) return "Klingon";
-  if (/romulan/i.test(faction)) return "Romulan";
-  if (/federation/i.test(faction)) return "Federation";
-  if (/dominion/i.test(faction)) return "Dominion";
-  if (/cross/i.test(faction)) return "Cross-Faction";
-  return faction;
-}
-
-function factionAccent(faction: string): string {
-  const color = getFactionColor(faction);
-  if (color === "federation") return "#3fa7ff";
-  if (color === "klingon") return "#d32f2f";
-  if (color === "romulan") return "#00c853";
-  if (color === "dominion") return "#ff9838";
-  return "#7dd3fc";
-}
-
-function toggleType(type: string) {
-  selectedTypes.value = toggleInclusiveValue(selectedTypes.value, type);
-  page.value = 1;
-}
-
-function toggleFaction(faction: string) {
-  selectedFactions.value = toggleInclusiveValue(selectedFactions.value, faction);
-  page.value = 1;
-}
-
-function toggleTier(tier: number) {
-  selectedTiers.value = toggleInclusiveValue(selectedTiers.value, tier);
-  page.value = 1;
-}
-
-function clearFactionFilters() {
-  selectedFactions.value = [];
-  page.value = 1;
-}
-
-function clearTierFilters() {
-  selectedTiers.value = [];
-  page.value = 1;
-}
-
-function clearCostFilters() {
-  selectedCosts.value = [];
-  page.value = 1;
-}
-
-function removeCostFilter(code: string) {
-  selectedCosts.value = selectedCosts.value.filter((cost) => cost !== code);
-  page.value = 1;
-}
-
-function clearFilters() {
-  search.value = "";
-  selectedTypes.value = [];
-  selectedFactions.value = [];
-  selectedTiers.value = [];
-  selectedCosts.value = [];
-  page.value = 1;
-}
 
 function goToShip(shipId: number) {
   writeStoredShipsListState(listState.value);
@@ -214,15 +152,6 @@ function previousPage() {
 function nextPage() {
   page.value = Math.min(binder.value.totalPages, page.value + 1);
 }
-
-const hasActiveFilters = computed(
-  () =>
-    search.value.trim().length > 0 ||
-    selectedTypes.value.length > 0 ||
-    selectedFactions.value.length > 0 ||
-    selectedTiers.value.length > 0 ||
-    selectedCosts.value.length > 0,
-);
 </script>
 
 <template>
@@ -249,89 +178,7 @@ const hasActiveFilters = computed(
         </div>
       </header>
 
-      <section class="registry-filters" aria-label="Ship filters">
-        <div class="registry-filters__label">Filter by:</div>
-
-        <label class="registry-search">
-          <v-icon size="18" icon="mdi-magnify" />
-          <input
-            :value="search"
-            type="search"
-            placeholder="Search vessels..."
-            @input="onSearchUpdate(($event.target as HTMLInputElement).value)"
-          />
-        </label>
-
-        <div
-          v-if="selectedCosts.length"
-          class="registry-group"
-          role="group"
-          aria-label="Acquisition"
-        >
-          <button
-            type="button"
-            class="registry-chip registry-chip--all"
-            @click="clearCostFilters"
-          >
-            All
-          </button>
-          <button
-            v-for="code in selectedCosts"
-            :key="code"
-            type="button"
-            class="registry-chip registry-chip--active"
-            @click="removeCostFilter(code)"
-          >
-            {{ currencyDisplayLabel(code) }}
-          </button>
-        </div>
-
-        <div class="registry-group" role="group" aria-label="Faction">
-          <button
-            type="button"
-            class="registry-chip registry-chip--all"
-            :class="{ 'registry-chip--active': selectedFactions.length === 0 }"
-            @click="clearFactionFilters"
-          >
-            All
-          </button>
-          <button
-            v-for="faction in availableFactions"
-            :key="faction"
-            type="button"
-            class="registry-chip"
-            :class="{
-              'registry-chip--active': selectedFactions.includes(faction),
-            }"
-            :style="{ '--chip-accent': factionAccent(faction) }"
-            @click="toggleFaction(faction)"
-          >
-            {{ factionButtonLabel(faction) }}
-          </button>
-        </div>
-
-        <div class="registry-group" role="group" aria-label="Tier">
-          <button
-            type="button"
-            class="registry-chip registry-chip--all"
-            :class="{ 'registry-chip--active': selectedTiers.length === 0 }"
-            @click="clearTierFilters"
-          >
-            All
-          </button>
-          <button
-            v-for="tier in availableTiers"
-            :key="tier"
-            type="button"
-            class="registry-chip"
-            :class="{ 'registry-chip--active': selectedTiers.includes(tier) }"
-            @click="toggleTier(tier)"
-          >
-            Tier {{ tier }}
-          </button>
-        </div>
-      </section>
-
+      <ShipsListFiltersBar v-model="shipFilters" :ships="ships">
       <div v-if="filteredShips.length === 0" class="empty-state">
         No ships match the current search and filters.
       </div>
@@ -395,59 +242,7 @@ const hasActiveFilters = computed(
           </v-btn>
         </div>
       </div>
-
-      <section class="type-panel mt-4">
-        <div class="d-flex align-center justify-space-between ga-2 mb-2">
-          <div class="type-panel__heading">Ship type</div>
-          <v-btn
-            v-if="hasActiveFilters"
-            size="small"
-            variant="text"
-            prepend-icon="mdi-filter-off"
-            @click="clearFilters"
-          >
-            Clear filters
-          </v-btn>
-        </div>
-
-        <v-expansion-panels
-          v-model="openTypeDrawer"
-          multiple
-          variant="accordion"
-          class="filter-drawers"
-        >
-          <v-expansion-panel value="type">
-            <v-expansion-panel-title>
-              <div class="filter-drawer-title">
-                <span>Type</span>
-                <v-chip
-                  v-if="selectedTypes.length"
-                  size="x-small"
-                  color="secondary"
-                  variant="tonal"
-                >
-                  {{ selectedTypes.length }}
-                </v-chip>
-              </div>
-            </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <div class="filter-buttons">
-                <v-btn
-                  v-for="type in availableTypes"
-                  :key="type"
-                  size="small"
-                  rounded="lg"
-                  :variant="selectedTypes.includes(type) ? 'flat' : 'outlined'"
-                  :color="selectedTypes.includes(type) ? 'secondary' : undefined"
-                  @click="toggleType(type)"
-                >
-                  {{ type }}
-                </v-btn>
-              </div>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-      </section>
+      </ShipsListFiltersBar>
     </div>
   </v-container>
 </template>
@@ -513,130 +308,6 @@ const hasActiveFilters = computed(
   letter-spacing: 0.12em;
   text-transform: uppercase;
   line-height: 1.45;
-}
-
-.registry-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 12px;
-  margin-bottom: 18px;
-  padding: 12px;
-  border: 1px solid rgba(125, 211, 252, 0.28);
-  background: rgba(6, 14, 24, 0.72);
-}
-
-.registry-filters__label {
-  color: #7dd3fc;
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.registry-search {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: min(240px, 100%);
-  padding: 8px 10px;
-  border: 1px solid rgba(125, 211, 252, 0.45);
-  color: #7dd3fc;
-  background: rgba(8, 18, 30, 0.9);
-}
-
-.registry-search input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: #e8f7ff;
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.registry-search input::placeholder {
-  color: rgba(125, 211, 252, 0.55);
-  text-transform: uppercase;
-}
-
-.registry-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.registry-chip {
-  appearance: none;
-  border: 1px solid var(--chip-accent, rgba(125, 211, 252, 0.55));
-  background: transparent;
-  color: var(--chip-accent, #7dd3fc);
-  padding: 7px 10px;
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-  line-height: 1;
-  transition:
-    background 120ms ease,
-    color 120ms ease,
-    border-color 120ms ease;
-}
-
-.registry-chip--all {
-  --chip-accent: #7dd3fc;
-}
-
-.registry-chip:hover {
-  background: color-mix(in srgb, var(--chip-accent, #7dd3fc) 16%, transparent);
-}
-
-.registry-chip--active {
-  background: var(--chip-accent, #7dd3fc);
-  color: #041018;
-  border-color: var(--chip-accent, #7dd3fc);
-}
-
-.type-panel {
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(18, 32, 55, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.type-panel__heading {
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.filter-drawers :deep(.v-expansion-panel) {
-  background: transparent;
-}
-
-.filter-drawers :deep(.v-expansion-panel-title) {
-  min-height: 44px;
-  padding-inline: 8px;
-  font-size: 0.95rem;
-}
-
-.filter-drawers :deep(.v-expansion-panel-text__wrapper) {
-  padding-inline: 8px 8px 12px;
-}
-
-.filter-drawer-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.filter-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
 }
 
 .empty-state {

@@ -88,14 +88,14 @@ export function itemIconNameCandidates(name: string): string[] {
   return uniqueNames([decoded, withoutMods, withoutMark]);
 }
 
-/** ASCII and Unicode apostrophes. Strip them so public paths stay POSIX/WAF-safe. */
-export const WIKI_APOSTROPHES = /['\u2018\u2019\u02BC]/g;
+/** ASCII/Unicode apostrophes and ampersands. Strip so public paths stay POSIX/WAF/URL-safe. */
+export const WIKI_APOSTROPHES = /['\u2018\u2019\u02BC&]/g;
 
 export function stripWikiApostrophes(name: string): string {
   return name.replace(WIKI_APOSTROPHES, "");
 }
 
-/** Case-insensitive key that also ignores apostrophes still present on disk. */
+/** Case-insensitive key that also ignores apostrophes and ampersands still present on disk. */
 export function imageFileMatchKey(filename: string): string {
   return stripWikiApostrophes(filename).toLowerCase();
 }

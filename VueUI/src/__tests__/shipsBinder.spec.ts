@@ -3,10 +3,13 @@ import {
   BINDER_PAGE_SIZE,
   clampBinderPage,
   createDefaultShipsListState,
+  filterItemsByShip,
   filterShips,
   getBinderPage,
+  isFleetShip,
   parseShipsListQuery,
   serializeShipsListQuery,
+  shipsListFiltersAreActive,
   shipsListQueryForAcquisition,
   shipsListQueryIsEmpty,
   toggleInclusiveValue,
@@ -145,6 +148,118 @@ describe("filterShips", () => {
       }).map((ship) => ship.id),
     ).toEqual([5]);
   });
+
+  it("hides Fleet hulls when hideFleet is on", () => {
+    const fleet: ShipListItem = {
+      id: 6,
+      name: "Fleet Advanced Escort",
+      type: "Escort",
+      tier: 5,
+      faction: "United Federation of Planets",
+      factionLede: "Federation",
+      displayPrefix: "Fleet",
+    };
+    const roster = [...ships, fleet];
+
+    expect(
+      filterShips(roster, createDefaultShipsListState()).map((ship) => ship.id),
+    ).toContain(6);
+    expect(
+      filterShips(roster, {
+        ...createDefaultShipsListState(),
+        hideFleet: true,
+      }).map((ship) => ship.id),
+    ).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("hides collected ships when hideCollected is on", () => {
+    expect(
+      filterShips(
+        ships,
+        { ...createDefaultShipsListState(), hideCollected: true },
+        new Set([1, 5]),
+      ).map((ship) => ship.id),
+    ).toEqual([2, 3, 4]);
+  });
+
+  it("applies Fleet and collected hides together", () => {
+    const fleet: ShipListItem = {
+      id: 6,
+      name: "Fleet B'rel Bird-of-Prey",
+      type: "Raider",
+      tier: 5,
+      faction: "Klingon Empire",
+      factionLede: "Klingon Empire",
+      displayPrefix: "Fleet",
+    };
+
+    expect(
+      filterShips(
+        [...ships, fleet],
+        {
+          ...createDefaultShipsListState(),
+          hideCollected: true,
+          hideFleet: true,
+        },
+        new Set([1]),
+      ).map((ship) => ship.id),
+    ).toEqual([2, 3, 4, 5]);
+  });
+
+  it("filters collection-style rows by the mapped ship catalog item", () => {
+    const rows = ships.map((ship) => ({ catalogId: ship.id, label: ship.name }));
+    const fleetRow = {
+      catalogId: 6,
+      label: "Fleet Advanced Escort",
+    };
+    const roster = [
+      ...ships,
+      {
+        id: 6,
+        name: "Fleet Advanced Escort",
+        type: "Escort",
+        tier: 5,
+        faction: "United Federation of Planets",
+        factionLede: "Federation",
+        displayPrefix: "Fleet",
+      },
+    ];
+    const byId = new Map(roster.map((ship) => [ship.id, ship]));
+
+    expect(
+      filterItemsByShip(
+        [...rows, fleetRow],
+        (row) => byId.get(row.catalogId)!,
+        { ...createDefaultShipsListState(), hideFleet: true },
+      ).map((row) => row.catalogId),
+    ).toEqual([1, 2, 3, 4, 5]);
+  });
+});
+
+describe("isFleetShip", () => {
+  it("matches Fleet prefix or the word Fleet in the name", () => {
+    expect(
+      isFleetShip({ name: "Advanced Escort", displayPrefix: null }),
+    ).toBe(false);
+    expect(
+      isFleetShip({
+        name: "Fleet Advanced Escort",
+        displayPrefix: "Fleet",
+      }),
+    ).toBe(true);
+    expect(
+      isFleetShip({ name: "Fleet Mogh Battlecruiser (T6)", displayPrefix: "" }),
+    ).toBe(true);
+    expect(
+      isFleetShip({
+        name: "B'rel Fleet Bird-of-Prey Retrofit",
+        displayPrefix: null,
+      }),
+    ).toBe(true);
+    expect(
+      isFleetShip({ name: "Starfleet Medical Science Vessel", displayPrefix: "" }),
+    ).toBe(false);
+  });
 });
 
 describe("getBinderPage", () => {
@@ -169,11 +284,14 @@ describe("getBinderPage", () => {
 describe("ships list query serialization", () => {
   it("round-trips query state", () => {
     const state = {
+      ...createDefaultShipsListState(),
       search: "escort",
       types: ["Escort"],
       factions: ["Federation"],
       tiers: [5, 6],
       costs: ["PPP5"],
+      hideCollected: true,
+      hideFleet: true,
       page: 2,
     };
 
@@ -195,5 +313,15 @@ describe("ships list query serialization", () => {
   it("detects empty query objects", () => {
     expect(shipsListQueryIsEmpty({})).toBe(true);
     expect(shipsListQueryIsEmpty({ q: "a" })).toBe(false);
+  });
+
+  it("treats hide flags and search as active filters", () => {
+    expect(shipsListFiltersAreActive(createDefaultShipsListState())).toBe(false);
+    expect(
+      shipsListFiltersAreActive({
+        ...createDefaultShipsListState(),
+        hideFleet: true,
+      }),
+    ).toBe(true);
   });
 });

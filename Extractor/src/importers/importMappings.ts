@@ -21,6 +21,7 @@ export const importMappings = {
   Infobox: {
     model: "infobox",
     strategy: "replace",
+    identityFields: ["name", "type"],
     mapper: mapInfobox,
   },
   Mastery: {
