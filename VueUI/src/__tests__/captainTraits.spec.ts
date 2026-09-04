@@ -7,6 +7,7 @@ import {
 import {
   buildCaptainTraitSlots,
   groupCaptainTraitSlots,
+  personalGroundSlotCount,
   personalSpaceSlotCount,
   traitAllowsCareer,
   traitAllowsRace,
@@ -53,9 +54,11 @@ describe("captain identity", () => {
 });
 
 describe("captain trait slots", () => {
-  it("gives Alien captains a tenth personal space slot", () => {
-    expect(personalSpaceSlotCount("federation", "human")).toBe(9);
-    expect(personalSpaceSlotCount("federation", "alien")).toBe(10);
+  it("gives every captain the upgrade personal slot, plus one more for Alien", () => {
+    expect(personalSpaceSlotCount("federation", "human")).toBe(10);
+    expect(personalSpaceSlotCount("federation", "alien")).toBe(11);
+    expect(personalGroundSlotCount("federation", "human")).toBe(10);
+    expect(personalGroundSlotCount("federation", "alien")).toBe(11);
     const human = buildCaptainTraitSlots({
       faction: "federation",
       race: "human",
@@ -65,10 +68,10 @@ describe("captain trait slots", () => {
       race: "alien",
     });
     expect(human.filter((slot) => slot.group === "personalSpace")).toHaveLength(
-      9,
+      10,
     );
     expect(alien.filter((slot) => slot.group === "personalSpace")).toHaveLength(
-      10,
+      11,
     );
     expect(human.filter((slot) => slot.group === "starship")).toHaveLength(5);
     expect(human.filter((slot) => slot.group === "shipSpecific")).toHaveLength(2);
@@ -218,7 +221,7 @@ describe("captain trait slots", () => {
     ]);
   });
 
-  it("drops the tenth personal fill when an Alien captain changes race", () => {
+  it("drops the Alien extra personal fill when the captain changes race", () => {
     let state = createCharacter(createEmptyCollectionState(), {
       name: "Alice",
       career: "tactical",
@@ -238,7 +241,7 @@ describe("captain trait slots", () => {
     };
     const result = equipCaptainTraitSlot(
       state,
-      { slotId: "personalSpace-9", itemId: 8, catalogKind: "trait" },
+      { slotId: "personalSpace-10", itemId: 8, catalogKind: "trait" },
       {
         slots,
         traits: [trait],

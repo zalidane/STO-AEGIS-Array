@@ -3,6 +3,7 @@ import {
   hasExtraPersonalTraitSlot,
   type CaptainCareer,
 } from "@/logic/captain/identity";
+import { EXTRA_PERSONAL_TRAIT_UNLOCK } from "@/logic/captain/upgrade";
 
 export type CaptainTraitGroup =
   | "personalSpace"
@@ -43,6 +44,7 @@ export type CaptainTraitSource = {
 };
 
 export const PERSONAL_SPACE_BASE_SLOTS = 9;
+export const PERSONAL_GROUND_BASE_SLOTS = 9;
 export const STARSHIP_BASE_SLOTS = 4;
 export const REPUTATION_BASE_SLOTS = 4;
 export const ACTIVE_REPUTATION_BASE_SLOTS = 4;
@@ -94,12 +96,31 @@ function numbered(
   }));
 }
 
-export function personalSpaceSlotCount(
+export function personalTraitSlotCount(
   factionId: string | null | undefined,
   raceId: string | null | undefined,
 ): number {
   return (
     PERSONAL_SPACE_BASE_SLOTS +
+    EXTRA_PERSONAL_TRAIT_UNLOCK +
+    (hasExtraPersonalTraitSlot(factionId, raceId) ? 1 : 0)
+  );
+}
+
+export function personalSpaceSlotCount(
+  factionId: string | null | undefined,
+  raceId: string | null | undefined,
+): number {
+  return personalTraitSlotCount(factionId, raceId);
+}
+
+export function personalGroundSlotCount(
+  factionId: string | null | undefined,
+  raceId: string | null | undefined,
+): number {
+  return (
+    PERSONAL_GROUND_BASE_SLOTS +
+    EXTRA_PERSONAL_TRAIT_UNLOCK +
     (hasExtraPersonalTraitSlot(factionId, raceId) ? 1 : 0)
   );
 }

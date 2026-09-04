@@ -14,6 +14,7 @@ import {
 import { toggleInclusiveValue } from "@/logic/shipsBinder";
 import type { BindScope, CatalogKind } from "@/logic/collection/types";
 import { defaultBindForKind } from "@/logic/collection/bind";
+import { useCollectionStore } from "@/stores/collection";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
 
 const props = defineProps<{
@@ -33,10 +34,13 @@ const props = defineProps<{
   facetFilters?: boolean;
 }>();
 
+const collectionStore = useCollectionStore();
+
 const search = ref("");
 const selectedId = ref<number | null>(null);
 const selectedTypes = ref<string[]>([]);
 const selectedEnvironments = ref<string[]>([]);
+const hideCollected = ref(false);
 
 const availableTypes = computed(() =>
   uniqueTraitFacetValues(props.items, "type"),
@@ -51,11 +55,25 @@ const showTypeFilters = computed(
 const showEnvironmentFilters = computed(
   () => props.facetFilters && availableEnvironments.value.length > 1,
 );
+const showHideCollected = computed(() => Boolean(props.collectKind));
+const showFilters = computed(
+  () =>
+    showTypeFilters.value ||
+    showEnvironmentFilters.value ||
+    showHideCollected.value,
+);
+
+const collectedIds = computed(() => {
+  if (!props.collectKind) return new Set<number>();
+  return collectionStore.ownedCatalogIds(props.collectKind);
+});
 
 const filteredItems = computed(() =>
   filterTraitBrowserItems(props.items, search.value, {
     types: selectedTypes.value,
     environments: selectedEnvironments.value,
+    hideCollected: hideCollected.value,
+    collectedIds: collectedIds.value,
   }),
 );
 
@@ -155,7 +173,7 @@ const selectedCollectBindChoicePrompt = computed(() => {
 
     <template v-else>
       <section
-        v-if="showTypeFilters || showEnvironmentFilters"
+        v-if="showFilters"
         class="trait-browser__filters"
         aria-label="Trait filters"
       >
@@ -215,6 +233,21 @@ const selectedCollectBindChoicePrompt = computed(() => {
             @click="toggleEnvironment(environment)"
           >
             {{ displayTraitEnvironment(environment) }}
+          </button>
+        </div>
+        <div
+          v-if="showHideCollected"
+          class="trait-browser__filter-group"
+          role="group"
+          aria-label="Visibility"
+        >
+          <button
+            type="button"
+            class="trait-browser__chip"
+            :class="{ 'trait-browser__chip--active': hideCollected }"
+            @click="hideCollected = !hideCollected"
+          >
+            Hide collected
           </button>
         </div>
       </section>

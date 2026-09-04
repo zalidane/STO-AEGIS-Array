@@ -32,6 +32,18 @@ import {
   groupCollectionByKind,
   resolveCollectionTab,
 } from "@/logic/collection/kindTabs";
+import {
+  COLLECTION_SHIPS_FILTERS_KEY,
+  createDefaultShipsListFilters,
+  createDefaultShipsListState,
+  filterItemsByShip,
+  readStoredShipsListState,
+  shipsListFiltersAreActive,
+  shipsListFiltersFromState,
+  writeStoredShipsListState,
+  type ShipListItem,
+  type ShipsListFilters,
+} from "@/logic/shipsBinder";
 import { getShipImageUrl } from "@/utils/shipImage";
 import {
   getItemImageUrl,
@@ -41,6 +53,8 @@ import {
 import WikiIcon from "@/components/shared/WikiIcon.vue";
 import CompareToggle from "@/components/compare/CompareToggle.vue";
 import CompareLaunch from "@/components/compare/CompareLaunch.vue";
+import ShipsListFiltersBar from "@/components/ships/ShipsListFiltersBar.vue";
+import { useAlignItemCatalog } from "@/composables/useAlignItemCatalog";
 
 const route = useRoute();
 const router = useRouter();
@@ -51,6 +65,7 @@ const { result: shipsResult } = useQuery(ShipsDocument);
 const { result: traitsResult } = useQuery(TraitsDocument);
 const { result: starshipResult } = useQuery(StarshipTraitsDocument);
 const { result: itemsResult } = useQuery(InfoboxesDocument);
+useAlignItemCatalog(() => itemsResult.value?.infoboxes);
 
 type Row = {
   entry: CollectionEntry;
@@ -163,6 +178,50 @@ const rows = computed<Row[]>(() => {
   });
 });
 
+const catalogShips = computed<ShipListItem[]>(
+  () => shipsResult.value?.ships ?? [],
+);
+
+const collectedShipIds = computed(() => store.ownedCatalogIds("ship"));
+
+const storedCollectionShipFilters = readStoredShipsListState(
+  sessionStorage,
+  COLLECTION_SHIPS_FILTERS_KEY,
+);
+const shipFilters = ref<ShipsListFilters>(
+  storedCollectionShipFilters
+    ? shipsListFiltersFromState(storedCollectionShipFilters)
+    : createDefaultShipsListFilters(),
+);
+
+watch(
+  shipFilters,
+  (filters) => {
+    writeStoredShipsListState(
+      { ...createDefaultShipsListState(), ...filters, page: 1 },
+      sessionStorage,
+      COLLECTION_SHIPS_FILTERS_KEY,
+    );
+  },
+  { deep: true },
+);
+
+function shipListItemForRow(row: Row): ShipListItem {
+  const ship = catalogShips.value.find((item) => item.id === row.entry.catalogId);
+  return {
+    id: row.entry.catalogId,
+    name: ship?.name ?? row.name,
+    type: ship?.type ?? null,
+    tier: ship?.tier ?? null,
+    faction: ship?.faction ?? null,
+    factionLede: ship?.factionLede ?? null,
+    displayClass: ship?.displayClass,
+    displayPrefix: ship?.displayPrefix,
+    displayType: ship?.displayType,
+    cost: ship?.cost,
+  };
+}
+
 const tabs = computed(() =>
   groupCollectionByKind(rows.value, (row) => row.entry.kind),
 );
@@ -186,6 +245,30 @@ watch(activeTab, (kind) => {
 const activeGroup = computed(
   () => tabs.value.find((tab) => tab.kind === activeTab.value) ?? tabs.value[0],
 );
+
+const displayedRows = computed(() => {
+  const groupRows = activeGroup.value?.rows ?? [];
+  if (activeTab.value !== "ship") return groupRows;
+  return filterItemsByShip(
+    groupRows,
+    shipListItemForRow,
+    shipFilters.value,
+    collectedShipIds.value,
+  );
+});
+
+const emptyCopy = computed(() => {
+  if (!activeGroup.value) return "Nothing collected yet.";
+  if (
+    activeTab.value === "ship" &&
+    activeGroup.value.rows.length > 0 &&
+    displayedRows.value.length === 0 &&
+    shipsListFiltersAreActive(shipFilters.value)
+  ) {
+    return "No ships match the current search and filters.";
+  }
+  return collectionKindEmptyCopy(activeGroup.value.kind);
+});
 </script>
 
 <template>
@@ -225,17 +308,20 @@ const activeGroup = computed(
         </v-tab>
       </v-tabs>
 
-      <div v-if="!activeGroup || activeGroup.rows.length === 0" class="empty-featured">
-        {{
-          activeGroup
-            ? collectionKindEmptyCopy(activeGroup.kind)
-            : "Nothing collected yet."
-        }}
+      <ShipsListFiltersBar
+        v-if="activeTab === 'ship'"
+        v-model="shipFilters"
+        class="collection-ship-filters"
+        :ships="catalogShips"
+      />
+
+      <div v-if="displayedRows.length === 0" class="empty-featured">
+        {{ emptyCopy }}
       </div>
 
       <div v-else class="collection-list">
         <RouterLink
-          v-for="row in activeGroup.rows"
+          v-for="row in displayedRows"
           :key="row.entry.id"
           :to="row.to"
           class="collection-row"
@@ -319,6 +405,10 @@ const activeGroup = computed(
   margin-left: 0.35rem;
   color: rgba(255, 255, 255, 0.55);
   font-size: 0.85em;
+}
+
+.collection-ship-filters {
+  margin-bottom: 0.85rem;
 }
 
 .collection-list {

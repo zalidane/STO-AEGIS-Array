@@ -13,8 +13,8 @@ function normalizedFileStem(raw: string): string {
   return withoutPrefix.replace(/_/g, " ").replace(/\s+/g, " ").trim();
 }
 
-/** ASCII and Unicode apostrophes — strip so hosted Linux/WAF paths do not 404. */
-const WIKI_APOSTROPHES = /['\u2018\u2019\u02BC]/g;
+/** ASCII/Unicode apostrophes and ampersands — strip so hosted Linux/WAF/URL paths do not 404. */
+const WIKI_APOSTROPHES = /['\u2018\u2019\u02BC&]/g;
 
 export function wikiLocalFilename(fileField: string): string {
   return normalizedFileStem(fileField).replace(/ /g, "_").replace(WIKI_APOSTROPHES, "");

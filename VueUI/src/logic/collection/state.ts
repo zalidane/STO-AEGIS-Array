@@ -547,6 +547,23 @@ export function visibleCatalogIds(
   );
 }
 
+/** Catalog ids the active captain has marked collected (own copies only). */
+export function catalogIdsOwnedByActive(
+  state: CollectionState,
+  kind: CatalogKind,
+): Set<number> {
+  const activeId = state.activeCharacterId;
+  if (!activeId) return new Set();
+
+  const ids = new Set<number>();
+  for (const entry of state.entries) {
+    if (entry.characterId === activeId && entry.kind === kind) {
+      ids.add(entry.catalogId);
+    }
+  }
+  return ids;
+}
+
 export function hydrateCollectionState(
   raw: unknown,
 ): CollectionState {
@@ -717,6 +734,14 @@ function isSlotFill(value: unknown): value is CollectionLoadout["slots"][number]
   }
   if (fill.quality != null && typeof fill.quality !== "string") return false;
   if (fill.mark != null && typeof fill.mark !== "string") return false;
+  if (fill.modifiers != null) {
+    if (
+      !Array.isArray(fill.modifiers) ||
+      !fill.modifiers.every((token) => typeof token === "string")
+    ) {
+      return false;
+    }
+  }
   if (fill.abilityRank != null && typeof fill.abilityRank !== "number") {
     return false;
   }

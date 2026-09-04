@@ -57,6 +57,7 @@ const loadout: CollectionLoadout = {
       catalogKind: "item",
       quality: "epic",
       mark: "XV",
+      modifiers: ["[Dmg]", "[CrtH]", "[Pen]"],
     },
     { slotId: "tacticalConsole-1", itemId: 12, catalogKind: "item" },
     { slotId: "starshipTrait-1", itemId: 20, catalogKind: "starshipTrait" },
@@ -79,6 +80,7 @@ describe("encodeSharePayload", () => {
     ]);
     expect(JSON.stringify(payload)).not.toContain("itemId");
     expect(payload.slots[0]?.quality).toBe("epic");
+    expect(payload.slots[0]?.modifiers).toEqual(["[Dmg]", "[CrtH]", "[Pen]"]);
   });
 
   it("keeps tray-skill roman rank when II and III share an officer rank", () => {
@@ -133,6 +135,7 @@ describe("resolveShareSlots", () => {
     const resolved = resolveShareSlots(payload, moved);
     expect(resolved.unresolved).toEqual([]);
     expect(resolved.slots.map((fill) => fill.itemId)).toEqual([1011, 1012, 1020]);
+    expect(resolved.slots[0]?.modifiers).toEqual(["[Dmg]", "[CrtH]", "[Pen]"]);
   });
 });
 

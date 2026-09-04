@@ -26,6 +26,9 @@ describe("wikiImage", () => {
     expect(
       wikiLocalFilename("File:Son'a Collector Science Dreadnought.jpg"),
     ).toBe("Sona_Collector_Science_Dreadnought.jpg");
+    expect(wikiLocalFilename("File:Fresh From R&R icon.png")).toBe(
+      "Fresh_From_RR_icon.png",
+    );
     expect(wikiLocalFilename("File:obeliskcarrier.jpg")).toBe(
       "obeliskcarrier.jpg",
     );
@@ -53,6 +56,13 @@ describe("wikiImage", () => {
         "/images/ships/ship-placeholder.png",
       ),
     ).toBe("/images/ships/Sona_Collector_Science_Dreadnought.jpg");
+    expect(
+      getWikiImageUrl(
+        "traits",
+        "File:Fresh From R&R icon.png",
+        "/images/traits/trait-placeholder.png",
+      ),
+    ).toBe("/images/traits/Fresh_From_RR_icon.png");
     expect(
       getWikiImageUrl(
         "ships",
@@ -96,6 +106,12 @@ describe("wikiImage", () => {
     );
     expect(getTraitImageUrl("Adaptive Defense", "Adaptive Defense (space)")).toBe(
       "/images/traits/Adaptive_Defense_(space)_icon.png",
+    );
+    expect(getTraitImageUrl("Fresh From R&R", null)).toBe(
+      "/images/traits/Fresh_From_RR_icon.png",
+    );
+    expect(getTraitImageUrl("Fresh From R&amp;R", null)).toBe(
+      "/images/traits/Fresh_From_RR_icon.png",
     );
     expect(
       getTraySkillImageUrl("Beams: Fire at Will"),

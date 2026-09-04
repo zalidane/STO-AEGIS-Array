@@ -29,9 +29,15 @@ import {
   setEntryBind,
   uncollectItem,
   uncollectMany,
+  catalogIdsOwnedByActive,
   visibleEntriesForActiveCharacter,
 } from "@/logic/collection/state";
 import { unusedAccountName } from "@/logic/collection/accounts";
+import {
+  alignCollectionToCatalog,
+  denseSerialRange,
+  remapSerialCatalogId,
+} from "@/logic/collection/serialCatalogIds";
 import {
   catalogKindFromSearchType,
   splitHitsByOwnership,
@@ -282,6 +288,18 @@ describe("collection state", () => {
       }).ownedByActive,
     ).toBe(true);
     expect(state.entries).toHaveLength(2);
+  });
+
+  it("lists catalog ids the active captain collected", () => {
+    let state = withCaptains();
+    state = collectItem(state, { kind: "ship", catalogId: 10 }, clock);
+    state = collectItem(state, { kind: "trait", catalogId: 3 }, clock);
+
+    expect([...catalogIdsOwnedByActive(state, "ship")]).toEqual([10]);
+    expect([...catalogIdsOwnedByActive(state, "trait")]).toEqual([3]);
+
+    state = { ...state, activeCharacterId: "id-1" };
+    expect(catalogIdsOwnedByActive(state, "ship").size).toBe(0);
   });
 
   it("shows a Phoenix copy on other captains only after it is marked unlocked for account", () => {
@@ -620,6 +638,66 @@ describe("search catalog collection mapping", () => {
         new Set([2]),
       ),
     ).toEqual({ missingIds: [1, 3], collectedIds: [2] });
+  });
+});
+
+describe("serial catalog id realignment", () => {
+  const currentIds = Array.from({ length: 10 }, (_, i) => 100 + i);
+
+  it("detects a dense autoincrement block", () => {
+    expect(denseSerialRange(currentIds)).toEqual({ min: 100, count: 10 });
+    expect(denseSerialRange([1, 2, 4])).toBeNull();
+  });
+
+  it("maps a prior SERIAL generation onto the current block", () => {
+    expect(remapSerialCatalogId(95, { min: 100, count: 10 })).toBe(105);
+    expect(remapSerialCatalogId(85, { min: 100, count: 10 })).toBe(105);
+    expect(remapSerialCatalogId(103, { min: 100, count: 10 })).toBe(103);
+    expect(remapSerialCatalogId(61170, { min: 61611, count: 4277 })).toBe(65447);
+  });
+
+  it("realigns collected items and seated loadout fills", () => {
+    let state = withCaptains();
+    state = collectItem(state, { kind: "item", catalogId: 95 }, clock);
+    state = collectItem(state, { kind: "ship", catalogId: 95 }, clock);
+    state = {
+      ...state,
+      loadouts: [
+        {
+          id: "lo-1",
+          characterId: "id-2",
+          shipId: 1,
+          name: "Test",
+          createdAt: "2026-08-22T00:00:00.000Z",
+          updatedAt: "2026-08-22T00:00:00.000Z",
+          slots: [
+            { slotId: "fore-1", itemId: 85 },
+            { slotId: "trait-1", itemId: 85, catalogKind: "trait" },
+          ],
+        },
+      ],
+    };
+
+    const aligned = alignCollectionToCatalog(state, "item", currentIds);
+    expect(
+      aligned.entries
+        .filter((entry) => entry.kind === "item")
+        .map((entry) => entry.catalogId),
+    ).toEqual([105]);
+    expect(
+      aligned.entries
+        .filter((entry) => entry.kind === "ship")
+        .map((entry) => entry.catalogId),
+    ).toEqual([95]);
+    expect(aligned.loadouts[0]?.slots.map((slot) => slot.itemId)).toEqual([
+      105, 85,
+    ]);
+  });
+
+  it("leaves state untouched when ids already match", () => {
+    let state = withCaptains();
+    state = collectItem(state, { kind: "item", catalogId: 103 }, clock);
+    expect(alignCollectionToCatalog(state, "item", currentIds)).toBe(state);
   });
 });
 

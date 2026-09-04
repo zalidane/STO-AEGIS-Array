@@ -28,6 +28,7 @@ import {
 } from "@/logic/collection/searchCatalog";
 import { bucketSearchHits, resolveSearchTab } from "@/logic/searchResults";
 import type { CatalogKind } from "@/logic/collection/types";
+import { useAlignItemCatalog } from "@/composables/useAlignItemCatalog";
 
 const route = useRoute();
 const router = useRouter();
@@ -48,6 +49,7 @@ const { result, loading, error } = useQuery(SearchDocument, () => ({
 const { result: shipsResult } = useQuery(ShipsDocument);
 const { result: starshipResult } = useQuery(StarshipTraitsDocument);
 const { result: itemsResult } = useQuery(InfoboxesDocument);
+useAlignItemCatalog(() => itemsResult.value?.infoboxes);
 
 const catalogSources = computed<CatalogBindSources>(() => ({
   ships: shipsResult.value?.ships ?? [],

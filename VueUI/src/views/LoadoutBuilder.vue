@@ -5,6 +5,7 @@ import { useQuery } from "@vue/apollo-composable";
 import { storeToRefs } from "pinia";
 import {
   InfoboxesDocument,
+  ModifiersDocument,
   SetBonusesDocument,
   ShipDocument,
   ShipsDocument,
@@ -22,8 +23,10 @@ import WikiIcon from "@/components/shared/WikiIcon.vue";
 import CaptainTraitsPanel from "@/components/loadout/CaptainTraitsPanel.vue";
 import BoffStationsPanel from "@/components/loadout/BoffStationsPanel.vue";
 import ShareBuildDialog from "@/components/loadout/ShareBuildDialog.vue";
+import SlotSuffixModifiers from "@/components/loadout/SlotSuffixModifiers.vue";
 import CombatLogPanel from "@/components/loadout/CombatLogPanel.vue";
 import { useCollectionStore } from "@/stores/collection";
+import { useAlignItemCatalog } from "@/composables/useAlignItemCatalog";
 import { useShareStore } from "@/stores/share";
 import {
   resolvedBindForEntry,
@@ -92,10 +95,17 @@ import {
   displayedQuality,
   ITEM_MARKS,
   ITEM_QUALITIES,
+  previousSameKindFill,
   qualityColor,
   slotUsesItemMods,
   type ItemQuality,
 } from "@/logic/loadout/slotQuality";
+import {
+  applyModifierPick,
+  modifierSocketsForItem,
+  slotShowsSuffixModifiers,
+  type LoadoutModifier,
+} from "@/logic/loadout/slotModifiers";
 import {
   BOFF_CATALOG_KIND,
   boffPowerDisplayName,
@@ -143,6 +153,7 @@ const { result: shipResult, loading: shipLoading, error: shipError } = useQuery(
 );
 const { result: shipsResult } = useQuery(ShipsDocument);
 const { result: itemsResult, loading: itemsLoading } = useQuery(InfoboxesDocument);
+useAlignItemCatalog(() => itemsResult.value?.infoboxes);
 const { result: traitsResult, loading: traitsLoading } = useQuery(
   StarshipTraitsDocument,
 );
@@ -152,6 +163,7 @@ const { result: traySkillsResult, loading: traySkillsLoading } = useQuery(
   TraySkillsDocument,
 );
 const { result: setsResult } = useQuery(SetBonusesDocument);
+const { result: modifiersResult } = useQuery(ModifiersDocument);
 
 const ship = computed(() => shipResult.value?.ship ?? null);
 const fleetShips = computed(() => {
@@ -184,6 +196,10 @@ const itemByKey = computed(() => {
   }
   return map;
 });
+
+const modifierCatalog = computed<LoadoutModifier[]>(
+  () => modifiersResult.value?.modifiers ?? [],
+);
 
 const catalogBindSources = computed(() => ({
   ships: fleetShips.value,
@@ -710,6 +726,46 @@ function onSlotMarkChange(slot: HullSlot, event: Event) {
   });
 }
 
+function suffixSockets(slot: HullSlot) {
+  const item = itemInSlot(slot.id);
+  const fill = fillForSlot(activeLoadout.value, slot.id);
+  if (!item) return [];
+  if (
+    !slotShowsSuffixModifiers({
+      kind: slot.kind,
+      itemType: item.type,
+      itemName: item.name,
+      selected: fill?.modifiers,
+      catalog: modifierCatalog.value,
+    })
+  ) {
+    return [];
+  }
+  return modifierSocketsForItem({
+    kind: slot.kind,
+    quality: slotQuality(slot),
+    itemType: item.type,
+    itemName: item.name,
+    selected: fill?.modifiers,
+    catalog: modifierCatalog.value,
+  });
+}
+
+function onSlotModifierChange(slot: HullSlot, index: number, token: string) {
+  const loadout = activeLoadout.value;
+  const fill = fillForSlot(loadout, slot.id);
+  if (!loadout || !fill || !itemInSlot(slot.id)) return;
+  store.updateSlotMods(loadout.id, slot.id, {
+    modifiers:
+      applyModifierPick({
+        selected: fill.modifiers,
+        index,
+        token,
+        quality: slotQuality(slot),
+      }) ?? [],
+  });
+}
+
 function collectAllSeated() {
   const requests = collectAllRequests.value;
   if (requests.length === 0) return;
@@ -729,8 +785,36 @@ function equipContext() {
     hullSlots: hullSlots.value,
     items: catalogItems.value,
     ownedKeys: ownedKeys.value,
+    modifiers: modifierCatalog.value,
     requireOwned: onlyCollected.value,
   };
+}
+
+function onHullSlotClick(slot: HullSlot) {
+  if (itemInSlot(slot.id)) {
+    openPicker(slot);
+    return;
+  }
+  const loadout = activeLoadout.value;
+  const previous = previousSameKindFill(
+    hullSlots.value,
+    loadout?.slots ?? [],
+    slot,
+  );
+  if (loadout && previous && slot.kind !== "starshipTrait") {
+    const result = store.equipSlot(
+      {
+        loadoutId: loadout.id,
+        slotId: slot.id,
+        itemId: previous.itemId,
+        catalogKind:
+          previous.catalogKind === "starshipTrait" ? "starshipTrait" : "item",
+      },
+      equipContext(),
+    );
+    if (result.ok) return;
+  }
+  openPicker(slot);
 }
 
 function trySeatPendingHullGrants() {
@@ -1102,7 +1186,7 @@ const loading = computed(
                     :style="slotFillStyle(slot)"
                     :title="slotTitle(slot)"
                     :aria-label="slotTitle(slot)"
-                    @click="openPicker(slot)"
+                    @click="onHullSlotClick(slot)"
                   >
                     <WikiIcon
                       v-if="itemInSlot(slot.id)"
@@ -1178,6 +1262,14 @@ const loading = computed(
                         {{ mark }}
                       </option>
                     </select>
+                    <SlotSuffixModifiers
+                      v-if="suffixSockets(slot).length"
+                      class="equip-slot__suffixes"
+                      :sockets="suffixSockets(slot)"
+                      :disabled="!itemInSlot(slot.id)"
+                      :aria-prefix="slot.label"
+                      @pick="(index, token) => onSlotModifierChange(slot, index, token)"
+                    />
                   </div>
                 </div>
               </div>
@@ -1614,7 +1706,7 @@ const loading = computed(
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: 5.6rem;
+  width: 6.1rem;
   gap: 0.18rem;
 }
 
@@ -1723,6 +1815,10 @@ const loading = computed(
 .equip-mod:focus-visible,
 .quality-menu__choice:focus-visible {
   outline: 1px solid rgba(125, 211, 252, 0.8);
+}
+
+.equip-slot__suffixes {
+  grid-column: 1 / -1;
 }
 
 .loadout-slots__actions {

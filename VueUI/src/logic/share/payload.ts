@@ -18,6 +18,7 @@ export type ShareSlot = {
   type?: string | null;
   quality?: string;
   mark?: string;
+  modifiers?: string[];
   abilityRank?: number;
 };
 
@@ -71,6 +72,7 @@ export function encodeSharePayload(input: {
     if (item.type) slot.type = item.type;
     if (fill.quality) slot.quality = fill.quality;
     if (fill.mark) slot.mark = fill.mark;
+    if (fill.modifiers?.length) slot.modifiers = [...fill.modifiers];
     if (fill.abilityRank != null) slot.abilityRank = fill.abilityRank;
     slots.push(slot);
   }
@@ -130,6 +132,7 @@ export function resolveShareSlots(
     };
     if (slot.quality) fill.quality = slot.quality;
     if (slot.mark) fill.mark = slot.mark;
+    if (slot.modifiers?.length) fill.modifiers = [...slot.modifiers];
     if (slot.abilityRank != null) fill.abilityRank = slot.abilityRank;
     slots.push(fill);
   }

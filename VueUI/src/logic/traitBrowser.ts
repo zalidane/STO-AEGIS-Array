@@ -119,6 +119,8 @@ export function displayTraitEnvironment(
 export type TraitBrowserFacets = {
   types?: readonly string[];
   environments?: readonly string[];
+  hideCollected?: boolean;
+  collectedIds?: ReadonlySet<number>;
 };
 
 function matchesFacet(
@@ -159,6 +161,9 @@ export function filterTraitBrowserItems(
   return items.filter((item) => {
     if (!matchesFacet(types, item.type)) return false;
     if (!matchesFacet(environments, item.environment)) return false;
+    if (facets?.hideCollected && facets.collectedIds?.has(item.id)) {
+      return false;
+    }
     if (!needle) return true;
 
     const haystack = [

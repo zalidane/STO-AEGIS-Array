@@ -66,11 +66,17 @@ export function qualityFromRarity(
   );
 }
 
-export function inheritModsFromPreviousSameKind(
+export type InheritedSlotMods = {
+  quality?: string;
+  mark?: string;
+  modifiers?: string[];
+};
+
+export function previousSameKindFill(
   slots: ReadonlyArray<{ id: string; kind: HullSlotKind; index: number }>,
   fills: ReadonlyArray<LoadoutSlotFill>,
   current: { kind: HullSlotKind; index: number },
-): { quality?: string; mark?: string } {
+): LoadoutSlotFill | undefined {
   const fillBySlot = new Map(fills.map((fill) => [fill.slotId, fill]));
   const earlier = slots
     .filter((slot) => slot.kind === current.kind && slot.index < current.index)
@@ -78,10 +84,23 @@ export function inheritModsFromPreviousSameKind(
 
   for (const slot of earlier) {
     const fill = fillBySlot.get(slot.id);
-    if (!fill) continue;
-    return { quality: fill.quality, mark: fill.mark };
+    if (fill) return fill;
   }
-  return {};
+  return undefined;
+}
+
+export function inheritModsFromPreviousSameKind(
+  slots: ReadonlyArray<{ id: string; kind: HullSlotKind; index: number }>,
+  fills: ReadonlyArray<LoadoutSlotFill>,
+  current: { kind: HullSlotKind; index: number },
+): InheritedSlotMods {
+  const fill = previousSameKindFill(slots, fills, current);
+  if (!fill) return {};
+  return {
+    quality: fill.quality,
+    mark: fill.mark,
+    ...(fill.modifiers?.length ? { modifiers: [...fill.modifiers] } : {}),
+  };
 }
 
 export function defaultItemMark(
@@ -99,13 +118,15 @@ export function modsForNewFill(input: {
   kind: HullSlotKind;
   catalogKind: string;
   existing?: LoadoutSlotFill;
-  inherited?: { quality?: string; mark?: string };
+  inherited?: InheritedSlotMods;
   rarity?: string | null;
   itemType?: string | null;
-}): { quality?: string; mark?: string } {
+}): InheritedSlotMods {
   if (!slotUsesItemMods(input.kind) || input.catalogKind !== "item") {
     return {};
   }
+  const modifiers =
+    input.existing?.modifiers ?? input.inherited?.modifiers;
   return {
     quality:
       input.existing?.quality ??
@@ -115,6 +136,7 @@ export function modsForNewFill(input: {
       input.existing?.mark ??
       input.inherited?.mark ??
       defaultItemMark(input.kind, input.itemType),
+    ...(modifiers?.length ? { modifiers: [...modifiers] } : {}),
   };
 }
 

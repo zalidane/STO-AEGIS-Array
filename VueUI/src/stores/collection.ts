@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 import {
+  catalogIdsOwnedByActive,
   collectItem,
   collectMany as collectManyItems,
   collectionStatus,
@@ -19,6 +20,7 @@ import {
   updateAccount,
   updateCharacter,
 } from "@/logic/collection/state";
+import { alignCollectionToCatalog } from "@/logic/collection/serialCatalogIds";
 import {
   applyLoadout,
   attachCombatParse,
@@ -210,6 +212,17 @@ export const useCollectionStore = defineStore("collection", () => {
     );
   }
 
+  function ownedCatalogIds(kind: CatalogKind) {
+    return catalogIdsOwnedByActive(state.value, kind);
+  }
+
+  function alignCatalog(kind: CatalogKind, catalogIds: readonly number[]) {
+    const next = alignCollectionToCatalog(state.value, kind, catalogIds);
+    if (next === state.value) return;
+    state.value = next;
+    persist();
+  }
+
   const loadouts = computed(() =>
     loadoutsForCharacter(state.value, state.value.activeCharacterId),
   );
@@ -254,7 +267,7 @@ export const useCollectionStore = defineStore("collection", () => {
   function updateSlotMods(
     loadoutId: string,
     slotId: string,
-    mods: { quality?: string; mark?: string },
+    mods: { quality?: string; mark?: string; modifiers?: string[] },
   ) {
     state.value = updateLoadoutSlotMods(state.value, {
       loadoutId,
@@ -363,6 +376,8 @@ export const useCollectionStore = defineStore("collection", () => {
     bindForActive,
     statusFor,
     isOwnedByActive,
+    ownedCatalogIds,
+    alignCatalog,
     addLoadout,
     updateLoadoutName,
     removeLoadout,

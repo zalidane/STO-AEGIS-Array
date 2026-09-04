@@ -484,7 +484,7 @@ describe("loadout equip", () => {
     expect(withLoadout().loadouts[0]?.name).toBe("Build 1");
   });
 
-  it("stores quality and mark and copies them onto the next same-kind slot", () => {
+  it("stores quality, mark, and suffix mods and copies them onto the next same-kind slot", () => {
     let state = withLoadout();
     const loadoutId = state.loadouts[0]!.id;
     const first = equipLoadoutSlot(
@@ -503,7 +503,13 @@ describe("loadout equip", () => {
     state = applyLoadout(state, first.loadout);
     state = updateLoadoutSlotMods(
       state,
-      { loadoutId, slotId: "foreWeapon-0", quality: "Epic", mark: "XII" },
+      {
+        loadoutId,
+        slotId: "foreWeapon-0",
+        quality: "Epic",
+        mark: "XII",
+        modifiers: ["[Dmg]", "[CrtH]", "[Dmg]", "[Pen]", "[Ac/Dm]"],
+      },
       clock,
     );
     const second = equipLoadoutSlot(
@@ -520,6 +526,61 @@ describe("loadout equip", () => {
       itemId: 1,
       quality: "Epic",
       mark: "XII",
+      modifiers: ["[Dmg]", "[CrtH]", "[Dmg]", "[Pen]", "[Ac/Dm]"],
+    });
+  });
+
+  it("does not duplicate a unique item onto the next same-kind slot", () => {
+    let state = withLoadout();
+    const loadoutId = state.loadouts[0]!.id;
+    const first = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "aftWeapon-0", itemId: 2 },
+      context,
+      clock,
+    );
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    state = applyLoadout(state, first.loadout);
+    const second = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "aftWeapon-1", itemId: 2 },
+      context,
+      clock,
+    );
+    expect(second).toEqual({ ok: false, reason: "equip-limit" });
+  });
+
+  it("drops the epic suffix when quality falls below Epic", () => {
+    let state = withLoadout();
+    const loadoutId = state.loadouts[0]!.id;
+    const seated = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "foreWeapon-0", itemId: 1 },
+      context,
+      clock,
+    );
+    expect(seated.ok).toBe(true);
+    if (!seated.ok) return;
+    state = applyLoadout(state, seated.loadout);
+    state = updateLoadoutSlotMods(
+      state,
+      {
+        loadoutId,
+        slotId: "foreWeapon-0",
+        quality: "Epic",
+        modifiers: ["[Dmg]", "[CrtH]", "[Dmg]", "[Pen]", "[Ac/Dm]"],
+      },
+      clock,
+    );
+    state = updateLoadoutSlotMods(
+      state,
+      { loadoutId, slotId: "foreWeapon-0", quality: "Ultra Rare" },
+      clock,
+    );
+    expect(state.loadouts[0]!.slots[0]).toMatchObject({
+      quality: "Ultra Rare",
+      modifiers: ["[Dmg]", "[CrtH]", "[Dmg]", "[Pen]"],
     });
   });
 });
@@ -605,6 +666,7 @@ describe("hydrateCollectionState v1 to v3", () => {
               catalogKind: "item",
               quality: "Epic",
               mark: "Mk XII",
+              modifiers: ["[Dmg]", "[CrtH]", "[Pen]"],
             },
           ],
         },
@@ -613,6 +675,7 @@ describe("hydrateCollectionState v1 to v3", () => {
     expect(migrated.loadouts[0]?.slots[0]).toMatchObject({
       quality: "Epic",
       mark: "Mk XII",
+      modifiers: ["[Dmg]", "[CrtH]", "[Pen]"],
     });
   });
 });

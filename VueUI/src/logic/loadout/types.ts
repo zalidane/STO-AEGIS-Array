@@ -11,6 +11,8 @@ export type LoadoutSlotFill = {
   quality?: string;
   /** Seated copy mark level, e.g. XII or ∞. */
   mark?: string;
+  /** Suffix modifier tokens in socket order, e.g. [CrtH]. */
+  modifiers?: string[];
   /** 0-based tray-skill rank (I=0). Used when II and III share an officer rank. */
   abilityRank?: number;
 };
@@ -58,6 +60,8 @@ export type LoadoutEquipContext = {
   }>;
   items: ReadonlyArray<LoadoutItem>;
   ownedKeys: ReadonlySet<string>;
+  /** Wiki suffix modifiers used to prune inherited tokens. */
+  modifiers?: ReadonlyArray<import("./slotModifiers").LoadoutModifier>;
   /** When false, unowned catalog items may still be seated. Defaults to true. */
   requireOwned?: boolean;
 };

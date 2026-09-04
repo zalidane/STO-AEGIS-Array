@@ -3,6 +3,7 @@ import { parseShipCost, shipHasCurrencyCode } from "@/utils/parsers/shipCost";
 export const BINDER_SIDE_SIZE = 9;
 export const BINDER_PAGE_SIZE = BINDER_SIDE_SIZE * 2;
 export const SHIPS_LIST_STATE_KEY = "sto-aegis:ships-list-state";
+export const COLLECTION_SHIPS_FILTERS_KEY = "sto-aegis:collection-ships-filters";
 
 export type ShipListItem = {
   id: number;
@@ -24,6 +25,8 @@ export type ShipsListFilters = {
   factions: string[];
   tiers: number[];
   costs: string[];
+  hideCollected?: boolean;
+  hideFleet?: boolean;
 };
 
 export type ShipsListState = ShipsListFilters & {
@@ -108,6 +111,27 @@ function matchesTier(ship: ShipListItem, tiers: readonly number[]): boolean {
   return ship.tier != null && tiers.includes(ship.tier);
 }
 
+/** Fleet hulls use a Fleet display prefix or the word "Fleet" in the name. */
+export function isFleetShip(
+  ship: Pick<ShipListItem, "name" | "displayPrefix">,
+): boolean {
+  const prefix = ship.displayPrefix?.trim().toLowerCase();
+  if (prefix === "fleet") return true;
+  return /\bfleet\b/i.test(ship.name);
+}
+
+function parseBoolFlag(value: unknown): boolean {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === true || raw === 1) return true;
+  if (typeof raw === "string") {
+    const normalized = raw.trim().toLowerCase();
+    return normalized === "1" || normalized === "true";
+  }
+  return false;
+}
+
+const EMPTY_COLLECTED_IDS: ReadonlySet<number> = new Set();
+
 /** True when a ship is affiliated with any of the selected faction filters. */
 export function shipMatchesFaction(
   ship: ShipListItem,
@@ -178,16 +202,49 @@ export function prioritizeShipsByFaction<T extends ShipListItem>(
 export function filterShips<T extends ShipListItem>(
   ships: readonly T[],
   filters: ShipsListFilters,
+  collectedIds: ReadonlySet<number> = EMPTY_COLLECTED_IDS,
 ): T[] {
-  const filtered = ships.filter(
-    (ship) =>
-      matchesSearch(ship, filters.search) &&
-      matchesType(ship, filters.types) &&
-      matchesTier(ship, filters.tiers) &&
-      matchesCost(ship, filters.costs ?? []),
-  );
+  const filtered = ships.filter((ship) => {
+    if (!matchesSearch(ship, filters.search)) return false;
+    if (!matchesType(ship, filters.types)) return false;
+    if (!matchesTier(ship, filters.tiers)) return false;
+    if (!matchesCost(ship, filters.costs ?? [])) return false;
+    if (filters.hideCollected && collectedIds.has(ship.id)) return false;
+    if (filters.hideFleet && isFleetShip(ship)) return false;
+    return true;
+  });
 
   return prioritizeShipsByFaction(filtered, filters.factions);
+}
+
+/**
+ * Filter any row list by mapping each row onto a ship catalog item.
+ * Faction chips still promote rather than exclude, matching the registry.
+ */
+export function filterItemsByShip<T>(
+  items: readonly T[],
+  toShip: (item: T) => ShipListItem,
+  filters: ShipsListFilters,
+  collectedIds: ReadonlySet<number> = EMPTY_COLLECTED_IDS,
+): T[] {
+  const tagged = items.map((item, index) => ({
+    ...toShip(item),
+    __item: item,
+    __index: index,
+  }));
+  return filterShips(tagged, filters, collectedIds).map((row) => row.__item);
+}
+
+export function shipsListFiltersAreActive(filters: ShipsListFilters): boolean {
+  return (
+    filters.search.trim().length > 0 ||
+    filters.types.length > 0 ||
+    filters.factions.length > 0 ||
+    filters.tiers.length > 0 ||
+    (filters.costs?.length ?? 0) > 0 ||
+    Boolean(filters.hideCollected) ||
+    Boolean(filters.hideFleet)
+  );
 }
 
 export function getBinderPageCount(itemCount: number): number {
@@ -239,8 +296,22 @@ export function createDefaultShipsListState(): ShipsListState {
     factions: [],
     tiers: [],
     costs: [],
+    hideCollected: false,
+    hideFleet: false,
     page: 1,
   };
+}
+
+export function createDefaultShipsListFilters(): ShipsListFilters {
+  const { page: _page, ...filters } = createDefaultShipsListState();
+  return filters;
+}
+
+export function shipsListFiltersFromState(
+  state: ShipsListState,
+): ShipsListFilters {
+  const { page: _page, ...filters } = state;
+  return filters;
 }
 
 export function parseShipsListQuery(
@@ -253,6 +324,8 @@ export function parseShipsListQuery(
     factions: uniqueSortedStrings(parseCsv(query.faction)),
     tiers: uniqueSortedTiers(parseTierCsv(query.tier)),
     costs: uniqueSortedStrings(parseCsv(query.cost)),
+    hideCollected: parseBoolFlag(query.hideCollected),
+    hideFleet: parseBoolFlag(query.hideFleet),
     page: Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1,
   };
 }
@@ -273,6 +346,8 @@ export function serializeShipsListQuery(
   if ((state.costs?.length ?? 0) > 0) {
     query.cost = [...state.costs].sort((a, b) => a.localeCompare(b)).join(",");
   }
+  if (state.hideCollected) query.hideCollected = "1";
+  if (state.hideFleet) query.hideFleet = "1";
   if (state.page > 1) query.page = String(state.page);
   return query;
 }
@@ -297,15 +372,18 @@ export function shipsListQueryIsEmpty(
     !query.faction &&
     !query.tier &&
     !query.cost &&
+    !query.hideCollected &&
+    !query.hideFleet &&
     !query.page
   );
 }
 
 export function readStoredShipsListState(
   storage: Pick<Storage, "getItem"> = sessionStorage,
+  key: string = SHIPS_LIST_STATE_KEY,
 ): ShipsListState | null {
   try {
-    const raw = storage.getItem(SHIPS_LIST_STATE_KEY);
+    const raw = storage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ShipsListState>;
     return {
@@ -322,6 +400,8 @@ export function readStoredShipsListState(
       costs: Array.isArray(parsed.costs)
         ? uniqueSortedStrings(parsed.costs.map(String))
         : [],
+      hideCollected: parsed.hideCollected === true,
+      hideFleet: parsed.hideFleet === true,
       page:
         typeof parsed.page === "number" && parsed.page > 0
           ? Math.floor(parsed.page)
@@ -335,6 +415,7 @@ export function readStoredShipsListState(
 export function writeStoredShipsListState(
   state: ShipsListState,
   storage: Pick<Storage, "setItem"> = sessionStorage,
+  key: string = SHIPS_LIST_STATE_KEY,
 ): void {
-  storage.setItem(SHIPS_LIST_STATE_KEY, JSON.stringify(state));
+  storage.setItem(key, JSON.stringify(state));
 }
