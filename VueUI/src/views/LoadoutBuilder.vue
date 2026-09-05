@@ -1,22 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter, RouterLink } from "vue-router";
-import { useQuery } from "@vue/apollo-composable";
 import { storeToRefs } from "pinia";
-import {
-  InfoboxesDocument,
-  ModifiersDocument,
-  SetBonusesDocument,
-  ShipDocument,
-  ShipsDocument,
-  StarshipTraitsDocument,
-  TraitsDocument,
-  TraySkillsDocument,
-  type InfoboxesQuery,
-  type StarshipTraitsQuery,
-  type TraitsQuery,
-  type TraySkillsQuery,
-} from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
@@ -26,20 +11,15 @@ import ShareBuildDialog from "@/components/loadout/ShareBuildDialog.vue";
 import SlotSuffixModifiers from "@/components/loadout/SlotSuffixModifiers.vue";
 import CombatLogPanel from "@/components/loadout/CombatLogPanel.vue";
 import { useCollectionStore } from "@/stores/collection";
-import { useAlignItemCatalog } from "@/composables/useAlignItemCatalog";
 import { useShareStore } from "@/stores/share";
-import {
-  resolvedBindForEntry,
-  visibleCatalogIds,
-  ownedCopyCount,
-} from "@/logic/collection/state";
+import { useLoadoutCatalog } from "@/composables/useLoadoutCatalog";
+import { useLoadoutPicker } from "@/composables/useLoadoutPicker";
+import { ownedCopyCount } from "@/logic/collection/state";
 import { bindScopeFromCatalog } from "@/logic/collection/catalogBind";
-import type { CollectionEntry } from "@/logic/collection/types";
 import { displayInfoboxType } from "@/logic/collection/itemBrowser";
 import {
   buildHullSlots,
   groupHullSlots,
-  slotForGrantedConsole,
   type HullSlot,
 } from "@/logic/loadout/hullSlots";
 import {
@@ -49,24 +29,22 @@ import {
 } from "@/logic/loadout/state";
 import {
   equippedItemsForLoadout,
-  itemFitsHullSlot,
-  itemHasOpenCopy,
-  loadoutOwnershipKey,
   matchSetBonuses,
   shortSetPieceName,
 } from "@/logic/loadout/setBonus";
 import { normalizeWikiPlainText } from "@/logic/wikiPlainText";
-import { ownedKeysIncludingHullGrants } from "@/logic/loadout/hullGrants";
+import {
+  asBoffPower,
+  lookupLoadoutItem,
+} from "@/logic/loadout/catalogMap";
+import { fittingCaptainTraits, fittingItems } from "@/logic/loadout/pickerCandidates";
+import { pendingHullGrantEquips } from "@/logic/loadout/hullGrantSeat";
 import {
   buildCaptainTraitSlots,
-  captainTraitOwnershipKey,
-  fillForCaptainSlot,
   groupCaptainTraitSlots,
   shipSpecificSectionLabel,
-  traitFitsCaptainSlot,
   type CaptainTraitGroup,
   type CaptainTraitSlot,
-  type CaptainTraitSource,
 } from "@/logic/loadout/captainTraits";
 import {
   careerLabel,
@@ -80,14 +58,6 @@ import {
   splitShipAbilities,
 } from "@/logic/loadout/loadoutCosts";
 import type { LoadoutItem } from "@/logic/loadout/types";
-import {
-  loadoutItemSearchText,
-  matchesPickerQuery,
-} from "@/logic/loadout/pickerSearch";
-import {
-  preferredItemIdsForNextSlot,
-  rankPickerCandidates,
-} from "@/logic/loadout/pickerRank";
 import { collectRequestsForSeated } from "@/logic/loadout/collectSeated";
 import { encodeSharePayload } from "@/logic/share/payload";
 import {
@@ -104,38 +74,16 @@ import {
   applyModifierPick,
   modifierSocketsForItem,
   slotShowsSuffixModifiers,
-  type LoadoutModifier,
 } from "@/logic/loadout/slotModifiers";
 import {
-  BOFF_CATALOG_KIND,
   boffPowerDisplayName,
   boffRankAbbrev,
   boffSlotIds,
   buildBoffStations,
-  powerRankIndexesForSlot,
   stationForSlot,
-  type BoffPlayableCareer,
-  type BoffPowerSource,
-  type BoffStationSlot,
 } from "@/logic/loadout/boffPowers";
 import { getBoffSeatColors, toBoffSeatView } from "@/mappers/boffColors";
 import { abbreviateBoffPart } from "@/utils/formatters";
-import { getItemImageUrl, getStarshipTraitImageUrl, getTraitImageUrl, getTraySkillImageUrl } from "@/utils/wikiImage";
-
-const EQUIP_ERROR: Record<string, string> = {
-  "no-character": "Create a captain first.",
-  "unknown-loadout": "That loadout is missing.",
-  "unknown-slot": "That slot is not on this hull.",
-  "unknown-item": "That item is not in the catalog.",
-  "not-owned": "Collect this item before seating it.",
-  "illegal-slot": "That item does not fit this slot.",
-  "equip-limit": "This unique item is already seated.",
-  "locked-slot": "That slot is locked.",
-};
-
-function equipMessage(reason: string): string {
-  return EQUIP_ERROR[reason] ?? reason;
-}
 
 const route = useRoute();
 const router = useRouter();
@@ -146,33 +94,27 @@ const shipId = computed(() => Number(route.params.id));
 const selectedId = ref<string | null>(
   typeof route.query.loadout === "string" ? route.query.loadout : null,
 );
+const draftName = ref("");
+const pendingUniqueSeatId = ref<string | null>(null);
+const onlyCollected = ref(true);
+const shareOpen = ref(false);
+const shareStore = useShareStore();
 
-const { result: shipResult, loading: shipLoading, error: shipError } = useQuery(
-  ShipDocument,
-  () => ({ id: shipId.value }),
-);
-const { result: shipsResult } = useQuery(ShipsDocument);
-const { result: itemsResult, loading: itemsLoading } = useQuery(InfoboxesDocument);
-useAlignItemCatalog(() => itemsResult.value?.infoboxes);
-const { result: traitsResult, loading: traitsLoading } = useQuery(
-  StarshipTraitsDocument,
-);
-const { result: personalTraitsResult, loading: personalTraitsLoading } =
-  useQuery(TraitsDocument);
-const { result: traySkillsResult, loading: traySkillsLoading } = useQuery(
-  TraySkillsDocument,
-);
-const { result: setsResult } = useQuery(SetBonusesDocument);
-const { result: modifiersResult } = useQuery(ModifiersDocument);
+const {
+  ship,
+  shipError,
+  fleetShips,
+  catalogItems,
+  itemByKey,
+  modifierCatalog,
+  catalogBindSources,
+  ownedShipIds,
+  ownedKeys,
+  setBonusSources,
+  starshipTraits,
+  loading,
+} = useLoadoutCatalog(shipId);
 
-const ship = computed(() => shipResult.value?.ship ?? null);
-const fleetShips = computed(() => {
-  const byId = new Map(
-    (shipsResult.value?.ships ?? []).map((row) => [row.id, row]),
-  );
-  if (ship.value) byId.set(ship.value.id, ship.value);
-  return [...byId.values()];
-});
 const hullSlots = computed(() => (ship.value ? buildHullSlots(ship.value) : []));
 const slotSections = computed(() => groupHullSlots(hullSlots.value));
 const captainSlots = computed(() =>
@@ -181,61 +123,6 @@ const captainSlots = computed(() =>
     race: activeCharacter.value?.race,
   }),
 );
-
-const catalogItems = computed<LoadoutItem[]>(() => [
-  ...(itemsResult.value?.infoboxes ?? []).map(toLoadoutItem),
-  ...(traitsResult.value?.starshipTraits ?? []).map(toLoadoutTrait),
-  ...(personalTraitsResult.value?.traits ?? []).map(toLoadoutPersonalTrait),
-  ...(traySkillsResult.value?.traySkills ?? []).map(toLoadoutTraySkill),
-]);
-
-const itemByKey = computed(() => {
-  const map = new Map<string, LoadoutItem>();
-  for (const item of catalogItems.value) {
-    map.set(loadoutOwnershipKey(item.catalogKind, item.id), item);
-  }
-  return map;
-});
-
-const modifierCatalog = computed<LoadoutModifier[]>(
-  () => modifiersResult.value?.modifiers ?? [],
-);
-
-const catalogBindSources = computed(() => ({
-  ships: fleetShips.value,
-  starshipTraits: traitsResult.value?.starshipTraits ?? [],
-  items: itemsResult.value?.infoboxes ?? [],
-}));
-
-function bindForEntry(entry: CollectionEntry) {
-  return resolvedBindForEntry(
-    entry,
-    bindScopeFromCatalog(
-      catalogBindSources.value,
-      entry.kind,
-      entry.catalogId,
-    ),
-  );
-}
-
-const ownedShipIds = computed(() =>
-  visibleCatalogIds(state.value, "ship", bindForEntry),
-);
-
-const ownedKeys = computed(() => {
-  const keys = ownedKeysIncludingHullGrants({
-    ownedItemIds: visibleCatalogIds(state.value, "item", bindForEntry),
-    ownedTraitIds: visibleCatalogIds(state.value, "starshipTrait", bindForEntry),
-    ownedShipIds: ownedShipIds.value,
-    ships: fleetShips.value,
-    traits: traitsResult.value?.starshipTraits ?? [],
-    items: itemsResult.value?.infoboxes ?? [],
-  });
-  for (const id of visibleCatalogIds(state.value, "trait", bindForEntry)) {
-    keys.add(captainTraitOwnershipKey("trait", id));
-  }
-  return keys;
-});
 
 const shipLoadouts = computed(() =>
   loadoutsForCharacter(state.value, state.value.activeCharacterId, shipId.value),
@@ -248,6 +135,43 @@ const activeLoadout = computed(
     null,
 );
 
+const boffStations = computed(() =>
+  buildBoffStations(ship.value?.boffs, activeLoadout.value?.boffSeatCareers),
+);
+
+const {
+  pickerOpen,
+  pickerHullSlot,
+  pickerCaptainSlot,
+  pickerBoffSlot,
+  pickerSearch,
+  pickerError,
+  pickerLabel,
+  pickerHasFill,
+  pickerCandidates,
+  itemInCaptainSlot,
+  itemIsOwned,
+  pickerCandidateKey,
+  openPicker,
+  openCaptainPicker,
+  openBoffPicker,
+  chooseItem,
+  clearPickerSlot,
+  equipContext,
+  onBoffCareer,
+  seatedFills,
+} = useLoadoutPicker({
+  catalogItems,
+  itemByKey,
+  ownedKeys,
+  modifierCatalog,
+  hullSlots,
+  captainSlots,
+  boffStations,
+  activeLoadout,
+  onlyCollected,
+});
+
 const equippedItems = computed(() =>
   equippedItemsForLoadout(activeLoadout.value, catalogItems.value),
 );
@@ -255,15 +179,8 @@ const equippedItems = computed(() =>
 const setBonuses = computed(() =>
   matchSetBonuses(
     equippedItems.value,
-    setsResult.value?.setBonuses ?? [],
+    setBonusSources.value,
     catalogItems.value,
-  ),
-);
-
-const boffStations = computed(() =>
-  buildBoffStations(
-    ship.value?.boffs,
-    activeLoadout.value?.boffSeatCareers,
   ),
 );
 
@@ -280,18 +197,6 @@ const warnings = computed(() => {
   );
 });
 
-const pickerOpen = ref(false);
-const pickerHullSlot = ref<HullSlot | null>(null);
-const pickerCaptainSlot = ref<CaptainTraitSlot | null>(null);
-const pickerBoffSlot = ref<BoffStationSlot | null>(null);
-const pickerSearch = ref("");
-const pickerError = ref("");
-const draftName = ref("");
-const pendingUniqueSeatId = ref<string | null>(null);
-const onlyCollected = ref(true);
-const shareOpen = ref(false);
-const shareStore = useShareStore();
-
 const sharePayload = computed(() => {
   if (!activeLoadout.value || !ship.value) return null;
   return encodeSharePayload({
@@ -307,65 +212,6 @@ const activeShare = computed(() =>
     ? shareStore.forLoadout(activeLoadout.value.id)
     : null,
 );
-
-const pickerLabel = computed(() => {
-  if (pickerBoffSlot.value) {
-    const located = stationForSlot(boffStations.value, pickerBoffSlot.value.id);
-    const seat = located
-      ? `${boffRankAbbrev(located.station.seat.rank)} ${abbreviateBoffPart(located.station.seat.career)}`
-      : "BOff";
-    return `${seat} · ${pickerBoffSlot.value.rankLabel}`;
-  }
-  return pickerCaptainSlot.value?.label ?? pickerHullSlot.value?.label ?? "";
-});
-
-const pickerHasFill = computed(() => {
-  if (pickerCaptainSlot.value) {
-    return Boolean(itemInCaptainSlot(pickerCaptainSlot.value));
-  }
-  if (pickerBoffSlot.value) {
-    return Boolean(itemInSlot(pickerBoffSlot.value.id));
-  }
-  if (pickerHullSlot.value) {
-    return Boolean(itemInSlot(pickerHullSlot.value.id));
-  }
-  return false;
-});
-
-const pickerCandidates = computed(() => {
-  const query = (pickerSearch.value ?? "").trim().toLowerCase();
-  const captainSlot = pickerCaptainSlot.value;
-  const hullSlot = pickerHullSlot.value;
-  const boffSlot = pickerBoffSlot.value;
-  const pool = captainSlot
-    ? fittingCaptainTraits(captainSlot, onlyCollected.value, captainSlot.id)
-    : boffSlot
-      ? fittingBoffPowers(boffSlot)
-      : hullSlot
-        ? fittingItems(hullSlot.kind, onlyCollected.value, hullSlot.id)
-        : [];
-  const matched = pool.filter((item) => matchesPickerQuery(item, query));
-  if (boffSlot) {
-    const named = pool.map((item) => ({
-      ...item,
-      name: boffPowerDisplayName(
-        asBoffPower(item),
-        boffSlot.rank,
-        item.abilityRank,
-      ),
-    }));
-    return named.filter((item) => matchesPickerQuery(item, query));
-  }
-  if (!hullSlot || captainSlot) return matched;
-  return rankPickerCandidates(
-    matched,
-    preferredItemIdsForNextSlot(
-      hullSlots.value,
-      activeLoadout.value?.slots ?? [],
-      hullSlot,
-    ),
-  );
-});
 
 const collectAllRequests = computed(() => {
   const loadout = activeLoadout.value;
@@ -395,7 +241,7 @@ const loadoutCosts = computed(() =>
     ownedKeys: ownedKeys.value,
     ownedShipIds: ownedShipIds.value,
     ships: fleetShips.value,
-    traits: traitsResult.value?.starshipTraits ?? [],
+    traits: starshipTraits.value,
   }),
 );
 
@@ -427,105 +273,40 @@ watch(selectedId, (id) => {
   router.replace({ query: { ...route.query, loadout: id } });
 });
 
-function toLoadoutItem(row: InfoboxesQuery["infoboxes"][number]): LoadoutItem {
-  return {
-    id: row.id,
-    name: row.name,
-    type: row.type,
-    rarity: row.rarity,
-    image: getItemImageUrl(row.image, row.name),
-    equiplimit: row.equiplimit,
-    catalogKind: "item",
-    who: row.who,
-    searchText: loadoutItemSearchText(row),
-  };
-}
-
-function toLoadoutTrait(
-  row: StarshipTraitsQuery["starshipTraits"][number],
-): LoadoutItem {
-  return {
-    id: row.id,
-    name: row.name,
-    type: "starship trait",
-    image: getStarshipTraitImageUrl(row.name, row.iconName),
-    equiplimit: 1,
-    catalogKind: "starshipTrait",
-  };
-}
-
-function toLoadoutPersonalTrait(row: TraitsQuery["traits"][number]): LoadoutItem {
-  return {
-    id: row.id,
-    name: row.name,
-    type: row.type,
-    image: getTraitImageUrl(row.name, row.iconName),
-    equiplimit: 1,
-    catalogKind: "trait",
-    environment: row.environment,
-    career: row.career,
-    required: row.required,
-    who: row.source,
-  };
-}
-
-function toLoadoutTraySkill(
-  row: TraySkillsQuery["traySkills"][number],
-): LoadoutItem {
-  return {
-    id: row.id,
-    name: row.name,
-    type: row.type,
-    image: getTraySkillImageUrl(row.name, row.image),
-    catalogKind: BOFF_CATALOG_KIND,
-    environment: row.region,
-    searchText: [row.description, row.system].filter(Boolean).join(" "),
-    ranks: [
-      row.rank1rank,
-      row.rank2rank,
-      row.rank3rank,
-      row.rank4rank,
-      row.rank5rank,
-    ],
-  };
-}
-
-function asBoffPower(item: LoadoutItem): BoffPowerSource {
-  return {
-    id: item.id,
-    name: item.name,
-    type: item.type,
-    region: item.environment ?? null,
-    ranks: item.ranks ?? [],
-  };
-}
-
-function boffPowerContext() {
-  return {
-    stations: boffStations.value,
-    powers: catalogItems.value
-      .filter((item) => item.catalogKind === BOFF_CATALOG_KIND)
-      .map(asBoffPower),
-  };
-}
-
-function fittingBoffPowers(slot: BoffStationSlot): LoadoutItem[] {
-  const located = stationForSlot(boffStations.value, slot.id);
-  if (!located) return [];
-  const rows: LoadoutItem[] = [];
-  for (const item of catalogItems.value) {
-    if (item.catalogKind !== BOFF_CATALOG_KIND) continue;
-    const power = asBoffPower(item);
-    for (const abilityRank of powerRankIndexesForSlot(
-      power,
-      slot,
-      located.station,
-    )) {
-      rows.push({ ...item, abilityRank });
+watch(
+  [pendingUniqueSeatId, catalogItems, ownedKeys, hullSlots, shipLoadouts],
+  () => {
+    const loadoutId = pendingUniqueSeatId.value;
+    if (!loadoutId) return;
+    const loadout = shipLoadouts.value.find((row) => row.id === loadoutId);
+    if (!loadout) return;
+    const pending = pendingHullGrantEquips({
+      ship: ship.value,
+      hullSlots: hullSlots.value,
+      loadout,
+      catalog: catalogItems.value,
+    });
+    let waiting = pending.waiting;
+    for (const equip of pending.equips) {
+      const result = store.equipSlot(
+        {
+          loadoutId,
+          slotId: equip.slotId,
+          itemId: equip.itemId,
+          catalogKind: "item",
+        },
+        equipContext(),
+      );
+      if (
+        !result.ok &&
+        (result.reason === "unknown-item" || result.reason === "not-owned")
+      ) {
+        waiting = true;
+      }
     }
-  }
-  return rows;
-}
+    if (!waiting) pendingUniqueSeatId.value = null;
+  },
+);
 
 function boffStationBoard() {
   return boffStations.value.map((station) => {
@@ -559,88 +340,14 @@ function boffStationBoard() {
   });
 }
 
-function seatedFills() {
-  return [
-    ...(activeLoadout.value?.slots ?? []),
-    ...(activeCharacter.value?.traitSlots ?? []),
-  ];
-}
-
-function fittingItems(
-  kind: HullSlot["kind"],
-  collectedOnly: boolean,
-  exceptSlotId?: string,
-): LoadoutItem[] {
-  return catalogItems.value.filter((item) => {
-    if (!itemFitsHullSlot(item, kind)) return false;
-    if (!itemHasOpenCopy(item, seatedFills(), exceptSlotId)) return false;
-    if (!collectedOnly) return true;
-    return ownedKeys.value.has(loadoutOwnershipKey(item.catalogKind, item.id));
-  });
-}
-
 function ownedFittingItems(kind: HullSlot["kind"]): LoadoutItem[] {
-  return fittingItems(kind, true);
-}
-
-function captainIdentity() {
-  return {
-    career: activeCharacter.value?.career,
-    raceLabel: raceLabel(
-      activeCharacter.value?.faction,
-      activeCharacter.value?.race,
-    ),
-  };
-}
-
-function asCaptainTrait(item: LoadoutItem): CaptainTraitSource {
-  return {
-    id: item.id,
-    name: item.name,
-    type: item.type,
-    environment: item.environment ?? null,
-    career: item.career,
-    required: item.required,
-    catalogKind:
-      item.catalogKind === "starshipTrait" ? "starshipTrait" : "trait",
-    image: item.image,
-  };
-}
-
-function fittingCaptainTraits(
-  slot: CaptainTraitSlot,
-  collectedOnly: boolean,
-  exceptSlotId?: string,
-): LoadoutItem[] {
-  const identity = captainIdentity();
-  return catalogItems.value.filter((item) => {
-    if (!traitFitsCaptainSlot(asCaptainTrait(item), slot, identity)) return false;
-    if (!itemHasOpenCopy(item, seatedFills(), exceptSlotId)) return false;
-    if (!collectedOnly) return true;
-    return ownedKeys.value.has(
-      captainTraitOwnershipKey(
-        item.catalogKind === "starshipTrait" ? "starshipTrait" : "trait",
-        item.id,
-      ),
-    );
+  return fittingItems({
+    kind,
+    catalog: catalogItems.value,
+    seated: seatedFills(),
+    collectedOnly: true,
+    ownedKeys: ownedKeys.value,
   });
-}
-
-function itemIsOwned(item: LoadoutItem): boolean {
-  return ownedKeys.value.has(loadoutOwnershipKey(item.catalogKind, item.id));
-}
-
-function itemInCaptainSlot(slot: CaptainTraitSlot): LoadoutItem | null {
-  const fill =
-    slot.storage === "loadout"
-      ? fillForSlot(activeLoadout.value, slot.id)
-      : fillForCaptainSlot(activeCharacter.value?.traitSlots, slot.id);
-  if (!fill) return null;
-  return (
-    itemByKey.value.get(
-      loadoutOwnershipKey(fill.catalogKind, fill.itemId),
-    ) ?? null
-  );
 }
 
 function captainTraitSections(): Array<{
@@ -661,7 +368,20 @@ function captainTraitSections(): Array<{
     slots: section.slots.map((slot) => ({
       slot,
       item: itemInCaptainSlot(slot),
-      ownedCount: fittingCaptainTraits(slot, true).length,
+      ownedCount: fittingCaptainTraits({
+        slot,
+        catalog: catalogItems.value,
+        seated: seatedFills(),
+        collectedOnly: true,
+        ownedKeys: ownedKeys.value,
+        identity: {
+          career: activeCharacter.value?.career,
+          raceLabel: raceLabel(
+            activeCharacter.value?.faction,
+            activeCharacter.value?.race,
+          ),
+        },
+      }).length,
     })),
   }));
 }
@@ -685,11 +405,7 @@ const captainSubtitle = computed(() => {
 function itemInSlot(slotId: string): LoadoutItem | null {
   const fill = fillForSlot(activeLoadout.value, slotId);
   if (!fill) return null;
-  return (
-    itemByKey.value.get(
-      loadoutOwnershipKey(fill.catalogKind, fill.itemId),
-    ) ?? null
-  );
+  return lookupLoadoutItem(itemByKey.value, fill.catalogKind, fill.itemId);
 }
 
 function slotQuality(slot: HullSlot): ItemQuality {
@@ -780,16 +496,6 @@ function slotTitle(slot: HullSlot): string {
   return `Empty ${slot.label} · ${owned} owned`;
 }
 
-function equipContext() {
-  return {
-    hullSlots: hullSlots.value,
-    items: catalogItems.value,
-    ownedKeys: ownedKeys.value,
-    modifiers: modifierCatalog.value,
-    requireOwned: onlyCollected.value,
-  };
-}
-
 function onHullSlotClick(slot: HullSlot) {
   if (itemInSlot(slot.id)) {
     openPicker(slot);
@@ -815,225 +521,6 @@ function onHullSlotClick(slot: HullSlot) {
     if (result.ok) return;
   }
   openPicker(slot);
-}
-
-function trySeatPendingHullGrants() {
-  const loadoutId = pendingUniqueSeatId.value;
-  if (!loadoutId) return;
-  const loadout = shipLoadouts.value.find((row) => row.id === loadoutId);
-  if (!loadout) return;
-
-  let waiting = false;
-
-  const seatGrant = (itemId: number | null | undefined, slot: HullSlot | undefined) => {
-    if (itemId == null || slot == null) return;
-    if (
-      loadout.slots.some(
-        (fill) => fill.slotId === slot.id && fill.itemId === itemId,
-      )
-    ) {
-      return;
-    }
-    const item = catalogItems.value.find(
-      (row) => row.id === itemId && (row.catalogKind ?? "item") === "item",
-    );
-    if (!item) {
-      waiting = true;
-      return;
-    }
-    const result = store.equipSlot(
-      { loadoutId, slotId: slot.id, itemId, catalogKind: "item" },
-      equipContext(),
-    );
-    if (
-      !result.ok &&
-      (result.reason === "unknown-item" || result.reason === "not-owned")
-    ) {
-      waiting = true;
-    }
-  };
-
-  const consoleId = ship.value?.uniconsoleId ?? ship.value?.uniConsole?.id;
-  if (consoleId != null) {
-    const unique = catalogItems.value.find(
-      (item) => item.id === consoleId && (item.catalogKind ?? "item") === "item",
-    );
-    seatGrant(
-      consoleId,
-      unique
-        ? slotForGrantedConsole(hullSlots.value, unique.type) ?? undefined
-        : hullSlots.value.find((row) => row.kind === "universalConsole"),
-    );
-  }
-
-  const weaponId =
-    ship.value?.experimentalWeaponId ?? ship.value?.experimentalWeaponItem?.id;
-  seatGrant(
-    weaponId,
-    hullSlots.value.find((row) => row.kind === "experimental"),
-  );
-
-  if (!waiting) pendingUniqueSeatId.value = null;
-}
-
-watch(
-  [pendingUniqueSeatId, catalogItems, ownedKeys, hullSlots, shipLoadouts],
-  trySeatPendingHullGrants,
-);
-
-function openPicker(slot: HullSlot) {
-  pickerHullSlot.value = slot;
-  pickerCaptainSlot.value = null;
-  pickerBoffSlot.value = null;
-  pickerSearch.value = "";
-  pickerError.value = "";
-  pickerOpen.value = true;
-}
-
-function openCaptainPicker(slot: CaptainTraitSlot) {
-  if (slot.locked) return;
-  pickerCaptainSlot.value = slot;
-  pickerHullSlot.value = null;
-  pickerBoffSlot.value = null;
-  pickerSearch.value = "";
-  pickerError.value = "";
-  pickerOpen.value = true;
-}
-
-function openBoffPicker(slot: BoffStationSlot) {
-  pickerBoffSlot.value = slot;
-  pickerCaptainSlot.value = null;
-  pickerHullSlot.value = null;
-  pickerSearch.value = "";
-  pickerError.value = "";
-  pickerOpen.value = true;
-}
-
-function onBoffCareer(stationIndex: number, career: BoffPlayableCareer) {
-  const loadout = activeLoadout.value;
-  if (!loadout) return;
-  store.setBoffSeatCareer(
-    { loadoutId: loadout.id, stationIndex, career },
-    boffPowerContext(),
-  );
-}
-
-function pickerCandidateKey(item: LoadoutItem): string {
-  return `${loadoutOwnershipKey(item.catalogKind, item.id)}:${item.abilityRank ?? ""}`;
-}
-
-function chooseItem(item: LoadoutItem) {
-  const boffSlot = pickerBoffSlot.value;
-  if (boffSlot) {
-    const loadout = activeLoadout.value;
-    if (!loadout) return;
-    const result = store.equipBoffPower(
-      {
-        loadoutId: loadout.id,
-        slotId: boffSlot.id,
-        itemId: item.id,
-        abilityRank: item.abilityRank,
-      },
-      boffPowerContext(),
-    );
-    if (!result.ok) {
-      pickerError.value = equipMessage(result.reason);
-      return;
-    }
-    pickerOpen.value = false;
-    return;
-  }
-  const captainSlot = pickerCaptainSlot.value;
-  if (captainSlot) {
-    if (captainSlot.storage === "loadout") {
-      const loadout = activeLoadout.value;
-      if (!loadout) return;
-      const result = store.equipSlot(
-        {
-          loadoutId: loadout.id,
-          slotId: captainSlot.id,
-          itemId: item.id,
-          catalogKind: "starshipTrait",
-        },
-        equipContext(),
-      );
-      if (!result.ok) {
-        pickerError.value = equipMessage(result.reason);
-        return;
-      }
-      pickerOpen.value = false;
-      return;
-    }
-    const result = store.equipCaptainTrait(
-      {
-        slotId: captainSlot.id,
-        itemId: item.id,
-        catalogKind:
-          item.catalogKind === "starshipTrait" ? "starshipTrait" : "trait",
-      },
-      {
-        slots: captainSlots.value,
-        traits: catalogItems.value.map(asCaptainTrait),
-        ownedKeys: ownedKeys.value,
-        requireOwned: onlyCollected.value,
-        career: activeCharacter.value?.career,
-        raceLabel: raceLabel(
-          activeCharacter.value?.faction,
-          activeCharacter.value?.race,
-        ),
-      },
-    );
-    if (!result.ok) {
-      pickerError.value = equipMessage(result.reason);
-      return;
-    }
-    pickerOpen.value = false;
-    return;
-  }
-
-  const loadout = activeLoadout.value;
-  const slot = pickerHullSlot.value;
-  if (!loadout || !slot) return;
-  const result = store.equipSlot(
-    {
-      loadoutId: loadout.id,
-      slotId: slot.id,
-      itemId: item.id,
-      catalogKind: item.catalogKind === "starshipTrait" ? "starshipTrait" : "item",
-    },
-    equipContext(),
-  );
-  if (!result.ok) {
-    pickerError.value = equipMessage(result.reason);
-    return;
-  }
-  pickerOpen.value = false;
-}
-
-function clearSlot(slotId: string) {
-  const loadout = activeLoadout.value;
-  if (!loadout) return;
-  store.unequipSlot(loadout.id, slotId);
-}
-
-function clearPickerSlot() {
-  if (pickerCaptainSlot.value) {
-    if (pickerCaptainSlot.value.storage === "loadout") {
-      clearSlot(pickerCaptainSlot.value.id);
-    } else {
-      store.unequipCaptainTrait(pickerCaptainSlot.value.id);
-    }
-    pickerOpen.value = false;
-    return;
-  }
-  if (pickerBoffSlot.value) {
-    clearSlot(pickerBoffSlot.value.id);
-    pickerOpen.value = false;
-    return;
-  }
-  if (!pickerHullSlot.value) return;
-  clearSlot(pickerHullSlot.value.id);
-  pickerOpen.value = false;
 }
 
 function createAnother() {
@@ -1062,15 +549,6 @@ function removeActive() {
 watch(activeLoadout, (loadout) => {
   draftName.value = loadout?.name ?? "";
 });
-
-const loading = computed(
-  () =>
-    shipLoading.value ||
-    itemsLoading.value ||
-    traitsLoading.value ||
-    personalTraitsLoading.value ||
-    traySkillsLoading.value,
-);
 </script>
 
 <template>
