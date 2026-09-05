@@ -15,9 +15,13 @@ import { useCollectionStore } from "@/stores/collection";
 import { buildHullSlots, groupHullSlots } from "@/logic/loadout/hullSlots";
 import type { SharePayload } from "@/logic/share/payload";
 import { resolveShareSlots } from "@/logic/share/payload";
-import { loadoutOwnershipKey } from "@/logic/loadout/setBonus";
 import type { LoadoutItem } from "@/logic/loadout/types";
-import { getItemImageUrl, getStarshipTraitImageUrl } from "@/utils/wikiImage";
+import {
+  indexLoadoutItemsByKey,
+  lookupLoadoutItem,
+  toLoadoutItem,
+  toLoadoutTrait,
+} from "@/logic/loadout/catalogMap";
 import { FALLBACK_SHIP_IMAGE, getShipImageUrl } from "@/utils/shipImage";
 
 const route = useRoute();
@@ -42,29 +46,11 @@ const payload = computed<SharePayload | null>(() => {
 });
 
 const catalogItems = computed<LoadoutItem[]>(() => [
-  ...(itemsResult.value?.infoboxes ?? []).map((item) => ({
-    id: item.id,
-    name: item.name,
-    type: item.type,
-    image: getItemImageUrl(item.image, item.name),
-    catalogKind: "item" as const,
-  })),
-  ...(traitsResult.value?.starshipTraits ?? []).map((trait) => ({
-    id: trait.id,
-    name: trait.name,
-    type: trait.type,
-    image: getStarshipTraitImageUrl(trait.iconName, trait.name),
-    catalogKind: "starshipTrait" as const,
-  })),
+  ...(itemsResult.value?.infoboxes ?? []).map(toLoadoutItem),
+  ...(traitsResult.value?.starshipTraits ?? []).map(toLoadoutTrait),
 ]);
 
-const itemByKey = computed(() => {
-  const map = new Map<string, LoadoutItem>();
-  for (const item of catalogItems.value) {
-    map.set(loadoutOwnershipKey(item.catalogKind, item.id), item);
-  }
-  return map;
-});
+const itemByKey = computed(() => indexLoadoutItemsByKey(catalogItems.value));
 
 const resolvedFills = computed(() =>
   payload.value
@@ -75,8 +61,10 @@ const resolvedFills = computed(() =>
 const fillBySlot = computed(() => {
   const map = new Map<string, LoadoutItem>();
   for (const fill of resolvedFills.value) {
-    const item = itemByKey.value.get(
-      loadoutOwnershipKey(fill.catalogKind, fill.itemId),
+    const item = lookupLoadoutItem(
+      itemByKey.value,
+      fill.catalogKind,
+      fill.itemId,
     );
     if (item) map.set(fill.slotId, item);
   }
