@@ -8,6 +8,7 @@ import WikiIcon from "@/components/shared/WikiIcon.vue";
 import CaptainTraitsPanel from "@/components/loadout/CaptainTraitsPanel.vue";
 import BoffStationsPanel from "@/components/loadout/BoffStationsPanel.vue";
 import ShareBuildDialog from "@/components/loadout/ShareBuildDialog.vue";
+import ExportBuildDialog from "@/components/loadout/ExportBuildDialog.vue";
 import SlotSuffixModifiers from "@/components/loadout/SlotSuffixModifiers.vue";
 import CombatLogPanel from "@/components/loadout/CombatLogPanel.vue";
 import { useCollectionStore } from "@/stores/collection";
@@ -60,6 +61,7 @@ import {
 import type { LoadoutItem } from "@/logic/loadout/types";
 import { collectRequestsForSeated } from "@/logic/loadout/collectSeated";
 import { encodeSharePayload } from "@/logic/share/payload";
+import { exportRedditTemplate } from "@/logic/share/redditTemplate";
 import {
   displayedMark,
   displayedQuality,
@@ -98,6 +100,7 @@ const draftName = ref("");
 const pendingUniqueSeatId = ref<string | null>(null);
 const onlyCollected = ref(true);
 const shareOpen = ref(false);
+const exportOpen = ref(false);
 const shareStore = useShareStore();
 
 const {
@@ -204,6 +207,30 @@ const sharePayload = computed(() => {
     title: activeLoadout.value.name,
     loadout: activeLoadout.value,
     items: catalogItems.value,
+  });
+});
+
+const redditMarkdown = computed(() => {
+  if (!activeLoadout.value || !ship.value) return "";
+  const captain = activeCharacter.value;
+  return exportRedditTemplate({
+    title: activeLoadout.value.name,
+    shipName: ship.value.name,
+    captain: captain
+      ? {
+          name: captain.name,
+          career: captain.career,
+          faction: captain.faction,
+          race: captain.race,
+        }
+      : null,
+    loadout: activeLoadout.value,
+    items: catalogItems.value,
+    hullSlots: hullSlots.value,
+    captainSlots: captainSlots.value,
+    captainFills: captain?.traitSlots,
+    boffStations: boffStations.value,
+    setBonuses: setBonuses.value,
   });
 });
 
@@ -608,6 +635,9 @@ watch(activeLoadout, (loadout) => {
             />
             <v-btn variant="text" color="primary" @click="shareOpen = true">
               {{ activeShare ? "Shared" : "Share" }}
+            </v-btn>
+            <v-btn variant="text" color="primary" @click="exportOpen = true">
+              Export
             </v-btn>
             <v-btn variant="text" color="error" @click="removeActive">
               Delete
@@ -1040,6 +1070,10 @@ watch(activeLoadout, (loadout) => {
         v-model:open="shareOpen"
         :loadout-id="activeLoadout.id"
         :payload="sharePayload"
+      />
+      <ExportBuildDialog
+        v-model:open="exportOpen"
+        :markdown="redditMarkdown"
       />
   </v-container>
 </template>

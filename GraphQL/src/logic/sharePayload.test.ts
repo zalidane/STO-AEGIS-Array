@@ -45,7 +45,9 @@ describe("parseSharePayload", () => {
   });
 
   it("rejects infobox-id shaped slots and duplicate slot ids", () => {
-    assert.equal(parseSharePayload({ v: 1, shipName: "X", title: "A" }).ok, false);
+    const missingSlots = parseSharePayload({ v: 1, shipName: "X", title: "A" });
+    assert.equal(missingSlots.ok, false);
+    if (!missingSlots.ok) assert.equal(missingSlots.reason, "bad-slots");
     assert.equal(
       parseSharePayload({
         ...payload,
@@ -63,6 +65,48 @@ describe("parseSharePayload", () => {
       }).ok,
       false,
     );
+  });
+
+  it("accepts tray skills, suffixes, roman rank, and seat careers", () => {
+    const parsed = parseSharePayload({
+      ...payload,
+      slots: [
+        {
+          ...payload.slots[0],
+          modifiers: ["[Dmg]", "[CrtH]"],
+        },
+        {
+          slotId: "boff-0-commander",
+          catalogKind: "traySkill",
+          name: "Recursive Shearing",
+          type: "Temporal Operative",
+          abilityRank: 2,
+        },
+      ],
+      boffSeatCareers: { "0": "Tactical" },
+    });
+    assert.equal(parsed.ok, true);
+    if (!parsed.ok) return;
+    assert.deepEqual(parsed.payload.slots[0]?.modifiers, ["[Dmg]", "[CrtH]"]);
+    assert.equal(parsed.payload.slots[1]?.catalogKind, "traySkill");
+    assert.equal(parsed.payload.slots[1]?.abilityRank, 2);
+    assert.deepEqual(parsed.payload.boffSeatCareers, { "0": "Tactical" });
+  });
+
+  it("rejects unknown catalog kinds and invalid seat careers", () => {
+    const kind = parseSharePayload({
+      ...payload,
+      slots: [{ slotId: "boff-0", catalogKind: "trait", name: "Ablative" }],
+    });
+    assert.equal(kind.ok, false);
+    if (!kind.ok) assert.equal(kind.reason, "bad-slot");
+
+    const careers = parseSharePayload({
+      ...payload,
+      boffSeatCareers: { "0": "Universal" },
+    });
+    assert.equal(careers.ok, false);
+    if (!careers.ok) assert.equal(careers.reason, "bad-boff-careers");
   });
 });
 
@@ -83,6 +127,32 @@ describe("contentHashFromPayload", () => {
     };
     assert.notEqual(contentHashFromPayload(payload), contentHashFromPayload(next));
   });
+
+  it("changes when suffixes, tray rank, or seat career change", () => {
+    const withMods: SharePayload = {
+      ...payload,
+      slots: [{ ...payload.slots[0]!, modifiers: ["[Dmg]"] }, payload.slots[1]!],
+    };
+    const withRank: SharePayload = {
+      ...payload,
+      slots: [
+        payload.slots[0]!,
+        {
+          slotId: "boff-0-commander",
+          catalogKind: "traySkill",
+          name: "Recursive Shearing",
+          abilityRank: 2,
+        },
+      ],
+    };
+    const withCareer: SharePayload = {
+      ...payload,
+      boffSeatCareers: { "0": "Science" },
+    };
+    assert.notEqual(contentHashFromPayload(payload), contentHashFromPayload(withMods));
+    assert.notEqual(contentHashFromPayload(payload), contentHashFromPayload(withRank));
+    assert.notEqual(contentHashFromPayload(payload), contentHashFromPayload(withCareer));
+  });
 });
 
 describe("fillsFromPayload", () => {
@@ -99,6 +169,25 @@ describe("fillsFromPayload", () => {
     assert.equal(fills.length, 1);
     assert.equal(fills[0]?.name, "Phaser Dual Cannons");
     assert.equal(fills[0]?.contentHash, hash);
+  });
+
+  it("indexes tray skills as fills", () => {
+    const withSkill: SharePayload = {
+      ...payload,
+      slots: [
+        {
+          slotId: "boff-0-commander",
+          catalogKind: "traySkill",
+          name: "Recursive Shearing",
+          type: "Temporal Operative",
+          abilityRank: 2,
+        },
+      ],
+    };
+    const fills = fillsFromPayload(withSkill, contentHashFromPayload(withSkill));
+    assert.equal(fills.length, 1);
+    assert.equal(fills[0]?.catalogKind, "traySkill");
+    assert.equal(fills[0]?.name, "Recursive Shearing");
   });
 });
 
