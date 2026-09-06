@@ -3,6 +3,8 @@ import { DISCLAIMER } from "@/logic/attribution";
 export const KOFI_URL = "https://ko-fi.com/zalidane";
 export const KOFI_LABEL = "ko-fi.com/zalidane";
 export const GITHUB_URL = "https://github.com/zalidane/STO-AEGIS-Array";
+export const GITHUB_BUG_REPORT_URL = `${GITHUB_URL}/issues/new?template=bug.yml`;
+export const GITHUB_BUG_REPORT_LABEL = "Report a bug";
 
 export type AboutLink = {
   label: string;
@@ -50,6 +52,15 @@ export const ABOUT_SECTIONS: AboutSection[] = [
     paragraphs: [
       "The catalog API and this site cost money to keep online. Donations are optional and do not unlock features — they only help cover hosting.",
       "If you want to chip in, Ko-fi is the donation page.",
+    ],
+    links: [],
+  },
+  {
+    id: "bugs",
+    title: "Report a problem",
+    paragraphs: [
+      "If the catalog, collection, builder, or a share link is wrong, open a GitHub bug report. A page URL and what you expected is enough to start.",
+      "You need a GitHub account. Do not paste a full collection backup unless we ask for it.",
     ],
     links: [],
   },

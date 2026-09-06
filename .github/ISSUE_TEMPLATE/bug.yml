@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in the catalog, collection, builder, or share flow is wrong.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. A page URL plus what you expected is enough to start.
+
+        Do not paste a full collection backup JSON unless we ask for it.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Catalog (ships, items, traits, wiki data)
+        - Collection (accounts, captains, backup)
+        - Loadout builder
+        - Share or Reddit export
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Page URL
+      description: The address in the browser when it went wrong.
+      placeholder: https://…
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you saw, versus what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: Name and version if you know them (for example Chrome 128 on Windows 11).
+      placeholder: Chrome, Firefox, Safari, Edge…
+    validations:
+      required: true
+  - type: checkboxes
+    id: extras
+    attributes:
+      label: Extra context
+      options:
+        - label: This involves a shared build link
+        - label: This involves collection backup or restore
+        - label: I can attach a screenshot
