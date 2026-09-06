@@ -29,7 +29,7 @@ import {
 import type { BindScope } from "./types";
 import { isCombatParseSummary } from "@/logic/combatlog/parseLog";
 import type { CollectionLoadout } from "@/logic/loadout/types";
-import { careerById, factionById, raceById } from "@/logic/captain/identity";
+import { careerById, factionById, raceById, sanitizeCaptainSpecializations } from "@/logic/captain/identity";
 import {
   buildCaptainTraitSlots,
   pruneCaptainTraitFills,
@@ -65,7 +65,16 @@ export function getActiveCharacter(
 
 function parseCreateInput(
   input: string | CreateCharacterInput,
-): { name: string; identity?: Omit<CreateCharacterInput, "name"> } {
+): {
+  name: string;
+  identity?: {
+    career: CreateCharacterInput["career"];
+    faction: string;
+    race: string;
+    primarySpecialization?: CollectionCharacter["primarySpecialization"];
+    secondarySpecialization?: CollectionCharacter["secondarySpecialization"];
+  };
+} {
   if (typeof input === "string") {
     return { name: input.trim() };
   }
@@ -75,6 +84,10 @@ function parseCreateInput(
       career: input.career,
       faction: input.faction,
       race: input.race,
+      ...sanitizeCaptainSpecializations(
+        input.primarySpecialization,
+        input.secondarySpecialization,
+      ),
     },
   };
 }
@@ -236,6 +249,8 @@ export function updateCharacter(
     faction?: string;
     race?: string;
     accountId?: string;
+    primarySpecialization?: CollectionCharacter["primarySpecialization"] | "";
+    secondarySpecialization?: CollectionCharacter["secondarySpecialization"] | "";
   },
 ): CollectionState {
   if (!state.characters.some((character) => character.id === characterId)) {
@@ -259,13 +274,24 @@ export function updateCharacter(
         ...(patch.race !== undefined ? { race: patch.race } : {}),
         ...(patch.accountId != null ? { accountId: patch.accountId } : {}),
       };
+      const specs = sanitizeCaptainSpecializations(
+        patch.primarySpecialization !== undefined
+          ? patch.primarySpecialization
+          : next.primarySpecialization,
+        patch.secondarySpecialization !== undefined
+          ? patch.secondarySpecialization
+          : next.secondarySpecialization,
+      );
+      const { primarySpecialization: _primary, secondarySpecialization: _secondary, ...rest } =
+        next;
       const slots = buildCaptainTraitSlots({
-        faction: next.faction,
-        race: next.race,
+        faction: rest.faction,
+        race: rest.race,
       });
       return {
-        ...next,
-        traitSlots: pruneCaptainTraitFills(next.traitSlots, slots),
+        ...rest,
+        ...specs,
+        traitSlots: pruneCaptainTraitFills(rest.traitSlots, slots),
       };
     }),
     activeAccountId:
@@ -587,7 +613,7 @@ export function hydrateCollectionState(
   ) {
     return createEmptyCollectionState();
   }
-  const characters = value.characters.filter(isCharacter);
+  const characters = value.characters.filter(isCharacter).map(sanitizeCharacter);
   const accounts = migrateAccounts(
     Array.isArray(value.accounts) ? value.accounts.filter(isAccount) : [],
     characters,
@@ -643,6 +669,19 @@ function migrateAccounts(
   ];
 }
 
+function sanitizeCharacter(character: CollectionCharacter): CollectionCharacter {
+  const specs = sanitizeCaptainSpecializations(
+    character.primarySpecialization,
+    character.secondarySpecialization,
+  );
+  const {
+    primarySpecialization: _primary,
+    secondarySpecialization: _secondary,
+    ...rest
+  } = character;
+  return { ...rest, ...specs };
+}
+
 function isTraitFill(value: unknown): value is CaptainTraitFill {
   if (!value || typeof value !== "object") return false;
   const fill = value as CaptainTraitFill;
@@ -687,6 +726,18 @@ function isCharacter(value: unknown): value is CollectionCharacter {
     character.race != null &&
     raceById(character.faction, character.race) == null &&
     raceById(undefined, character.race) == null
+  ) {
+    return false;
+  }
+  if (
+    character.primarySpecialization != null &&
+    typeof character.primarySpecialization !== "string"
+  ) {
+    return false;
+  }
+  if (
+    character.secondarySpecialization != null &&
+    typeof character.secondarySpecialization !== "string"
   ) {
     return false;
   }
