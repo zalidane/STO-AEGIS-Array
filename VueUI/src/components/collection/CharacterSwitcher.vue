@@ -4,8 +4,11 @@ import { storeToRefs } from "pinia";
 import { useCollectionStore } from "@/stores/collection";
 import CaptainIdentityFields from "@/components/collection/CaptainIdentityFields.vue";
 import {
+  captainIdentityDraftFrom,
+  emptyCaptainIdentityDraft,
   isCompleteIdentity,
   type CaptainCareer,
+  type CaptainIdentityDraft,
 } from "@/logic/captain/identity";
 import {
   accountNameTaken,
@@ -40,15 +43,7 @@ const deleteAccountOpen = ref(false);
 
 const draftName = ref("");
 const draftAccountId = ref<string | null>(null);
-const draftIdentity = ref<{
-  career: CaptainCareer | "";
-  faction: string;
-  race: string;
-}>({
-  career: "",
-  faction: "",
-  race: "",
-});
+const draftIdentity = ref<CaptainIdentityDraft>(emptyCaptainIdentityDraft());
 const draftAccountName = ref("");
 const draftPlatform = ref<CollectionPlatform>("pc");
 
@@ -117,7 +112,7 @@ const accountError = computed(() => {
 });
 
 function resetIdentity() {
-  draftIdentity.value = { career: "", faction: "", race: "" };
+  draftIdentity.value = emptyCaptainIdentityDraft();
 }
 
 function openCreate(accountId?: string) {
@@ -130,11 +125,7 @@ function openCreate(accountId?: string) {
 function openRename() {
   draftName.value = activeCharacter.value?.name ?? "";
   draftAccountId.value = activeCharacter.value?.accountId ?? activeAccountId.value;
-  draftIdentity.value = {
-    career: activeCharacter.value?.career ?? "",
-    faction: activeCharacter.value?.faction ?? "",
-    race: activeCharacter.value?.race ?? "",
-  };
+  draftIdentity.value = captainIdentityDraftFrom(activeCharacter.value);
   renameOpen.value = true;
 }
 
@@ -158,6 +149,8 @@ function submitCreate() {
     career: draftIdentity.value.career as CaptainCareer,
     faction: draftIdentity.value.faction,
     race: draftIdentity.value.race,
+    primarySpecialization: draftIdentity.value.primarySpecialization,
+    secondarySpecialization: draftIdentity.value.secondarySpecialization,
     ...(draftAccountId.value ? { accountId: draftAccountId.value } : {}),
   });
   createOpen.value = false;
@@ -170,6 +163,8 @@ function submitRename() {
     career: draftIdentity.value.career as CaptainCareer,
     faction: draftIdentity.value.faction,
     race: draftIdentity.value.race,
+    primarySpecialization: draftIdentity.value.primarySpecialization,
+    secondarySpecialization: draftIdentity.value.secondarySpecialization,
     ...(draftAccountId.value ? { accountId: draftAccountId.value } : {}),
   });
   renameOpen.value = false;
@@ -319,7 +314,7 @@ const switcherLabel = computed(() => {
       </v-list>
     </v-menu>
 
-    <v-dialog v-model="createOpen" max-width="460">
+    <v-dialog v-model="createOpen" max-width="460" persistent>
       <v-card>
         <v-card-title>New captain</v-card-title>
         <v-card-text>
@@ -354,7 +349,7 @@ const switcherLabel = computed(() => {
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="renameOpen" max-width="460">
+    <v-dialog v-model="renameOpen" max-width="460" persistent>
       <v-card>
         <v-card-title>Edit captain</v-card-title>
         <v-card-text>

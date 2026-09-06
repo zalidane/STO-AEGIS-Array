@@ -222,6 +222,8 @@ const redditMarkdown = computed(() => {
           career: captain.career,
           faction: captain.faction,
           race: captain.race,
+          primarySpecialization: captain.primarySpecialization,
+          secondarySpecialization: captain.secondarySpecialization,
         }
       : null,
     loadout: activeLoadout.value,

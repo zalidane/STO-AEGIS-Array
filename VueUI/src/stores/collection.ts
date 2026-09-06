@@ -139,6 +139,8 @@ export const useCollectionStore = defineStore("collection", () => {
       faction?: string;
       race?: string;
       accountId?: string;
+      primarySpecialization?: CreateCharacterInput["primarySpecialization"];
+      secondarySpecialization?: CreateCharacterInput["secondarySpecialization"];
     },
   ) {
     state.value = updateCharacter(state.value, characterId, patch);
