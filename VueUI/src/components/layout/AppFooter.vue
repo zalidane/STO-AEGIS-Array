@@ -8,9 +8,11 @@ import {
 </script>
 
 <template>
-  <footer class="app-footer" aria-label="Content attributions">
+  <footer class="app-footer" aria-label="Site footer">
     <p class="app-footer__summary">{{ FOOTER_SUMMARY }}</p>
     <p class="app-footer__links">
+      <RouterLink to="/about">About</RouterLink>
+      <span class="app-footer__sep" aria-hidden="true">·</span>
       <a :href="STOWIKI_HOME_URL" target="_blank" rel="noopener noreferrer"
         >STOWiki</a
       >
