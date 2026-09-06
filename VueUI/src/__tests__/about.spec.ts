@@ -5,6 +5,7 @@ import {
   aboutPageTitle,
   GITHUB_BUG_REPORT_URL,
   GITHUB_URL,
+  SITE_URL,
   isInternalHref,
   KOFI_LABEL,
   KOFI_URL,
@@ -38,6 +39,7 @@ describe("about page copy", () => {
     expect(GITHUB_BUG_REPORT_URL).toBe(
       `${GITHUB_URL}/issues/new?template=bug.yml`,
     );
+    expect(SITE_URL).toBe("https://vueui-production.up.railway.app");
     expect(isInternalHref(GITHUB_BUG_REPORT_URL)).toBe(false);
 
     const credits = ABOUT_SECTIONS.find((section) => section.id === "credits");
