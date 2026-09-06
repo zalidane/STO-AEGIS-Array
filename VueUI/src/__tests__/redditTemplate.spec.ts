@@ -174,6 +174,8 @@ describe("exportRedditTemplate", () => {
         career: "tactical",
         faction: "federation",
         race: "alien",
+        primarySpecialization: "temporal",
+        secondarySpecialization: "strategist",
       },
       loadout,
       items,
@@ -200,13 +202,15 @@ describe("exportRedditTemplate", () => {
     expect(markdown).toContain("Captain Career | Tactical");
     expect(markdown).toContain("Captain Faction | Federation");
     expect(markdown).toContain("Captain Race | Alien");
+    expect(markdown).toContain("Primary Specialization | Temporal Operative");
+    expect(markdown).toContain("Secondary Specialization | Strategist");
     expect(markdown).toContain("**Fore Weapons: 2**");
     expect(markdown).toContain("Phaser Dual Cannons Mk XV [CrtD]x3 [Pen]");
     expect(markdown).toContain("**Deflector**");
     expect(markdown).toContain(
-      "Officer 1: Lt. Commander ( Science ) | Jam Targeting Sensors I",
+      "| Officer 1: Lt. Commander ( Science ) | Jam Targeting Sensors I | |",
     );
-    expect(markdown).toContain("| Jam Targeting Sensors II |");
+    expect(markdown).toContain("| | Jam Targeting Sensors II | |");
     expect(markdown).toContain("Crippling Fire");
     expect(markdown).toContain("Angle On The Bow");
     expect(markdown).toContain("Terran Task Force | 2/3 | +5% Phaser Damage");

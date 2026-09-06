@@ -6,6 +6,20 @@ export const CAPTAIN_CAREERS = [
 
 export type CaptainCareer = (typeof CAPTAIN_CAREERS)[number]["id"];
 
+/** Captain primary/secondary trees. Commando is ground-only; the rest are used in space. */
+export const CAPTAIN_SPECIALIZATIONS = [
+  { id: "intelligence", label: "Intelligence" },
+  { id: "command", label: "Command" },
+  { id: "pilot", label: "Pilot" },
+  { id: "temporal", label: "Temporal Operative" },
+  { id: "miracle", label: "Miracle Worker" },
+  { id: "strategist", label: "Strategist" },
+  { id: "constable", label: "Constable" },
+  { id: "commando", label: "Commando" },
+] as const;
+
+export type CaptainSpecialization = (typeof CAPTAIN_SPECIALIZATIONS)[number]["id"];
+
 export type CaptainRace = {
   id: string;
   label: string;
@@ -112,6 +126,24 @@ export type CaptainIdentity = {
   race: string;
 };
 
+export type CaptainIdentityDraft = {
+  career: CaptainCareer | "";
+  faction: string;
+  race: string;
+  primarySpecialization: CaptainSpecialization | "";
+  secondarySpecialization: CaptainSpecialization | "";
+};
+
+export function emptyCaptainIdentityDraft(): CaptainIdentityDraft {
+  return {
+    career: "",
+    faction: "",
+    race: "",
+    primarySpecialization: "",
+    secondarySpecialization: "",
+  };
+}
+
 export function factionById(factionId: string | null | undefined): CaptainFaction | null {
   if (!factionId) return null;
   return CAPTAIN_FACTIONS.find((faction) => faction.id === factionId) ?? null;
@@ -170,4 +202,61 @@ export function isCompleteIdentity(
 export function careerTraitCode(career: CaptainCareer | null | undefined): string | null {
   if (!career) return null;
   return CAPTAIN_CAREERS.find((row) => row.id === career)?.traitCode ?? null;
+}
+
+export function specializationById(
+  specId: string | null | undefined,
+): CaptainSpecialization | null {
+  if (!specId) return null;
+  return CAPTAIN_SPECIALIZATIONS.some((spec) => spec.id === specId)
+    ? (specId as CaptainSpecialization)
+    : null;
+}
+
+export function specializationLabel(specId: string | null | undefined): string {
+  return (
+    CAPTAIN_SPECIALIZATIONS.find((spec) => spec.id === specId)?.label ?? ""
+  );
+}
+
+export function captainIdentityDraftFrom(
+  value: {
+    career?: string | null;
+    faction?: string | null;
+    race?: string | null;
+    primarySpecialization?: string | null;
+    secondarySpecialization?: string | null;
+  } | null | undefined,
+): CaptainIdentityDraft {
+  const sanitized = sanitizeCaptainSpecializations(
+    value?.primarySpecialization,
+    value?.secondarySpecialization,
+  );
+  return {
+    career: careerById(value?.career) ?? "",
+    faction: value?.faction?.trim() ?? "",
+    race: value?.race?.trim() ?? "",
+    primarySpecialization: sanitized.primarySpecialization ?? "",
+    secondarySpecialization: sanitized.secondarySpecialization ?? "",
+  };
+}
+
+/** Primary is required for a secondary; the two trees cannot be the same. */
+export function sanitizeCaptainSpecializations(
+  primary?: string | null,
+  secondary?: string | null,
+): {
+  primarySpecialization?: CaptainSpecialization;
+  secondarySpecialization?: CaptainSpecialization;
+} {
+  const primaryId = specializationById(primary);
+  if (!primaryId) return {};
+  const secondaryId = specializationById(secondary);
+  if (!secondaryId || secondaryId === primaryId) {
+    return { primarySpecialization: primaryId };
+  }
+  return {
+    primarySpecialization: primaryId,
+    secondarySpecialization: secondaryId,
+  };
 }

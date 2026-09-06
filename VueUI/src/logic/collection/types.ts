@@ -1,4 +1,4 @@
-import type { CaptainCareer } from "@/logic/captain/identity";
+import type { CaptainCareer, CaptainSpecialization } from "@/logic/captain/identity";
 import type { CaptainTraitFill } from "@/logic/loadout/captainTraits";
 import type { CollectionLoadout } from "@/logic/loadout/types";
 
@@ -39,6 +39,8 @@ export type CollectionCharacter = {
   career?: CaptainCareer;
   faction?: string;
   race?: string;
+  primarySpecialization?: CaptainSpecialization;
+  secondarySpecialization?: CaptainSpecialization;
   traitSlots?: CaptainTraitFill[];
 };
 
@@ -53,6 +55,8 @@ export type CreateCharacterInput = {
   faction: string;
   race: string;
   accountId?: string;
+  primarySpecialization?: CaptainSpecialization | "";
+  secondarySpecialization?: CaptainSpecialization | "";
 };
 
 export type CollectionEntry = {
