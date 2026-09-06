@@ -9,6 +9,7 @@ import {
   MIN_PUBLIC_FILLS,
   parseSharePayload,
   pickFeaturedBuildId,
+  SHARE_PAYLOAD_ERROR,
   SHARE_VISIBILITY,
   utcDateString,
   wasFeaturedRecently,
@@ -55,7 +56,7 @@ function fail(message: string, code: string): never {
 function requirePayload(raw: unknown): SharePayload {
   const parsed = parseSharePayload(raw);
   if (parsed.ok) return parsed.payload;
-  fail("Share payload is not a versioned name-keyed snapshot.", "BAD_PAYLOAD");
+  fail(SHARE_PAYLOAD_ERROR[parsed.reason], "BAD_PAYLOAD");
 }
 
 async function lookupShipId(
