@@ -9,7 +9,11 @@ describe("AppFooter", () => {
   it("renders wiki attribution summary and license links", async () => {
     const router = createRouter({
       history: createMemoryHistory(),
-      routes: [{ path: "/attributions", component: { template: "<div />" } }],
+      routes: [
+        { path: "/", component: { template: "<div />" } },
+        { path: "/about", component: { template: "<div />" } },
+        { path: "/attributions", component: { template: "<div />" } },
+      ],
     });
     await router.push("/");
     await router.isReady();
@@ -19,7 +23,9 @@ describe("AppFooter", () => {
     });
 
     expect(wrapper.text()).toContain(FOOTER_SUMMARY);
+    expect(wrapper.text()).toContain("About");
     expect(wrapper.text()).toContain("Full attributions");
+    expect(wrapper.find('a[href="/about"]').exists()).toBe(true);
     expect(wrapper.find('a[href="https://stowiki.net/"]').exists()).toBe(true);
     expect(
       wrapper

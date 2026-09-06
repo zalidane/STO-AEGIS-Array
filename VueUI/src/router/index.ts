@@ -26,6 +26,7 @@ import Items from "@/views/Items.vue";
 import ShipTypes from "@/views/ShipTypes.vue";
 import ShipTypeDetails from "@/views/ShipTypeDetails.vue";
 import Attributions from "@/views/Attributions.vue";
+import About from "@/views/About.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -188,6 +189,12 @@ const router = createRouter({
       name: "ship-type-details",
       component: ShipTypeDetails,
       meta: { breadcrumb: "Ship Type Details", parent: "/ship-types" },
+    },
+    {
+      path: "/about",
+      name: "about",
+      component: About,
+      meta: { breadcrumb: "About" },
     },
     {
       path: "/attributions",
