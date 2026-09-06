@@ -26,6 +26,8 @@ describe("about page copy", () => {
 
     const data = ABOUT_SECTIONS.find((section) => section.id === "data");
     expect(data?.paragraphs.join(" ")).toMatch(/locally/i);
+    expect(data?.paragraphs.join(" ")).toMatch(/JSON backup/i);
+    expect(data?.links.map((link) => link.href)).toEqual(["/collection"]);
 
     const support = ABOUT_SECTIONS.find((section) => section.id === "support");
     expect(support?.paragraphs.join(" ")).toMatch(/optional/i);
