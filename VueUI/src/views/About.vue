@@ -5,6 +5,8 @@ import {
   ABOUT_LEDE,
   ABOUT_SECTIONS,
   aboutPageTitle,
+  GITHUB_BUG_REPORT_LABEL,
+  GITHUB_BUG_REPORT_URL,
   isInternalHref,
   KOFI_LABEL,
   KOFI_URL,
@@ -47,6 +49,16 @@ const title = aboutPageTitle();
           rel="noopener noreferrer"
         >
           Support hosting on {{ KOFI_LABEL }}
+        </a>
+      </p>
+      <p v-else-if="section.id === 'bugs'" class="about-section__action">
+        <a
+          class="about-kofi"
+          :href="GITHUB_BUG_REPORT_URL"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {{ GITHUB_BUG_REPORT_LABEL }}
         </a>
       </p>
       <ul v-if="section.links.length" class="about-section__links">

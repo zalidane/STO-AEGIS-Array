@@ -27,6 +27,7 @@ import ShipTypes from "@/views/ShipTypes.vue";
 import ShipTypeDetails from "@/views/ShipTypeDetails.vue";
 import Attributions from "@/views/Attributions.vue";
 import About from "@/views/About.vue";
+import HttpError from "@/views/HttpError.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -202,7 +203,24 @@ const router = createRouter({
       component: Attributions,
       meta: { breadcrumb: "Attributions" },
     },
+    {
+      path: "/500",
+      name: "server-error",
+      component: HttpError,
+      meta: { breadcrumb: "Something went wrong", httpStatus: 500 },
+    },
+    {
+      path: "/:pathMatch(.*)*",
+      name: "not-found",
+      component: HttpError,
+      meta: { breadcrumb: "Not found", httpStatus: 404 },
+    },
   ],
+});
+
+router.onError(() => {
+  if (router.currentRoute.value.name === "server-error") return;
+  void router.replace({ name: "server-error" });
 });
 
 export default router;
