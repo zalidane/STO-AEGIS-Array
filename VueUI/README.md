@@ -2,6 +2,9 @@
 
 Vue 3 catalog, collection, and ship loadout builder for STO AEGIS Array. Talks to the GraphQL API via Apollo; collection and builds persist in the browser.
 
+**Live site:** [https://vueui-production.up.railway.app](https://vueui-production.up.railway.app)
+
+
 ## Run
 
 From the **monorepo root**, with GraphQL already running (`npm run dev:graphql`):
