@@ -39,9 +39,10 @@ export const ABOUT_SECTIONS: AboutSection[] = [
     title: "Your collection stays in this browser",
     paragraphs: [
       "Captains, collected items, and loadouts are stored locally in this browser. They are not uploaded to a user account on the host.",
-      "Clearing this site’s data, switching browsers, or using a private window starts you with an empty armory. Shared build links store a snapshot of a loadout on the server so others can open them.",
+      "Download a JSON backup of accounts, captains, collected items, and builds from the Collection page. Restoring a backup replaces what is stored in this browser.",
+      "Clearing this site’s data, switching browsers, or using a private window starts you with an empty armory unless you restore a backup. Shared build links store a snapshot of a loadout on the server so others can open them.",
     ],
-    links: [],
+    links: [{ label: "Collection", href: "/collection" }],
   },
   {
     id: "support",

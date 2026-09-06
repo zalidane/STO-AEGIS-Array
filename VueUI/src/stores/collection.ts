@@ -11,6 +11,7 @@ import {
   deleteCharacter,
   entryBindForActive,
   getActiveCharacter,
+  hydrateCollectionState,
   renameCharacter,
   setActiveAccount,
   setActiveCharacter,
@@ -65,6 +66,7 @@ import {
   type CreateAccountInput,
 } from "@/logic/collection/types";
 import type { BindScope, CreateCharacterInput } from "@/logic/collection/types";
+import { stringifyCollectionBackup } from "@/logic/collection/backup";
 import { getCollectionRepository } from "@/models/collection";
 
 export const useCollectionStore = defineStore("collection", () => {
@@ -84,6 +86,23 @@ export const useCollectionStore = defineStore("collection", () => {
 
   function load() {
     state.value = repository.load();
+  }
+
+  function exportCollectionBackup(exportedAt = new Date().toISOString()): string {
+    return stringifyCollectionBackup(state.value, exportedAt);
+  }
+
+  function replaceCollection(next: CollectionState) {
+    const hydrated = hydrateCollectionState(next);
+    try {
+      repository.save(hydrated);
+    } catch (err) {
+      if (isQuotaExceeded(err)) {
+        throw new DOMException("Storage quota exceeded", "QuotaExceededError");
+      }
+      throw err;
+    }
+    state.value = hydrated;
   }
 
   load();
@@ -361,6 +380,8 @@ export const useCollectionStore = defineStore("collection", () => {
     activeAccountId,
     loadouts,
     load,
+    exportCollectionBackup,
+    replaceCollection,
     addAccount,
     editAccount,
     removeAccount,

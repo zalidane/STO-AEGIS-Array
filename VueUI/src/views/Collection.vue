@@ -11,6 +11,7 @@ import {
 } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import CollectToggle from "@/components/collection/CollectToggle.vue";
+import CollectionBackup from "@/components/collection/CollectionBackup.vue";
 import { useCollectionStore } from "@/stores/collection";
 import {
   resolvedBindForEntry,
@@ -286,6 +287,7 @@ const emptyCopy = computed(() => {
             : "Create an account folder and a captain in the header to start a collection on this device."
         }}
       </p>
+      <CollectionBackup />
       <CompareLaunch class="mt-3" />
     </header>
 
