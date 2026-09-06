@@ -10,8 +10,10 @@ import {
 } from "@/logic/collection/bindChoice";
 import CaptainIdentityFields from "@/components/collection/CaptainIdentityFields.vue";
 import {
+  emptyCaptainIdentityDraft,
   isCompleteIdentity,
   type CaptainCareer,
+  type CaptainIdentityDraft,
 } from "@/logic/captain/identity";
 
 const props = defineProps<{
@@ -36,15 +38,7 @@ const { activeCharacter } = storeToRefs(store);
 const createOpen = ref(false);
 const bindOpen = ref(false);
 const draftName = ref("");
-const draftIdentity = ref<{
-  career: CaptainCareer | "";
-  faction: string;
-  race: string;
-}>({
-  career: "",
-  faction: "",
-  race: "",
-});
+const draftIdentity = ref<CaptainIdentityDraft>(emptyCaptainIdentityDraft());
 
 const storedBind = computed(() =>
   store.bindForActive(props.kind, props.catalogId),
@@ -82,7 +76,7 @@ const createError = computed(() => {
 function toggle() {
   if (!activeCharacter.value) {
     draftName.value = "";
-    draftIdentity.value = { career: "", faction: "", race: "" };
+    draftIdentity.value = emptyCaptainIdentityDraft();
     createOpen.value = true;
     return;
   }
@@ -104,6 +98,8 @@ function submitCreate() {
     career: draftIdentity.value.career as CaptainCareer,
     faction: draftIdentity.value.faction,
     race: draftIdentity.value.race,
+    primarySpecialization: draftIdentity.value.primarySpecialization,
+    secondarySpecialization: draftIdentity.value.secondarySpecialization,
   });
   createOpen.value = false;
   if (props.allowAccountUnlock) {
@@ -172,7 +168,7 @@ const dialogPrompt = computed(() => {
       <span v-if="otherLabel" class="collect-toggle__others">{{ otherLabel }}</span>
     </div>
 
-    <v-dialog v-model="createOpen" max-width="460">
+    <v-dialog v-model="createOpen" max-width="460" persistent>
       <v-card>
         <v-card-title>Create a captain first</v-card-title>
         <v-card-text>

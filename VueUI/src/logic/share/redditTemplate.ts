@@ -2,6 +2,7 @@ import {
   careerLabel,
   factionLabel,
   raceLabel,
+  specializationLabel,
 } from "@/logic/captain/identity";
 import { asBoffPower } from "@/logic/loadout/catalogMap";
 import {
@@ -74,6 +75,8 @@ export type RedditCaptainInput = {
   career?: string | null;
   faction?: string | null;
   race?: string | null;
+  primarySpecialization?: string | null;
+  secondarySpecialization?: string | null;
 };
 
 export type RedditTemplateInput = {
@@ -152,13 +155,17 @@ export function formatRedditItemLine(
 }
 
 function markdownTable(headers: string[], rows: string[][]): string {
-  const head = headers.map(escapeRedditCell).join(" | ");
-  const align = headers.map(() => ":--").join(" | ");
+  const formatRow = (cells: string[]) =>
+    `|${cells
+      .map((cell) => {
+        const text = escapeRedditCell(cell);
+        return text ? ` ${text} ` : " ";
+      })
+      .join("|")}|`;
+  const head = formatRow(headers);
+  const align = formatRow(headers.map(() => ":--"));
   const body = rows
-    .map((row) => {
-      const cells = headers.map((_, index) => escapeRedditCell(row[index] ?? ""));
-      return cells.join(" | ");
-    })
+    .map((row) => formatRow(headers.map((_, index) => row[index] ?? "")))
     .join("\n");
   return `${head}\n${align}\n${body}`;
 }
@@ -185,8 +192,14 @@ function playerTable(captain: RedditCaptainInput | null | undefined): string {
       ["Captain Career", careerLabel(captain?.career)],
       ["Captain Faction", factionLabel(captain?.faction)],
       ["Captain Race", raceLabel(captain?.faction, captain?.race)],
-      ["Primary Specialization", ""],
-      ["Secondary Specialization", ""],
+      [
+        "Primary Specialization",
+        specializationLabel(captain?.primarySpecialization),
+      ],
+      [
+        "Secondary Specialization",
+        specializationLabel(captain?.secondarySpecialization),
+      ],
       ["Intended Role", ""],
     ],
   );

@@ -3,20 +3,30 @@ import { computed, watch } from "vue";
 import {
   CAPTAIN_CAREERS,
   CAPTAIN_FACTIONS,
+  CAPTAIN_SPECIALIZATIONS,
   factionById,
-  type CaptainCareer,
+  type CaptainIdentityDraft,
 } from "@/logic/captain/identity";
 
-const identity = defineModel<{
-  career: CaptainCareer | "";
-  faction: string;
-  race: string;
-}>("identity", {
+const identity = defineModel<CaptainIdentityDraft>("identity", {
   required: true,
 });
 
+/** Keep menus inside the parent dialog so picking an option does not dismiss it. */
+const selectMenuProps = { attach: true };
+
+function patchIdentity(patch: Partial<CaptainIdentityDraft>) {
+  identity.value = { ...identity.value, ...patch };
+}
+
 const races = computed(
   () => factionById(identity.value.faction)?.races ?? [],
+);
+
+const secondarySpecs = computed(() =>
+  CAPTAIN_SPECIALIZATIONS.filter(
+    (spec) => spec.id !== identity.value.primarySpecialization,
+  ),
 );
 
 watch(
@@ -24,6 +34,21 @@ watch(
   () => {
     const allowed = races.value.some((race) => race.id === identity.value.race);
     if (!allowed) identity.value = { ...identity.value, race: "" };
+  },
+);
+
+watch(
+  () => identity.value.primarySpecialization,
+  (primary) => {
+    if (!primary) {
+      if (identity.value.secondarySpecialization) {
+        identity.value = { ...identity.value, secondarySpecialization: "" };
+      }
+      return;
+    }
+    if (identity.value.secondarySpecialization === primary) {
+      identity.value = { ...identity.value, secondarySpecialization: "" };
+    }
   },
 );
 </script>
@@ -39,7 +64,8 @@ watch(
     density="compact"
     hide-details="auto"
     class="mt-2"
-    @update:model-value="identity = { ...identity, career: $event ?? '' }"
+    :menu-props="selectMenuProps"
+    @update:model-value="patchIdentity({ career: $event ?? '' })"
   />
   <v-select
     :model-value="identity.faction || null"
@@ -51,7 +77,8 @@ watch(
     density="compact"
     hide-details="auto"
     class="mt-3"
-    @update:model-value="identity = { ...identity, faction: $event ?? '' }"
+    :menu-props="selectMenuProps"
+    @update:model-value="patchIdentity({ faction: $event ?? '' })"
   />
   <v-select
     :model-value="identity.race || null"
@@ -64,6 +91,36 @@ watch(
     hide-details="auto"
     class="mt-3"
     :disabled="!identity.faction"
-    @update:model-value="identity = { ...identity, race: $event ?? '' }"
+    :menu-props="selectMenuProps"
+    @update:model-value="patchIdentity({ race: $event ?? '' })"
+  />
+  <v-select
+    :model-value="identity.primarySpecialization || null"
+    :items="[...CAPTAIN_SPECIALIZATIONS]"
+    item-title="label"
+    item-value="id"
+    label="Primary specialization"
+    variant="outlined"
+    density="compact"
+    hide-details="auto"
+    clearable
+    class="mt-3"
+    :menu-props="selectMenuProps"
+    @update:model-value="patchIdentity({ primarySpecialization: $event ?? '' })"
+  />
+  <v-select
+    :model-value="identity.secondarySpecialization || null"
+    :items="[...secondarySpecs]"
+    item-title="label"
+    item-value="id"
+    label="Secondary specialization"
+    variant="outlined"
+    density="compact"
+    hide-details="auto"
+    clearable
+    class="mt-3"
+    :disabled="!identity.primarySpecialization"
+    :menu-props="selectMenuProps"
+    @update:model-value="patchIdentity({ secondarySpecialization: $event ?? '' })"
   />
 </template>

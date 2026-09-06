@@ -3,6 +3,8 @@ import {
   hasExtraPersonalTraitSlot,
   isCompleteIdentity,
   raceById,
+  sanitizeCaptainSpecializations,
+  specializationLabel,
 } from "@/logic/captain/identity";
 import {
   buildCaptainTraitSlots,
@@ -19,6 +21,7 @@ import {
 } from "@/logic/loadout/captainTraitState";
 import {
   createCharacter,
+  hydrateCollectionState,
   updateCharacter,
 } from "@/logic/collection/state";
 import {
@@ -50,6 +53,20 @@ describe("captain identity", () => {
     expect(hasExtraPersonalTraitSlot("federation", "alien")).toBe(true);
     expect(hasExtraPersonalTraitSlot("federation", "human")).toBe(false);
     expect(raceById("klingon", "nausicaan")?.label).toBe("Nausicaan");
+  });
+
+  it("keeps primary and secondary specializations distinct", () => {
+    expect(
+      sanitizeCaptainSpecializations("temporal", "strategist"),
+    ).toEqual({
+      primarySpecialization: "temporal",
+      secondarySpecialization: "strategist",
+    });
+    expect(sanitizeCaptainSpecializations("temporal", "temporal")).toEqual({
+      primarySpecialization: "temporal",
+    });
+    expect(sanitizeCaptainSpecializations("", "strategist")).toEqual({});
+    expect(specializationLabel("miracle")).toBe("Miracle Worker");
   });
 });
 
@@ -256,5 +273,50 @@ describe("captain trait slots", () => {
     state = updateCharacter(state, "cap-1", { race: "human" });
     expect(state.characters[0]?.race).toBe("human");
     expect(state.characters[0]?.traitSlots).toEqual([]);
+  });
+
+  it("stores captain specializations and drops a duplicate secondary", () => {
+    let state = createCharacter(
+      createEmptyCollectionState(),
+      {
+        name: "Alice",
+        career: "tactical",
+        faction: "federation",
+        race: "human",
+        primarySpecialization: "temporal",
+        secondarySpecialization: "temporal",
+      },
+      clock,
+    );
+    expect(state.characters[0]?.primarySpecialization).toBe("temporal");
+    expect(state.characters[0]?.secondarySpecialization).toBeUndefined();
+    state = updateCharacter(state, "cap-1", {
+      secondarySpecialization: "strategist",
+    });
+    expect(state.characters[0]?.secondarySpecialization).toBe("strategist");
+    state = updateCharacter(state, "cap-1", { primarySpecialization: "" });
+    expect(state.characters[0]?.primarySpecialization).toBeUndefined();
+    expect(state.characters[0]?.secondarySpecialization).toBeUndefined();
+
+    const hydrated = hydrateCollectionState({
+      version: 3,
+      activeCharacterId: "c1",
+      characters: [
+        {
+          id: "c1",
+          name: "Alice",
+          createdAt: "2026-08-29T00:00:00.000Z",
+          career: "tactical",
+          faction: "federation",
+          race: "human",
+          primarySpecialization: "temporal",
+          secondarySpecialization: "nope",
+        },
+      ],
+      entries: [],
+      loadouts: [],
+    });
+    expect(hydrated.characters[0]?.primarySpecialization).toBe("temporal");
+    expect(hydrated.characters[0]?.secondarySpecialization).toBeUndefined();
   });
 });
