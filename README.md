@@ -1,6 +1,11 @@
 # STO AEGIS Array
 
-Monorepo for Star Trek Online data tooling: wiki extraction, shared database, GraphQL API, and Vue UI.
+Unofficial Star Trek Online catalog, collection tracker, and space loadout builder.
+
+**Live site:** [https://vueui-production.up.railway.app](https://vueui-production.up.railway.app)
+
+Monorepo for wiki extraction, a shared database, GraphQL API, and Vue UI.
+
 
 ## Structure
 
