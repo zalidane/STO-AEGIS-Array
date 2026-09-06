@@ -5,6 +5,7 @@ export const KOFI_LABEL = "ko-fi.com/zalidane";
 export const GITHUB_URL = "https://github.com/zalidane/STO-AEGIS-Array";
 export const GITHUB_BUG_REPORT_URL = `${GITHUB_URL}/issues/new?template=bug.yml`;
 export const GITHUB_BUG_REPORT_LABEL = "Report a bug";
+export const SITE_URL = "https://vueui-production.up.railway.app";
 
 export type AboutLink = {
   label: string;
