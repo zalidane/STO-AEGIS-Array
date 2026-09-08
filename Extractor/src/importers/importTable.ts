@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 
 import type { PrismaClient } from "@sto-aegis/database";
@@ -21,7 +22,39 @@ export async function importTable<
     return false;
   }
 
-  const rows = validation.rows as TRaw[];
+  let rows = validation.rows as TRaw[];
+
+  if (config.supplementFile && config.mergeSupplement) {
+    if (!existsSync(config.supplementFile)) {
+      console.warn(
+        `${table}: supplement ${config.supplementFile} missing — importing Cargo only`,
+      );
+    } else {
+      const rawSupplement = await fs.readFile(config.supplementFile, "utf-8");
+      let supplement: unknown;
+      try {
+        supplement = JSON.parse(rawSupplement);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(
+          `[JSON] ${table}: supplement parse failed — ${message}; import skipped`,
+        );
+        return false;
+      }
+      try {
+        const before = rows.length;
+        rows = config.mergeSupplement(rows, supplement);
+        console.log(
+          `${table}: merged supplement ${config.supplementFile} (${before} → ${rows.length} rows)`,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`${table}: supplement merge failed — ${message}`);
+        return false;
+      }
+    }
+  }
+
   const model = (prisma as unknown as Record<string, any>)[config.model];
 
   if (!model) {

@@ -13,4 +13,11 @@ export interface ImportConfig<
    */
   identityFields?: readonly [keyof TMapped, ...(keyof TMapped)[]];
   mapper: (row: TRaw) => TMapped;
+  /**
+   * Optional committed supplement (JSON) merged with Cargo before upsert/replace.
+   * Path is relative to the Extractor working directory.
+   */
+  supplementFile?: string;
+  /** Merge Cargo rows with the parsed supplement payload. */
+  mergeSupplement?: (cargo: TRaw[], supplement: unknown) => TRaw[];
 }
