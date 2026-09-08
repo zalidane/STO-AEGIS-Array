@@ -100,6 +100,30 @@ describe("slotModifiers", () => {
     expect(slotAllowsSuffixModifiers("device", "ship device")).toBe(true);
   });
 
+  it("offers [Proc] on Ship Fore Weapon after Type includes that seat (#10)", () => {
+    const procWithoutFore = {
+      type: "Body Armor,EV Suit,Ground Weapon,Kit,Personal Shield,Ship Aft Weapon,Ship Weapon",
+      available: null,
+    };
+    const procWithFore = {
+      type: `${procWithoutFore.type},Ship Fore Weapon`,
+      available: null,
+    };
+    const terranDhc = {
+      type: "Ship Fore Weapon",
+      name: "Terran Task Force Dual Heavy Cannons",
+    };
+    const terranBeam = {
+      type: "Ship Weapon",
+      name: "Terran Task Force Phaser Beam Array",
+    };
+
+    expect(modifierFitsItem(procWithoutFore, terranDhc)).toBe(false);
+    expect(modifierFitsItem(procWithFore, terranDhc)).toBe(true);
+    expect(modifierFitsItem(procWithoutFore, terranBeam)).toBe(true);
+    expect(modifierFitsItem(procWithFore, terranBeam)).toBe(true);
+  });
+
   it("matches wiki type lists and item-specific unique mods", () => {
     expect(modifierFitsItem(catalog[0]!, phaser)).toBe(true);
     expect(

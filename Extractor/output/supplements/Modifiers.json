@@ -28,5 +28,13 @@
     "_merge": {
       "clearAvailable": true
     }
+  },
+  {
+    "modifier": "[Proc]",
+    "type": "Body Armor,EV Suit,Ground Weapon,Kit,Personal Shield,Ship Aft Weapon,Ship Weapon,Ship Fore Weapon",
+    "available": null,
+    "isunique": "1",
+    "isepic": "0",
+    "info": "Supplement: wiki Type omits Ship Fore Weapon; Terran Task Force Dual Heavy Cannons and other fore weapons need [Proc] (#10)."
   }
 ]
