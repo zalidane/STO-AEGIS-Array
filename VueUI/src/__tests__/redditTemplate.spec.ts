@@ -127,6 +127,11 @@ const loadout: CollectionLoadout = {
       itemId: 20,
       catalogKind: "starshipTrait",
     },
+    {
+      slotId: "personalSpace-0",
+      itemId: 8,
+      catalogKind: "trait",
+    },
   ],
 };
 
@@ -184,9 +189,6 @@ describe("exportRedditTemplate", () => {
         faction: "federation",
         race: "alien",
       }),
-      captainFills: [
-        { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
-      ],
       boffStations: stations,
       setBonuses: [
         {

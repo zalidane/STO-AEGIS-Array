@@ -170,7 +170,10 @@ function isCollectionStateDocument(value: unknown): boolean {
     entries?: unknown;
   };
   return (
-    (doc.version === 1 || doc.version === 2 || doc.version === 3) &&
+    (doc.version === 1 ||
+      doc.version === 2 ||
+      doc.version === 3 ||
+      doc.version === 4) &&
     Array.isArray(doc.characters) &&
     Array.isArray(doc.entries)
   );

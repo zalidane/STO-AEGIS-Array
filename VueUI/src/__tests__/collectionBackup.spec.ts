@@ -129,7 +129,7 @@ describe("collection backup", () => {
       ],
     });
     expect(restored.source).toBe("collection");
-    expect(restored.state.version).toBe(3);
+    expect(restored.state.version).toBe(4);
     expect(restored.state.accounts).toHaveLength(1);
     expect(restored.state.characters[0]?.name).toBe("Alice");
     expect(restored.state.entries).toHaveLength(1);
