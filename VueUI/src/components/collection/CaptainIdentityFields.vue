@@ -12,8 +12,9 @@ const identity = defineModel<CaptainIdentityDraft>("identity", {
   required: true,
 });
 
-/** Keep menus inside the parent dialog so picking an option does not dismiss it. */
-const selectMenuProps = { attach: true };
+// Do not set menu-props.attach. Attaching the overlay into the dialog puts its
+// scrim over the list items, so a pointer click closes the menu without applying
+// a value. Parent dialogs are persistent, so the default body teleport is safe.
 
 function patchIdentity(patch: Partial<CaptainIdentityDraft>) {
   identity.value = { ...identity.value, ...patch };
@@ -56,7 +57,7 @@ watch(
 <template>
   <v-select
     :model-value="identity.career || null"
-    :items="[...CAPTAIN_CAREERS]"
+    :items="CAPTAIN_CAREERS"
     item-title="label"
     item-value="id"
     label="Class"
@@ -64,12 +65,11 @@ watch(
     density="compact"
     hide-details="auto"
     class="mt-2"
-    :menu-props="selectMenuProps"
     @update:model-value="patchIdentity({ career: $event ?? '' })"
   />
   <v-select
     :model-value="identity.faction || null"
-    :items="[...CAPTAIN_FACTIONS]"
+    :items="CAPTAIN_FACTIONS"
     item-title="label"
     item-value="id"
     label="Faction"
@@ -77,12 +77,11 @@ watch(
     density="compact"
     hide-details="auto"
     class="mt-3"
-    :menu-props="selectMenuProps"
     @update:model-value="patchIdentity({ faction: $event ?? '' })"
   />
   <v-select
     :model-value="identity.race || null"
-    :items="[...races]"
+    :items="races"
     item-title="label"
     item-value="id"
     label="Race"
@@ -91,12 +90,11 @@ watch(
     hide-details="auto"
     class="mt-3"
     :disabled="!identity.faction"
-    :menu-props="selectMenuProps"
     @update:model-value="patchIdentity({ race: $event ?? '' })"
   />
   <v-select
     :model-value="identity.primarySpecialization || null"
-    :items="[...CAPTAIN_SPECIALIZATIONS]"
+    :items="CAPTAIN_SPECIALIZATIONS"
     item-title="label"
     item-value="id"
     label="Primary specialization"
@@ -105,12 +103,11 @@ watch(
     hide-details="auto"
     clearable
     class="mt-3"
-    :menu-props="selectMenuProps"
     @update:model-value="patchIdentity({ primarySpecialization: $event ?? '' })"
   />
   <v-select
     :model-value="identity.secondarySpecialization || null"
-    :items="[...secondarySpecs]"
+    :items="secondarySpecs"
     item-title="label"
     item-value="id"
     label="Secondary specialization"
@@ -120,7 +117,6 @@ watch(
     clearable
     class="mt-3"
     :disabled="!identity.primarySpecialization"
-    :menu-props="selectMenuProps"
     @update:model-value="patchIdentity({ secondarySpecialization: $event ?? '' })"
   />
 </template>
