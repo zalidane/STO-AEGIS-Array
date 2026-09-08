@@ -115,7 +115,12 @@ function resetIdentity() {
   draftIdentity.value = emptyCaptainIdentityDraft();
 }
 
+function closeSwitcherMenu() {
+  menuOpen.value = false;
+}
+
 function openCreate(accountId?: string) {
+  closeSwitcherMenu();
   draftName.value = "";
   draftAccountId.value = accountId ?? activeAccountId.value;
   resetIdentity();
@@ -123,6 +128,7 @@ function openCreate(accountId?: string) {
 }
 
 function openRename() {
+  closeSwitcherMenu();
   draftName.value = activeCharacter.value?.name ?? "";
   draftAccountId.value = activeCharacter.value?.accountId ?? activeAccountId.value;
   draftIdentity.value = captainIdentityDraftFrom(activeCharacter.value);
@@ -130,6 +136,7 @@ function openRename() {
 }
 
 function openCreateAccount() {
+  closeSwitcherMenu();
   draftPlatform.value = "pc";
   draftAccountName.value = unusedAccountName(state.value, "pc");
   createAccountOpen.value = true;
@@ -137,6 +144,7 @@ function openCreateAccount() {
 
 function openEditAccount() {
   if (!activeAccount.value) return;
+  closeSwitcherMenu();
   draftPlatform.value = activeAccount.value.platform;
   draftAccountName.value = activeAccount.value.name;
   editAccountOpen.value = true;
