@@ -76,4 +76,32 @@ describe("collectRequestsForSeated", () => {
       }),
     ).toEqual([]);
   });
+
+  it("collects the seated hull when it is not owned (#18)", () => {
+    expect(
+      collectRequestsForSeated({
+        fills: [{ itemId: 1, catalogKind: "item" }],
+        items,
+        ownedCount: (kind) => (kind === "ship" ? 0 : 0),
+        bindFor: (kind, catalogId) =>
+          kind === "ship" && catalogId === 42 ? "character" : undefined,
+        shipId: 42,
+      }),
+    ).toEqual([
+      { kind: "ship", catalogId: 42, bind: "character", allowDuplicate: true },
+      { kind: "item", catalogId: 1, allowDuplicate: true },
+    ]);
+  });
+
+  it("does not re-collect an already owned hull", () => {
+    expect(
+      collectRequestsForSeated({
+        fills: [],
+        items,
+        ownedCount: (kind, catalogId) =>
+          kind === "ship" && catalogId === 42 ? 1 : 0,
+        shipId: 42,
+      }),
+    ).toEqual([]);
+  });
 });

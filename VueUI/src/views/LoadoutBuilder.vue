@@ -255,6 +255,7 @@ const collectAllRequests = computed(() => {
       ownedCopyCount(state.value, { kind, catalogId }),
     bindFor: (kind, catalogId) =>
       bindScopeFromCatalog(catalogBindSources.value, kind, catalogId),
+    shipId: loadout.shipId,
   });
 });
 

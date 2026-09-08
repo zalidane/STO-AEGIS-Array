@@ -38,13 +38,32 @@ function ownershipKey(kind: CatalogKind, catalogId: number): string {
 /**
  * One collect request per missing seated copy.
  * Unique gear stays a single copy; stackable items can add more copies.
+ * When `shipId` is set and the hull is not owned, include a ship collect
+ * request first (same bind rules as the catalog via `bindFor`).
  */
 export function collectRequestsForSeated(input: {
   fills: ReadonlyArray<SeatedCollectFill>;
   items: ReadonlyArray<Pick<LoadoutItem, "id" | "catalogKind" | "equiplimit">>;
   ownedCount: (kind: CatalogKind, catalogId: number) => number;
   bindFor?: (kind: CatalogKind, catalogId: number) => BindScope | undefined;
+  /** Seated hull on the builder; collected when missing from this captain. */
+  shipId?: number | null;
 }): CollectSeatedRequest[] {
+  const requests: CollectSeatedRequest[] = [];
+
+  if (input.shipId != null && Number.isFinite(input.shipId) && input.shipId > 0) {
+    const shipId = input.shipId;
+    if (input.ownedCount("ship", shipId) === 0) {
+      const bind = input.bindFor?.("ship", shipId);
+      requests.push({
+        kind: "ship",
+        catalogId: shipId,
+        ...(bind ? { bind } : {}),
+        allowDuplicate: true,
+      });
+    }
+  }
+
   const catalog = new Map(
     input.items.flatMap((item) => {
       const kind = collectibleKind(item.catalogKind);
@@ -63,7 +82,6 @@ export function collectRequestsForSeated(input: {
     needed.set(key, { kind, catalogId: fill.itemId });
   }
 
-  const requests: CollectSeatedRequest[] = [];
   for (const [key, identity] of needed) {
     const item = catalog.get(key);
     const unique = isUniqueCollectible(identity.kind, item);
