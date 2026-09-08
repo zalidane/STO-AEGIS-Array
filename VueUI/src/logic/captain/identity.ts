@@ -18,7 +18,8 @@ export const CAPTAIN_SPECIALIZATIONS = [
   { id: "commando", label: "Commando" },
 ] as const;
 
-export type CaptainSpecialization = (typeof CAPTAIN_SPECIALIZATIONS)[number]["id"];
+export type CaptainSpecialization =
+  (typeof CAPTAIN_SPECIALIZATIONS)[number]["id"];
 
 export type CaptainRace = {
   id: string;
@@ -33,7 +34,11 @@ export type CaptainFaction = {
   races: readonly CaptainRace[];
 };
 
-const ALIEN: CaptainRace = { id: "alien", label: "Alien", extraPersonalTrait: true };
+const ALIEN: CaptainRace = {
+  id: "alien",
+  label: "Alien",
+  extraPersonalTrait: true,
+};
 
 /**
  * Playable factions and species at character create.
@@ -44,22 +49,25 @@ export const CAPTAIN_FACTIONS: readonly CaptainFaction[] = [
     id: "federation",
     label: "Federation",
     races: [
-      { id: "human", label: "Human" },
       { id: "andorian", label: "Andorian" },
       { id: "bajoran", label: "Bajoran" },
       { id: "benzite", label: "Benzite" },
       { id: "betazoid", label: "Betazoid" },
       { id: "bolian", label: "Bolian" },
       { id: "caitian", label: "Caitian" },
+      { id: "cardassian", label: "Cardassian" },
       { id: "ferengi", label: "Ferengi" },
-      { id: "joined-trill", label: "Joined Trill" },
+      { id: "human", label: "Human" },
+      { id: "klingon", label: "Klingon" },
+      { id: "liberated-borg", label: "Liberated Borg" },
       { id: "pakled", label: "Pakled" },
       { id: "rigelian", label: "Rigelian" },
       { id: "saurian", label: "Saurian" },
+      { id: "talaxian", label: "Talaxian" },
       { id: "tellarite", label: "Tellarite" },
       { id: "trill", label: "Trill" },
+      { id: "joined-trill", label: "Trill (Joined)" },
       { id: "vulcan", label: "Vulcan" },
-      { id: "liberated-borg", label: "Liberated Borg" },
       ALIEN,
     ],
   },
@@ -67,12 +75,17 @@ export const CAPTAIN_FACTIONS: readonly CaptainFaction[] = [
     id: "klingon",
     label: "Klingon Empire",
     races: [
-      { id: "klingon", label: "Klingon" },
+      { id: "cardassian", label: "Cardassian" },
+      { id: "ferasan", label: "Ferasan" },
       { id: "gorn", label: "Gorn" },
+      { id: "klingon", label: "Klingon (TNG)" },
+      { id: "klingon-dsc", label: "Klingon (Discovery)" },
       { id: "lethean", label: "Lethean" },
+      { id: "liberated-borg", label: "Liberated Borg" },
       { id: "nausicaan", label: "Nausicaan" },
       { id: "orion", label: "Orion" },
-      { id: "liberated-borg", label: "Liberated Borg" },
+      { id: "talaxian", label: "Talaxian" },
+      { id: "joined-trill", label: "Trill (Joined)" },
       ALIEN,
     ],
   },
@@ -92,18 +105,16 @@ export const CAPTAIN_FACTIONS: readonly CaptainFaction[] = [
     races: [
       { id: "jemhadar", label: "Jem'Hadar" },
       { id: "jemhadar-vanguard", label: "Jem'Hadar Vanguard" },
-      ALIEN,
     ],
   },
   {
     id: "tos",
     label: "TOS Starfleet",
     races: [
-      { id: "human", label: "Human" },
-      { id: "vulcan", label: "Vulcan" },
       { id: "andorian", label: "Andorian" },
+      { id: "human", label: "Human" },
       { id: "tellarite", label: "Tellarite" },
-      ALIEN,
+      { id: "vulcan", label: "Vulcan" },
     ],
   },
   {
@@ -112,9 +123,6 @@ export const CAPTAIN_FACTIONS: readonly CaptainFaction[] = [
     races: [
       { id: "human", label: "Human" },
       { id: "vulcan", label: "Vulcan" },
-      { id: "andorian", label: "Andorian" },
-      { id: "tellarite", label: "Tellarite" },
-      { id: "kelpien", label: "Kelpien" },
       ALIEN,
     ],
   },
@@ -144,7 +152,9 @@ export function emptyCaptainIdentityDraft(): CaptainIdentityDraft {
   };
 }
 
-export function factionById(factionId: string | null | undefined): CaptainFaction | null {
+export function factionById(
+  factionId: string | null | undefined,
+): CaptainFaction | null {
   if (!factionId) return null;
   return CAPTAIN_FACTIONS.find((faction) => faction.id === factionId) ?? null;
 }
@@ -159,7 +169,9 @@ export function raceById(
   return pool.find((race) => race.id === raceId) ?? null;
 }
 
-export function careerById(careerId: string | null | undefined): CaptainCareer | null {
+export function careerById(
+  careerId: string | null | undefined,
+): CaptainCareer | null {
   if (!careerId) return null;
   return CAPTAIN_CAREERS.some((career) => career.id === careerId)
     ? (careerId as CaptainCareer)
@@ -199,7 +211,9 @@ export function isCompleteIdentity(
   );
 }
 
-export function careerTraitCode(career: CaptainCareer | null | undefined): string | null {
+export function careerTraitCode(
+  career: CaptainCareer | null | undefined,
+): string | null {
   if (!career) return null;
   return CAPTAIN_CAREERS.find((row) => row.id === career)?.traitCode ?? null;
 }
@@ -220,13 +234,16 @@ export function specializationLabel(specId: string | null | undefined): string {
 }
 
 export function captainIdentityDraftFrom(
-  value: {
-    career?: string | null;
-    faction?: string | null;
-    race?: string | null;
-    primarySpecialization?: string | null;
-    secondarySpecialization?: string | null;
-  } | null | undefined,
+  value:
+    | {
+        career?: string | null;
+        faction?: string | null;
+        race?: string | null;
+        primarySpecialization?: string | null;
+        secondarySpecialization?: string | null;
+      }
+    | null
+    | undefined,
 ): CaptainIdentityDraft {
   const sanitized = sanitizeCaptainSpecializations(
     value?.primarySpecialization,
