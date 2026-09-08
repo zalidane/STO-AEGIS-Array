@@ -7,6 +7,8 @@ import {
   type CaptainTraitSource,
 } from "./captainTraits";
 import type { CaptainCareer } from "@/logic/captain/identity";
+import { applyLoadout } from "./state";
+import type { CollectionLoadout } from "./types";
 
 export type CaptainTraitEquipContext = {
   slots: ReadonlyArray<CaptainTraitSlot>;
@@ -19,6 +21,7 @@ export type CaptainTraitEquipContext = {
 
 export type CaptainTraitEquipFailure =
   | "no-character"
+  | "unknown-loadout"
   | "unknown-slot"
   | "unknown-item"
   | "not-owned"
@@ -27,39 +30,33 @@ export type CaptainTraitEquipFailure =
   | "equip-limit";
 
 export type CaptainTraitEquipResult =
-  | { ok: true; fills: CaptainTraitFill[] }
+  | { ok: true; loadout: CollectionLoadout }
   | { ok: false; reason: CaptainTraitEquipFailure };
 
-function characterFills(state: CollectionState, characterId: string): CaptainTraitFill[] {
-  return (
-    state.characters.find((character) => character.id === characterId)
-      ?.traitSlots ?? []
-  );
-}
-
-function replaceCharacterFills(
-  state: CollectionState,
-  characterId: string,
-  fills: CaptainTraitFill[],
-): CollectionState {
-  return {
-    ...state,
-    characters: state.characters.map((character) =>
-      character.id === characterId ? { ...character, traitSlots: fills } : character,
-    ),
-  };
-}
-
+/**
+ * Seat a space-trait board fill on the active loadout (#16).
+ * Ownership stays on the captain; seating is per build.
+ */
 export function equipCaptainTraitSlot(
   state: CollectionState,
-  input: { slotId: string; itemId: number; catalogKind: CaptainTraitFill["catalogKind"] },
+  input: {
+    loadoutId: string;
+    slotId: string;
+    itemId: number;
+    catalogKind: CaptainTraitFill["catalogKind"];
+  },
   context: CaptainTraitEquipContext,
 ): CaptainTraitEquipResult {
   const characterId = state.activeCharacterId;
   if (!characterId) return { ok: false, reason: "no-character" };
 
+  const loadout = state.loadouts.find(
+    (row) => row.id === input.loadoutId && row.characterId === characterId,
+  );
+  if (!loadout) return { ok: false, reason: "unknown-loadout" };
+
   const slot = context.slots.find((row) => row.id === input.slotId);
-  if (!slot || slot.storage !== "character") {
+  if (!slot || slot.storage !== "loadout") {
     return { ok: false, reason: "unknown-slot" };
   }
   if (slot.locked) return { ok: false, reason: "locked-slot" };
@@ -89,16 +86,15 @@ export function equipCaptainTraitSlot(
     return { ok: false, reason: "illegal-slot" };
   }
 
-  const current = characterFills(state, characterId);
-  const alreadyHere = current.find(
+  const alreadyHere = loadout.slots.find(
     (fill) =>
       fill.slotId === input.slotId &&
       fill.itemId === input.itemId &&
       fill.catalogKind === input.catalogKind,
   );
-  if (alreadyHere) return { ok: true, fills: current };
+  if (alreadyHere) return { ok: true, loadout };
 
-  const copies = current.filter(
+  const copies = loadout.slots.filter(
     (fill) =>
       fill.itemId === input.itemId &&
       fill.catalogKind === input.catalogKind &&
@@ -106,48 +102,67 @@ export function equipCaptainTraitSlot(
   ).length;
   if (copies >= 1) return { ok: false, reason: "equip-limit" };
 
-  const fills = [
-    ...current.filter((fill) => fill.slotId !== input.slotId),
-    {
-      slotId: input.slotId,
-      itemId: input.itemId,
-      catalogKind: input.catalogKind,
+  return {
+    ok: true,
+    loadout: {
+      ...loadout,
+      slots: [
+        ...loadout.slots.filter((fill) => fill.slotId !== input.slotId),
+        {
+          slotId: input.slotId,
+          itemId: input.itemId,
+          catalogKind: input.catalogKind,
+        },
+      ],
     },
-  ];
-  return { ok: true, fills };
+  };
 }
 
-export function applyCaptainTraitFills(
+export function applyCaptainTraitLoadout(
   state: CollectionState,
-  fills: CaptainTraitFill[],
+  loadout: CollectionLoadout,
 ): CollectionState {
-  const characterId = state.activeCharacterId;
-  if (!characterId) return state;
-  return replaceCharacterFills(state, characterId, fills);
+  return applyLoadout(state, loadout);
 }
 
 export function unequipCaptainTraitSlot(
   state: CollectionState,
-  slotId: string,
+  input: { loadoutId: string; slotId: string },
 ): CollectionState {
   const characterId = state.activeCharacterId;
   if (!characterId) return state;
-  const current = characterFills(state, characterId);
-  const fills = current.filter((fill) => fill.slotId !== slotId);
-  if (fills.length === current.length) return state;
-  return replaceCharacterFills(state, characterId, fills);
+  const loadout = state.loadouts.find(
+    (row) => row.id === input.loadoutId && row.characterId === characterId,
+  );
+  if (!loadout) return state;
+  const slots = loadout.slots.filter((fill) => fill.slotId !== input.slotId);
+  if (slots.length === loadout.slots.length) return state;
+  return applyLoadout(state, { ...loadout, slots });
 }
 
+/** Remove a trait from every loadout for this captain (and legacy character board). */
 export function stripTraitFromCharacterBoard(
   state: CollectionState,
   characterId: string,
   itemId: number,
   catalogKind: CaptainTraitFill["catalogKind"],
 ): CollectionState {
-  const current = characterFills(state, characterId);
-  const fills = current.filter(
-    (fill) => !(fill.itemId === itemId && fill.catalogKind === catalogKind),
-  );
-  if (fills.length === current.length) return state;
-  return replaceCharacterFills(state, characterId, fills);
+  const characters = state.characters.map((character) => {
+    if (character.id !== characterId) return character;
+    const fills = (character.traitSlots ?? []).filter(
+      (fill) => !(fill.itemId === itemId && fill.catalogKind === catalogKind),
+    );
+    if (fills.length === (character.traitSlots ?? []).length) return character;
+    return { ...character, traitSlots: fills };
+  });
+  const loadouts = state.loadouts.map((loadout) => {
+    if (loadout.characterId !== characterId) return loadout;
+    const slots = loadout.slots.filter(
+      (fill) =>
+        !(fill.itemId === itemId && fill.catalogKind === catalogKind),
+    );
+    if (slots.length === loadout.slots.length) return loadout;
+    return { ...loadout, slots };
+  });
+  return { ...state, characters, loadouts };
 }

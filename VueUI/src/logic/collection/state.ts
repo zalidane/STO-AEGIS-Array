@@ -14,6 +14,7 @@ import {
   createEmptyCollectionState,
   defaultCollectionClock,
   MIGRATED_DEFAULT_ACCOUNT_ID,
+  COLLECTION_STATE_VERSION,
 } from "./types";
 import {
   accountIdForCharacter,
@@ -32,7 +33,7 @@ import type { CollectionLoadout } from "@/logic/loadout/types";
 import { careerById, factionById, raceById, sanitizeCaptainSpecializations } from "@/logic/captain/identity";
 import {
   buildCaptainTraitSlots,
-  pruneCaptainTraitFills,
+  captainTraitBoardSlotIds,
   type CaptainTraitFill,
 } from "@/logic/loadout/captainTraits";
 import { stripTraitFromCharacterBoard } from "@/logic/loadout/captainTraitState";
@@ -284,21 +285,43 @@ export function updateCharacter(
       );
       const { primarySpecialization: _primary, secondarySpecialization: _secondary, ...rest } =
         next;
-      const slots = buildCaptainTraitSlots({
-        faction: rest.faction,
-        race: rest.race,
-      });
       return {
         ...rest,
         ...specs,
-        traitSlots: pruneCaptainTraitFills(rest.traitSlots, slots),
+        traitSlots: [],
       };
+    }),
+    loadouts: state.loadouts.map((loadout) => {
+      if (loadout.characterId !== characterId) return loadout;
+      const character = state.characters.find((row) => row.id === characterId);
+      const faction =
+        patch.faction !== undefined ? patch.faction : character?.faction;
+      const race = patch.race !== undefined ? patch.race : character?.race;
+      const openIds = captainTraitBoardSlotIds(
+        buildCaptainTraitSlots({ faction, race }),
+      );
+      const slots = loadout.slots.filter((fill) => {
+        if (!isCaptainBoardSlotId(fill.slotId)) return true;
+        return openIds.has(fill.slotId);
+      });
+      if (slots.length === loadout.slots.length) return loadout;
+      return { ...loadout, slots };
     }),
     activeAccountId:
       characterId === state.activeCharacterId && patch.accountId
         ? patch.accountId
         : state.activeAccountId,
   };
+}
+
+function isCaptainBoardSlotId(slotId: string): boolean {
+  return (
+    slotId.startsWith("personalSpace-") ||
+    slotId.startsWith("captainStarship-") ||
+    slotId.startsWith("starshipTrait-") ||
+    slotId.startsWith("spaceReputation-") ||
+    slotId.startsWith("activeSpaceReputation-")
+  );
 }
 
 export function deleteCharacter(
@@ -607,7 +630,10 @@ export function hydrateCollectionState(
   };
   const version = value.version;
   if (
-    (version !== 1 && version !== 2 && version !== 3) ||
+    (version !== 1 &&
+      version !== 2 &&
+      version !== 3 &&
+      version !== 4) ||
     !Array.isArray(value.characters) ||
     !Array.isArray(value.entries)
   ) {
@@ -639,18 +665,56 @@ export function hydrateCollectionState(
       ? value.activeAccountId
       : (activeFromCharacter ?? accounts[0]?.id ?? null);
 
-  return {
-    version: 3,
+  const base: CollectionState = {
+    version: COLLECTION_STATE_VERSION,
     activeCharacterId,
     activeAccountId,
     accounts,
     characters: withAccounts,
     entries: value.entries.filter(isEntry),
     loadouts:
-      (version === 2 || version === 3) && Array.isArray(value.loadouts)
+      (version === 2 || version === 3 || version === 4) &&
+      Array.isArray(value.loadouts)
         ? value.loadouts.filter(isLoadout).map(sanitizeLoadoutParse)
         : [],
   };
+
+  if (version < 4) {
+    return migrateCaptainTraitsOntoLoadouts(base);
+  }
+  return base;
+}
+
+/**
+ * Copy legacy character.traitSlots onto each of that captain's loadouts, then
+ * clear the character board (#16).
+ */
+export function migrateCaptainTraitsOntoLoadouts(
+  state: CollectionState,
+): CollectionState {
+  const loadouts = state.loadouts.map((loadout) => {
+    const character = state.characters.find(
+      (row) => row.id === loadout.characterId,
+    );
+    const traitSlots = character?.traitSlots ?? [];
+    if (!traitSlots.length) return loadout;
+    const existing = new Set(loadout.slots.map((fill) => fill.slotId));
+    const additions = traitSlots
+      .filter((fill) => !existing.has(fill.slotId))
+      .map((fill) => ({
+        slotId: fill.slotId,
+        itemId: fill.itemId,
+        catalogKind: fill.catalogKind,
+      }));
+    if (!additions.length) return loadout;
+    return { ...loadout, slots: [...loadout.slots, ...additions] };
+  });
+  const characters = state.characters.map((character) =>
+    character.traitSlots?.length
+      ? { ...character, traitSlots: [] }
+      : character,
+  );
+  return { ...state, loadouts, characters };
 }
 
 function migrateAccounts(

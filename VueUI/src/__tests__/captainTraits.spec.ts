@@ -16,7 +16,7 @@ import {
   traitFitsCaptainSlot,
 } from "@/logic/loadout/captainTraits";
 import {
-  applyCaptainTraitFills,
+  applyCaptainTraitLoadout,
   equipCaptainTraitSlot,
 } from "@/logic/loadout/captainTraitState";
 import {
@@ -28,10 +28,17 @@ import {
   createEmptyCollectionState,
   type CollectionClock,
 } from "@/logic/collection/types";
+import { createLoadout } from "@/logic/loadout/state";
 
 const clock: CollectionClock = {
   now: () => "2026-08-29T00:00:00.000Z",
   id: () => "cap-1",
+};
+
+let loadoutSeq = 0;
+const loadoutClock: CollectionClock = {
+  now: () => "2026-08-29T00:00:00.000Z",
+  id: () => `lo-${++loadoutSeq}`,
 };
 
 describe("captain identity", () => {
@@ -47,7 +54,7 @@ describe("captain identity", () => {
       isCompleteIdentity({
         career: "tactical",
         faction: "federation",
-        race: "klingon",
+        race: "ferasan",
       }),
     ).toBe(false);
     expect(hasExtraPersonalTraitSlot("federation", "alien")).toBe(true);
@@ -97,6 +104,7 @@ describe("captain trait slots", () => {
         .filter((slot) => slot.group === "shipSpecific")
         .every((slot) => slot.storage === "loadout" && !slot.locked),
     ).toBe(true);
+    expect(human.every((slot) => slot.storage === "loadout")).toBe(true);
     expect(
       groupCaptainTraitSlots(human).map((section) => section.group),
     ).toEqual([
@@ -157,13 +165,16 @@ describe("captain trait slots", () => {
     ).toBe(true);
   });
 
-  it("seats a collected personal trait on the captain board", () => {
+  it("seats a collected personal trait on the active loadout (#16)", () => {
+    loadoutSeq = 0;
     let state = createCharacter(createEmptyCollectionState(), {
       name: "Alice",
       career: "tactical",
       faction: "federation",
       race: "human",
     }, clock);
+    state = createLoadout(state, { shipId: 10 }, loadoutClock);
+    const loadoutId = state.loadouts[0]!.id;
     const slots = buildCaptainTraitSlots({
       faction: "federation",
       race: "human",
@@ -177,7 +188,12 @@ describe("captain trait slots", () => {
     };
     const result = equipCaptainTraitSlot(
       state,
-      { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+      {
+        loadoutId,
+        slotId: "personalSpace-0",
+        itemId: 8,
+        catalogKind: "trait",
+      },
       {
         slots,
         traits: [trait],
@@ -188,19 +204,23 @@ describe("captain trait slots", () => {
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    state = applyCaptainTraitFills(state, result.fills);
-    expect(state.characters[0]?.traitSlots).toEqual([
+    state = applyCaptainTraitLoadout(state, result.loadout);
+    expect(state.characters[0]?.traitSlots ?? []).toEqual([]);
+    expect(state.loadouts[0]?.slots).toEqual([
       { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
     ]);
   });
 
   it("seats a collected active-reputation trait in the fifth socket", () => {
+    loadoutSeq = 0;
     let state = createCharacter(createEmptyCollectionState(), {
       name: "Alice",
       career: "tactical",
       faction: "federation",
       race: "human",
     }, clock);
+    state = createLoadout(state, { shipId: 10 }, loadoutClock);
+    const loadoutId = state.loadouts[0]!.id;
     const slots = buildCaptainTraitSlots({
       faction: "federation",
       race: "human",
@@ -208,6 +228,7 @@ describe("captain trait slots", () => {
     const result = equipCaptainTraitSlot(
       state,
       {
+        loadoutId,
         slotId: "activeSpaceReputation-4",
         itemId: 9,
         catalogKind: "trait",
@@ -228,8 +249,8 @@ describe("captain trait slots", () => {
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    state = applyCaptainTraitFills(state, result.fills);
-    expect(state.characters[0]?.traitSlots).toEqual([
+    state = applyCaptainTraitLoadout(state, result.loadout);
+    expect(state.loadouts[0]?.slots).toEqual([
       {
         slotId: "activeSpaceReputation-4",
         itemId: 9,
@@ -239,12 +260,15 @@ describe("captain trait slots", () => {
   });
 
   it("drops the Alien extra personal fill when the captain changes race", () => {
+    loadoutSeq = 0;
     let state = createCharacter(createEmptyCollectionState(), {
       name: "Alice",
       career: "tactical",
       faction: "federation",
       race: "alien",
     }, clock);
+    state = createLoadout(state, { shipId: 10 }, loadoutClock);
+    const loadoutId = state.loadouts[0]!.id;
     const slots = buildCaptainTraitSlots({
       faction: "federation",
       race: "alien",
@@ -258,7 +282,12 @@ describe("captain trait slots", () => {
     };
     const result = equipCaptainTraitSlot(
       state,
-      { slotId: "personalSpace-10", itemId: 8, catalogKind: "trait" },
+      {
+        loadoutId,
+        slotId: "personalSpace-10",
+        itemId: 8,
+        catalogKind: "trait",
+      },
       {
         slots,
         traits: [trait],
@@ -269,10 +298,77 @@ describe("captain trait slots", () => {
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    state = applyCaptainTraitFills(state, result.fills);
+    state = applyCaptainTraitLoadout(state, result.loadout);
     state = updateCharacter(state, "cap-1", { race: "human" });
     expect(state.characters[0]?.race).toBe("human");
-    expect(state.characters[0]?.traitSlots).toEqual([]);
+    expect(state.loadouts[0]?.slots).toEqual([]);
+  });
+
+  it("migrates character traitSlots onto each loadout at hydrate v4 (#16)", () => {
+    const hydrated = hydrateCollectionState({
+      version: 3,
+      activeCharacterId: "c1",
+      characters: [
+        {
+          id: "c1",
+          name: "Alice",
+          createdAt: "2026-08-29T00:00:00.000Z",
+          career: "tactical",
+          faction: "federation",
+          race: "human",
+          traitSlots: [
+            { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+            {
+              slotId: "captainStarship-0",
+              itemId: 3,
+              catalogKind: "starshipTrait",
+            },
+          ],
+        },
+      ],
+      entries: [],
+      loadouts: [
+        {
+          id: "lo-1",
+          characterId: "c1",
+          shipId: 10,
+          name: "Build 1",
+          createdAt: "2026-08-29T00:00:00.000Z",
+          updatedAt: "2026-08-29T00:00:00.000Z",
+          slots: [
+            { slotId: "starshipTrait-0", itemId: 99, catalogKind: "starshipTrait" },
+          ],
+        },
+        {
+          id: "lo-2",
+          characterId: "c1",
+          shipId: 11,
+          name: "Build 2",
+          createdAt: "2026-08-29T00:00:00.000Z",
+          updatedAt: "2026-08-29T00:00:00.000Z",
+          slots: [],
+        },
+      ],
+    });
+    expect(hydrated.version).toBe(4);
+    expect(hydrated.characters[0]?.traitSlots).toEqual([]);
+    expect(hydrated.loadouts[0]?.slots).toEqual([
+      { slotId: "starshipTrait-0", itemId: 99, catalogKind: "starshipTrait" },
+      { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+      {
+        slotId: "captainStarship-0",
+        itemId: 3,
+        catalogKind: "starshipTrait",
+      },
+    ]);
+    expect(hydrated.loadouts[1]?.slots).toEqual([
+      { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+      {
+        slotId: "captainStarship-0",
+        itemId: 3,
+        catalogKind: "starshipTrait",
+      },
+    ]);
   });
 
   it("stores captain specializations and drops a duplicate secondary", () => {
@@ -316,6 +412,7 @@ describe("captain trait slots", () => {
       entries: [],
       loadouts: [],
     });
+    expect(hydrated.version).toBe(4);
     expect(hydrated.characters[0]?.primarySpecialization).toBe("temporal");
     expect(hydrated.characters[0]?.secondarySpecialization).toBeUndefined();
   });

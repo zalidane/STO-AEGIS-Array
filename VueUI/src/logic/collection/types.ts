@@ -2,7 +2,7 @@ import type { CaptainCareer, CaptainSpecialization } from "@/logic/captain/ident
 import type { CaptainTraitFill } from "@/logic/loadout/captainTraits";
 import type { CollectionLoadout } from "@/logic/loadout/types";
 
-export const COLLECTION_STATE_VERSION = 3 as const;
+export const COLLECTION_STATE_VERSION = 4 as const;
 
 export type CatalogKind = "ship" | "trait" | "starshipTrait" | "item";
 

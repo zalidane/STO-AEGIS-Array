@@ -522,7 +522,7 @@ describe("STO account folders", () => {
       ],
       entries: [],
     });
-    expect(fromV1.version).toBe(3);
+    expect(fromV1.version).toBe(4);
     expect(fromV1.accounts).toEqual([
       expect.objectContaining({
         id: MIGRATED_DEFAULT_ACCOUNT_ID,
@@ -542,7 +542,7 @@ describe("STO account folders", () => {
       entries: [],
       loadouts: [],
     });
-    expect(fromV2.version).toBe(3);
+    expect(fromV2.version).toBe(4);
     expect(fromV2.characters[0]?.accountId).toBe(MIGRATED_DEFAULT_ACCOUNT_ID);
   });
 
