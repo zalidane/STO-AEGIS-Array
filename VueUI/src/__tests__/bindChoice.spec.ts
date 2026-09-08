@@ -48,6 +48,21 @@ describe("bindChoice conditions", () => {
     ).toEqual([]);
   });
 
+  it("matches dilithium + faction requisition shipyard hulls (#19)", () => {
+    // Vor'cha Battlecruiser Retrofit
+    expect(bindChoiceFromCost("20000;Dil / 1;SRKDF5").conditionIds).toEqual([
+      "shipyard-dil-requisition",
+    ]);
+    expect(bindChoiceFromCost("20000;dil / 1;srfed5").conditionIds).toEqual([
+      "shipyard-dil-requisition",
+    ]);
+    // Dil alone or Zen + requisition (Kar'Fi) must not use this path
+    expect(bindChoiceFromCost("200000;dil").requiresChoice).toBe(false);
+    expect(bindChoiceFromCost("2000;Zen / 1;SRKDF6").conditionIds).toEqual([
+      "non-zen-path",
+    ]);
+  });
+
   it("composes the collect prompt from matched conditions only", () => {
     const kelvin = bindChoiceFromCost("1;LB / 29500;Zen");
     expect(kelvin.prompt).toContain("method other than the Zen Store");
@@ -57,6 +72,10 @@ describe("bindChoice conditions", () => {
     const phoenix = bindChoiceFromCost("1;PPP5");
     expect(phoenix.prompt).toContain("Phoenix Token");
     expect(phoenix.prompt).not.toContain("over 10,000");
+
+    const vorcha = bindChoiceFromCost("20000;Dil / 1;SRKDF5");
+    expect(vorcha.prompt).toContain("Dilithium shipyard");
+    expect(vorcha.prompt).not.toContain("Phoenix Token");
   });
 
   it("unions granting-ship conditions in list order", () => {
@@ -77,6 +96,7 @@ describe("bindChoice conditions", () => {
       "phoenix-anniversary",
       "non-zen-path",
       "expensive-zen",
+      "shipyard-dil-requisition",
     ]);
     expect(matchingBindChoiceConditions(null)).toEqual([]);
   });
