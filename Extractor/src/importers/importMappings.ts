@@ -11,6 +11,26 @@ import {
   mapTrait,
   mapTraySkill,
 } from "../mappers/cargoMappers.js";
+import {
+  mergeModifiers,
+  type ModifierCargoRow,
+  type ModifierSupplementRow,
+} from "./mergeModifiers.js";
+
+export const MODIFIERS_SUPPLEMENT_PATH = "output/supplements/Modifiers.json";
+
+function mergeModifiersSupplement(
+  cargo: Record<string, unknown>[],
+  supplement: unknown,
+): Record<string, unknown>[] {
+  if (!Array.isArray(supplement)) {
+    throw new Error("Modifiers supplement must be a JSON array");
+  }
+  return mergeModifiers(
+    cargo as ModifierCargoRow[],
+    supplement as ModifierSupplementRow[],
+  ) as Record<string, unknown>[];
+}
 
 export const importMappings = {
   GwObtain: {
@@ -31,8 +51,13 @@ export const importMappings = {
   },
   Modifiers: {
     model: "modifier",
-    uniqueFields: ["modifier", "type"],
+    // Replace so widened `type` keys replace the prior unique pair instead of
+    // leaving an orphan Cargo row beside the supplemented one.
+    strategy: "replace" as const,
+    identityFields: ["modifier", "type"] as const,
     mapper: mapModifier,
+    supplementFile: MODIFIERS_SUPPLEMENT_PATH,
+    mergeSupplement: mergeModifiersSupplement,
   },
   Reputation: {
     model: "reputation",
