@@ -26,6 +26,8 @@ const props = defineProps<{
   descriptionLabel?: string;
   /** Optional deep-link path builder for full detail pages. */
   detailsPath?: (id: number) => string;
+  /** Prefer selecting this catalog id when present in the current list. */
+  preferredSelectedId?: number | null;
   collectKind?: CatalogKind;
   collectBind?: BindScope | ((item: TraitBrowserItem) => BindScope);
   collectAccountUnlock?: boolean | ((item: TraitBrowserItem) => boolean);
@@ -88,6 +90,14 @@ watch(
       selectedId.value = null;
       return;
     }
+    const preferred = props.preferredSelectedId;
+    if (
+      preferred != null &&
+      items.some((item) => item.id === preferred)
+    ) {
+      selectedId.value = preferred;
+      return;
+    }
     if (
       selectedId.value == null ||
       !items.some((item) => item.id === selectedId.value)
@@ -96,6 +106,16 @@ watch(
     }
   },
   { immediate: true },
+);
+
+watch(
+  () => props.preferredSelectedId,
+  (preferred) => {
+    if (preferred == null) return;
+    if (filteredItems.value.some((item) => item.id === preferred)) {
+      selectedId.value = preferred;
+    }
+  },
 );
 
 function selectItem(id: number) {
@@ -313,7 +333,11 @@ const selectedCollectBindChoicePrompt = computed(() => {
             :collect-bind="selectedCollectBind"
             :collect-account-unlock="selectedCollectAccountUnlock"
             :collect-bind-choice-prompt="selectedCollectBindChoicePrompt"
-          />
+          >
+            <template #extra="slotProps">
+              <slot name="card-extra" v-bind="slotProps" />
+            </template>
+          </TraitDetailCard>
 
           <div v-else class="trait-browser__empty trait-browser__card">
             Select an item to view details.

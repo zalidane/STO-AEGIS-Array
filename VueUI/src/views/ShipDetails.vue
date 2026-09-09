@@ -535,7 +535,7 @@ watch(
             <div class="detail-card__body">
               <RouterLink
                 v-if="ship.uniConsole"
-                :to="`/items/${ship.uniConsole.id}`"
+                :to="`/items?id=${ship.uniConsole.id}`"
                 class="grant-link"
               >
                 <div class="grant-link__label">Unique console</div>
@@ -544,7 +544,7 @@ watch(
 
               <RouterLink
                 v-if="ship.experimentalWeaponItem"
-                :to="`/items/${ship.experimentalWeaponItem.id}`"
+                :to="`/items?id=${ship.experimentalWeaponItem.id}`"
                 class="grant-link"
               >
                 <div class="grant-link__label">Experimental weapon</div>

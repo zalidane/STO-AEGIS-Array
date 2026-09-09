@@ -1,34 +1,28 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { useRoute, useRouter } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
+import { useRouter } from "vue-router";
 import {
   InfoboxDocument,
   type InfoboxQuery,
 } from "@/graphql/generated/graphql";
-import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
-import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import DetailFieldList from "@/components/shared/DetailFieldList.vue";
-import CollectToggle from "@/components/collection/CollectToggle.vue";
-import WikiIcon from "@/components/shared/WikiIcon.vue";
-import { getItemImageUrl } from "@/utils/wikiImage";
-import {
-  allowsAccountUnlockFromGrantingShips,
-  bindScopeForKind,
-} from "@/logic/collection/bind";
-import { bindChoiceFromGrantingShips } from "@/logic/collection/bindChoice";
+import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import { displayInfoboxType } from "@/logic/collection/itemBrowser";
 import { publicUsageLabel } from "@/logic/share/usage";
 
-const route = useRoute();
+const props = defineProps<{
+  itemId: number;
+}>();
+
 const router = useRouter();
-const id = computed(() => Number(route.params.id));
 const { result, loading, error } = useQuery(InfoboxDocument, () => ({
-  id: id.value,
+  id: props.itemId,
 }));
 
 type Detail = NonNullable<InfoboxQuery["infobox"]>;
 const item = computed<Detail | null>(() => result.value?.infobox ?? null);
+
 const grantingShips = computed(() => {
   if (!item.value) return [];
   const byId = new Map<number, Detail["shipsWithConsole"][number]>();
@@ -40,19 +34,6 @@ const grantingShips = computed(() => {
   }
   return [...byId.values()];
 });
-const bind = computed(() =>
-  bindScopeForKind({
-    kind: "item",
-    grantingShipCosts: grantingShips.value.map((ship) => ship.cost),
-    boundto: item.value?.boundto,
-  }),
-);
-const allowAccountUnlock = computed(() =>
-  allowsAccountUnlockFromGrantingShips(grantingShips.value),
-);
-const bindChoicePrompt = computed(() =>
-  bindChoiceFromGrantingShips(grantingShips.value).prompt,
-);
 
 const fields = computed(() => {
   if (!item.value) return [];
@@ -74,42 +55,29 @@ const fields = computed(() => {
     { label: "Updated", value: i.updatedAt },
   ];
 });
+
+const usage = computed(() =>
+  item.value ? publicUsageLabel(item.value.publicBuildCount) : null,
+);
 </script>
 
 <template>
-  <v-container>
-    <AppBreadcrumbs :title="item?.name" />
-    <loading-panel v-if="loading" :message="'Infobox Details'" />
-    <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
+  <div class="item-full-details">
+    <loading-panel v-if="loading" message="Item details" />
+    <v-alert v-else-if="error" type="error" density="compact" class="mb-3">
+      {{ error.message }}
+    </v-alert>
     <template v-else-if="item">
-      <div class="d-flex align-start justify-space-between ga-4 mb-4">
-        <div class="d-flex align-start ga-4">
-          <WikiIcon :src="getItemImageUrl(item.image, item.name)" :alt="item.name" :size="64" />
-          <div>
-            <h3>{{ item.name }}</h3>
-            <h5>{{ item.rarity }} • {{ displayInfoboxType(item.type) }}</h5>
-            <p v-if="publicUsageLabel(item.publicBuildCount)" class="usage-line">
-              {{ publicUsageLabel(item.publicBuildCount) }}
-            </p>
-          </div>
-        </div>
-        <CollectToggle
-          kind="item"
-          :catalog-id="item.id"
-          :bind="bind"
-          :allow-account-unlock="allowAccountUnlock"
-          :bind-choice-prompt="bindChoicePrompt"
-        />
-      </div>
+      <p v-if="usage" class="item-full-details__usage">{{ usage }}</p>
 
-      <v-card class="mt-4 mb-4">
-        <v-card-title>Details</v-card-title>
+      <section class="item-full-details__section">
+        <h3 class="item-full-details__title">Details</h3>
         <DetailFieldList :items="fields" />
-      </v-card>
+      </section>
 
-      <v-card class="mb-4">
-        <v-card-title>Granted by ships</v-card-title>
-        <v-list>
+      <section class="item-full-details__section">
+        <h3 class="item-full-details__title">Granted by ships</h3>
+        <v-list density="compact" class="item-full-details__list">
           <v-list-item
             v-for="ship in grantingShips"
             :key="ship.id"
@@ -118,44 +86,77 @@ const fields = computed(() => {
             <v-list-item-title>{{ ship.name }}</v-list-item-title>
             <v-list-item-subtitle>Tier {{ ship.tier }}</v-list-item-subtitle>
           </v-list-item>
-          <v-list-item v-if="!grantingShips.length">None</v-list-item>
+          <v-list-item v-if="!grantingShips.length">
+            <v-list-item-title>None</v-list-item-title>
+          </v-list-item>
         </v-list>
-      </v-card>
+      </section>
 
-      <v-card class="mb-4">
-        <v-card-title>Ground Lock Boxes</v-card-title>
-        <v-list>
+      <section class="item-full-details__section">
+        <h3 class="item-full-details__title">Ground Lock Boxes</h3>
+        <v-list density="compact" class="item-full-details__list">
           <v-list-item v-for="box in item.gwLockBoxes" :key="box.id">
             <v-list-item-title>{{ box.flavor }}</v-list-item-title>
             <v-list-item-subtitle>
               {{ box.cat }} • {{ box.type }}
             </v-list-item-subtitle>
           </v-list-item>
-          <v-list-item v-if="!item.gwLockBoxes.length">None</v-list-item>
+          <v-list-item v-if="!item.gwLockBoxes.length">
+            <v-list-item-title>None</v-list-item-title>
+          </v-list-item>
         </v-list>
-      </v-card>
+      </section>
 
-      <v-card>
-        <v-card-title>Space Lock Boxes</v-card-title>
-        <v-list>
+      <section class="item-full-details__section">
+        <h3 class="item-full-details__title">Space Lock Boxes</h3>
+        <v-list density="compact" class="item-full-details__list">
           <v-list-item v-for="box in item.swLockBoxes" :key="box.id">
             <v-list-item-title>{{ box.flavor }}</v-list-item-title>
             <v-list-item-subtitle>
               {{ box.cat }} • {{ box.type }}
             </v-list-item-subtitle>
           </v-list-item>
-          <v-list-item v-if="!item.swLockBoxes.length">None</v-list-item>
+          <v-list-item v-if="!item.swLockBoxes.length">
+            <v-list-item-title>None</v-list-item-title>
+          </v-list-item>
         </v-list>
-      </v-card>
+      </section>
     </template>
-    <v-alert v-else type="warning">Infobox not found</v-alert>
-  </v-container>
+  </div>
 </template>
 
 <style scoped>
-.usage-line {
-  margin: 0.35rem 0 0;
-  color: rgba(255, 255, 255, 0.62);
+.item-full-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.item-full-details__usage {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.9rem;
+}
+
+.item-full-details__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.item-full-details__title {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+}
+
+.item-full-details__list {
+  background: transparent;
+  padding: 0;
 }
 </style>

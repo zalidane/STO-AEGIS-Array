@@ -127,15 +127,25 @@ function toPath(
   if (!route) return null;
   if (typeof route === "string") return route;
   if ("path" in route && typeof route.path === "string") return route.path;
-  if ("name" in route && route.params && "id" in (route.params as object)) {
+  if (!("name" in route)) return null;
+
+  const queryId =
+    route.query && typeof route.query === "object" && "id" in route.query
+      ? (route.query as { id?: unknown }).id
+      : undefined;
+  if (route.name === "items" && queryId != null) {
+    return `/items?id=${queryId}`;
+  }
+
+  if (route.params && "id" in (route.params as object)) {
     const id = (route.params as { id: number }).id;
     switch (route.name) {
       case "ship-details":
         return `/ships/${id}`;
       case "item-details":
-        return `/items/${id}`;
       case "infobox-details":
-        return `/items/${id}`;
+      case "items":
+        return `/items?id=${id}`;
       case "trait-details":
         return `/traits/${id}`;
       case "starship-trait-details":
@@ -183,7 +193,7 @@ watch(
             normalizeLookupKey(item.name) === normalizeLookupKey(page),
         );
         if (exact) {
-          nextRoutes[page] = `/items/${exact.id}`;
+          nextRoutes[page] = `/items?id=${exact.id}`;
           continue;
         }
 
