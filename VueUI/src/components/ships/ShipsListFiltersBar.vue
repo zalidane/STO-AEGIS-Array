@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { getFactionColor } from "@/mappers/factionColors";
+import { getFactionGlow } from "@/mappers/factionColors";
 import {
   shipsListFiltersAreActive,
   toggleInclusiveValue,
@@ -56,12 +56,8 @@ function factionButtonLabel(faction: string): string {
 }
 
 function factionAccent(faction: string): string {
-  const color = getFactionColor(faction);
-  if (color === "federation") return "#3fa7ff";
-  if (color === "klingon") return "#d32f2f";
-  if (color === "romulan") return "#00c853";
-  if (color === "dominion") return "#ff9838";
-  return "#7dd3fc";
+  // Match ship card / binder accents (Dominion purple is #9c27b0, not command orange).
+  return getFactionGlow(faction);
 }
 
 function onSearchUpdate(value: string) {
