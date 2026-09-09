@@ -230,7 +230,7 @@ const redditMarkdown = computed(() => {
     items: catalogItems.value,
     hullSlots: hullSlots.value,
     captainSlots: captainSlots.value,
-    captainFills: captain?.traitSlots,
+    captainFills: undefined,
     boffStations: boffStations.value,
     setBonuses: setBonuses.value,
   });
@@ -246,10 +246,7 @@ const collectAllRequests = computed(() => {
   const loadout = activeLoadout.value;
   if (!loadout) return [];
   return collectRequestsForSeated({
-    fills: [
-      ...loadout.slots,
-      ...(activeCharacter.value?.traitSlots ?? []),
-    ],
+    fills: [...loadout.slots],
     items: catalogItems.value,
     ownedCount: (kind, catalogId) =>
       ownedCopyCount(state.value, { kind, catalogId }),
@@ -265,7 +262,6 @@ const loadoutCosts = computed(() =>
   aggregateLoadoutCosts({
     seated: seatedItemsForCosts({
       loadout: activeLoadout.value,
-      captainFills: activeCharacter.value?.traitSlots,
       items: catalogItems.value,
     }),
     ownedKeys: ownedKeys.value,

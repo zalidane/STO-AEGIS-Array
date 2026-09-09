@@ -132,7 +132,8 @@ export function shipSpecificSectionLabel(shipName: string | null | undefined): s
 
 /**
  * Empty sockets on the captain space-traits board.
- * Captain starship fills live on the character; ship-specific fills live on the loadout.
+ * Personal Space, Starship, Reputation, and ship-specific fills all live on
+ * the active loadout so each build keeps its own trait set (#16).
  */
 export function buildCaptainTraitSlots(input: {
   faction?: string | null;
@@ -156,14 +157,14 @@ export function buildCaptainTraitSlots(input: {
     ...numbered(
       "personalSpace",
       "trait",
-      "character",
+      "loadout",
       personal,
       "personalSpace",
     ),
     ...numbered(
       "starship",
       "starshipTrait",
-      "character",
+      "loadout",
       CAPTAIN_STARSHIP_SLOTS,
       "captainStarship",
     ),
@@ -171,14 +172,14 @@ export function buildCaptainTraitSlots(input: {
     ...numbered(
       "spaceReputation",
       "trait",
-      "character",
+      "loadout",
       CAPTAIN_REPUTATION_SLOTS,
       "spaceReputation",
     ),
     ...numbered(
       "activeSpaceReputation",
       "trait",
-      "character",
+      "loadout",
       CAPTAIN_ACTIVE_REPUTATION_SLOTS,
       "activeSpaceReputation",
     ),
@@ -293,8 +294,15 @@ export function pruneCaptainTraitFills(
   if (!fills?.length) return [];
   const open = new Set(
     slots
-      .filter((slot) => slot.storage === "character" && !slot.locked)
+      .filter((slot) => !slot.locked)
       .map((slot) => slot.id),
   );
   return fills.filter((fill) => open.has(fill.slotId));
+}
+
+/** Slot ids used by the space-traits board (for pruning loadout.slots). */
+export function captainTraitBoardSlotIds(
+  slots: readonly CaptainTraitSlot[],
+): Set<string> {
+  return new Set(slots.filter((slot) => !slot.locked).map((slot) => slot.id));
 }

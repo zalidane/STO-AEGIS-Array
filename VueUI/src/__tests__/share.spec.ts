@@ -83,6 +83,35 @@ describe("encodeSharePayload", () => {
     expect(payload.slots[0]?.modifiers).toEqual(["[Dmg]", "[CrtH]", "[Pen]"]);
   });
 
+  it("includes personal trait seats on the loadout (#16)", () => {
+    const withTrait: CollectionLoadout = {
+      ...loadout,
+      slots: [
+        ...loadout.slots,
+        { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+      ],
+    };
+    const catalog = [
+      ...items,
+      {
+        id: 8,
+        name: "Crippling Fire",
+        type: "char",
+        catalogKind: "trait" as const,
+      },
+    ];
+    const payload = encodeSharePayload({
+      shipName: "Advanced Heavy Cruiser (T6)",
+      title: "Energy 1",
+      loadout: withTrait,
+      items: catalog,
+    });
+    expect(payload.slots.some((slot) => slot.catalogKind === "trait")).toBe(
+      true,
+    );
+    expect(payload.slots.map((slot) => slot.name)).toContain("Crippling Fire");
+  });
+
   it("keeps tray-skill roman rank when II and III share an officer rank", () => {
     const payload = encodeSharePayload({
       shipName: "Atlantis Temporal Destroyer",

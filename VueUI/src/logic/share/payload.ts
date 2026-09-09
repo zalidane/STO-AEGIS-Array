@@ -9,7 +9,7 @@ import type {
 export const SHARE_SCHEMA_VERSION = 1 as const;
 export const MIN_PUBLIC_FILLS = 8;
 
-export type ShareCatalogKind = "item" | "starshipTrait" | "traySkill";
+export type ShareCatalogKind = "item" | "starshipTrait" | "traySkill" | "trait";
 
 export type ShareSlot = {
   slotId: string;
@@ -36,7 +36,12 @@ export type ShareCatalogItem = Pick<
 >;
 
 function isShareKind(kind: LoadoutCatalogKind): kind is ShareCatalogKind {
-  return kind === "item" || kind === "starshipTrait" || kind === "traySkill";
+  return (
+    kind === "item" ||
+    kind === "starshipTrait" ||
+    kind === "traySkill" ||
+    kind === "trait"
+  );
 }
 
 function itemByFill(
