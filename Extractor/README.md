@@ -2,10 +2,12 @@
 
 Extracts Star Trek Online game data from [STOWiki](https://stowiki.net) Cargo tables into `output/*.json`, then imports those files into PostgreSQL via `@sto-aegis/database`. Image files are downloaded into `VueUI/public/images/`. After Cargo extract, experimental-weapon names are scraped from hull wikitext into `output/ShipExperimentalWeapons.json` (not a Cargo table).
 
+Committed **supplements** under `output/supplements/` fill Cargo gaps (missing modifier tokens, incomplete `available` lists, and later other tables). Import merges each supplement with its Cargo file before writing Prisma models. Cargo remains primary: supplements insert missing rows and may widen `type` / `available`, but do not overwrite non-empty wiki `stats`.
+
 **Workflow**
 
 1. **Extract (manual, local)** — fetch wiki → commit `output/*.json` (and optionally images)
-2. **Import (automatic / deploy)** — read committed JSON → production DB
+2. **Import (automatic / deploy)** — read committed JSON (+ supplements) → production DB
 
 Production never hits STOWiki; it only imports JSON shipped in git. Run extract from a home/residential IP, not Railway.
 
@@ -64,6 +66,19 @@ Infobox, Mastery, Reputation, SetBonus, Ships, StarshipTraits, Traits, TraySkill
 
 Import order is Infobox → Ships → StarshipTraits → Mastery → Modifiers → GwObtain → SwObtain → Reputation → SetBonus → Traits → TraySkill, then `linkRelations` (ship types, unique consoles, experimental weapons, trait-ship joins, HTML-entity name dedupe).
 
+### Supplements
+
+| File | Merges into | Purpose |
+|------|-------------|---------|
+| `output/supplements/Modifiers.json` | Modifiers | Missing tokens (e.g. `[HullCap]`, `[ShCap]`); widen or clear `available` (e.g. `[HullHeal]`) |
+
+Modifier supplement rows are Cargo-shaped. Optional `_merge` metadata (stripped before DB write):
+
+- `clearAvailable: true` — drop the Cargo item-name allowlist so eligibility follows **Type**
+- `matchType: "…"` — when several Cargo rows share a modifier name, pick which `type` blob to widen
+
+Import hashes Cargo + supplement together, so editing only the supplement still re-imports that table.
+
 ## CLI
 
 | Command / flag | Effect |
@@ -85,7 +100,7 @@ From the monorepo root:
 npm run test:extractor
 ```
 
-Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, and import name dedupe.
+Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier supplement merge, and import name dedupe.
 
 ## Images
 
@@ -106,7 +121,7 @@ Third-party licensing for extracted text and images is documented in
 
 ## Output in git
 
-`Extractor/output/*.json` **is tracked** so production deploys can import without extracting (including `ShipExperimentalWeapons.json`).
+`Extractor/output/*.json` **is tracked** so production deploys can import without extracting (including `ShipExperimentalWeapons.json` and `output/supplements/*.json`).
 
 `output/importState.json` and `output/.wiki-session.json` are **local-only** (gitignored).
 
