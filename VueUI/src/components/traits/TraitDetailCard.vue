@@ -193,6 +193,8 @@ const resolvedBind = computed(
       >
         No additional details available.
       </p>
+
+      <slot name="extra" :item="item" />
     </div>
     </div>
   </article>
