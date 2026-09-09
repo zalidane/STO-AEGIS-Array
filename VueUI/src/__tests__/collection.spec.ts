@@ -122,6 +122,16 @@ describe("bindScope", () => {
     expect(allowsAccountUnlockFromCost("3000;Zen")).toBe(false);
   });
 
+  it("defaults Dil + faction requisition shipyard hulls to BtC with an account-unlock choice (#19)", () => {
+    // Vor'cha Battlecruiser Retrofit
+    expect(bindScopeFromShipCost("20000;Dil / 1;SRKDF5")).toBe("character");
+    expect(allowsAccountUnlockFromCost("20000;Dil / 1;SRKDF5")).toBe(true);
+    // Kar'Fi keeps Zen + non-Zen path (account default, still offers choice)
+    expect(bindScopeFromShipCost("2000;Zen / 1;SRKDF6")).toBe("account");
+    expect(allowsAccountUnlockFromCost("2000;Zen / 1;SRKDF6")).toBe(true);
+    expect(allowsAccountUnlockFromCost("200000;dil")).toBe(false);
+  });
+
   it("offers a bind choice when a Zen hull also has a non-Zen path or costs more than 10,000 Zen", () => {
     expect(allowsAccountUnlockFromCost("1;LB / 3000;Zen")).toBe(true);
     expect(allowsAccountUnlockFromCost("1;LB / 29500;Zen")).toBe(true);

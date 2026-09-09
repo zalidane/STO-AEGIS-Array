@@ -63,15 +63,20 @@ export function allowsAccountUnlockFromGrantingShips(
 
 /**
  * Hull bind from wiki `cost`.
- * Phoenix / Anniversary pack costs default to character-bound. Dual-path and
- * expensive Zen hulls default to account; SHIP_BIND_CHOICE_CONDITIONS still
- * offers a single-captain choice when collecting.
+ * Phoenix / Anniversary pack costs default to character-bound. Dilithium +
+ * faction requisition shipyard hulls do the same. Dual-path and expensive Zen
+ * hulls default to account; SHIP_BIND_CHOICE_CONDITIONS still offers a
+ * single-captain choice when collecting.
  */
 export function bindScopeFromShipCost(
   cost: string | null | undefined,
 ): BindScope {
   const codes = shipCostCurrencyCodes(cost).map((code) => code.toLowerCase());
   if (codes.length === 0) return "unknown";
+  // Dil + SR* shipyard retrofits: default BtC, dialog offers BtA (#19).
+  if (codes.includes("dil") && codes.some((code) => code.startsWith("sr"))) {
+    return "character";
+  }
   if (codes.some(isAccountCurrency)) return "account";
   if (
     codes.some(
