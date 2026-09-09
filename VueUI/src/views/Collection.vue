@@ -128,7 +128,7 @@ function detailsPath(kind: CatalogKind, id: number): string {
   if (kind === "ship") return `/ships/${id}`;
   if (kind === "trait") return `/traits/${id}`;
   if (kind === "starshipTrait") return `/starship-traits/${id}`;
-  return `/items/${id}`;
+  return `/items?id=${id}`;
 }
 
 const catalogSources = computed(() => ({

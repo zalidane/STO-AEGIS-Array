@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useRoute } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
 import {
   InfoboxesDocument,
@@ -7,6 +8,7 @@ import {
 } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import TraitBrowserLayout from "@/components/traits/TraitBrowserLayout.vue";
+import ItemBrowserFullDetails from "@/components/collection/ItemBrowserFullDetails.vue";
 import { useKeepAliveScrollRestore } from "@/composables/useKeepAliveScrollRestore";
 import type { TraitBrowserItem } from "@/logic/traitBrowser";
 import {
@@ -25,6 +27,7 @@ defineOptions({ name: "Items" });
 
 useKeepAliveScrollRestore();
 
+const route = useRoute();
 const { result, loading, error } = useQuery(InfoboxesDocument);
 useAlignItemCatalog(() => result.value?.infoboxes);
 const { result: shipsResult } = useQuery(ShipsDocument);
@@ -32,6 +35,14 @@ const { result: shipsResult } = useQuery(ShipsDocument);
 const equipment = computed(() =>
   filterEquipmentInfoboxes(result.value?.infoboxes ?? []),
 );
+
+const preferredSelectedId = computed(() => {
+  const raw = route.query.id;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (value == null || value === "") return null;
+  const id = Number(value);
+  return Number.isFinite(id) ? id : null;
+});
 
 const bindById = computed(() => {
   const map = new Map<number, BindScope>();
@@ -88,12 +99,16 @@ function collectBindChoicePromptFor(item: TraitBrowserItem): string {
       :items="items"
       :loading="loading"
       :error-message="error?.message"
-      :details-path="(id) => `/items/${id}`"
+      :preferred-selected-id="preferredSelectedId"
       collect-kind="item"
       :collect-bind="collectBindFor"
       :collect-account-unlock="collectAccountUnlockFor"
       :collect-bind-choice-prompt="collectBindChoicePromptFor"
-    />
+    >
+      <template #card-extra="{ item }">
+        <ItemBrowserFullDetails :item-id="item.id" />
+      </template>
+    </TraitBrowserLayout>
   </v-container>
 </template>
 
