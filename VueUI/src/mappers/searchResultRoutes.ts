@@ -15,7 +15,7 @@ export function getSearchResultRoute(type: string, id: number) {
     case "Mastery":
       return { name: "mastery-details", params: { id } };
     case "Infobox":
-      return { name: "item-details", params: { id } };
+      return { name: "items", query: { id: String(id) } };
     case "ShipType":
       return { name: "ship-type-details", params: { id } };
     default:

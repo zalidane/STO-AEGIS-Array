@@ -21,7 +21,6 @@ import Reputations from "@/views/Reputations.vue";
 import ReputationDetails from "@/views/ReputationDetails.vue";
 import Modifiers from "@/views/Modifiers.vue";
 import ModifierDetails from "@/views/ModifierDetails.vue";
-import InfoboxDetails from "@/views/InfoboxDetails.vue";
 import Items from "@/views/Items.vue";
 import ShipTypes from "@/views/ShipTypes.vue";
 import ShipTypeDetails from "@/views/ShipTypeDetails.vue";
@@ -166,8 +165,10 @@ const router = createRouter({
     {
       path: "/items/:id",
       name: "item-details",
-      component: InfoboxDetails,
-      meta: { breadcrumb: "Item Details", parent: "/items" },
+      redirect: (to) => ({
+        name: "items",
+        query: { id: String(to.params.id) },
+      }),
     },
     {
       path: "/infoboxes",
@@ -176,8 +177,10 @@ const router = createRouter({
     {
       path: "/infoboxes/:id",
       name: "infobox-details",
-      component: InfoboxDetails,
-      meta: { breadcrumb: "Item Details", parent: "/items" },
+      redirect: (to) => ({
+        name: "items",
+        query: { id: String(to.params.id) },
+      }),
     },
     {
       path: "/ship-types",

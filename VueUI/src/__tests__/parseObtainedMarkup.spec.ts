@@ -131,7 +131,7 @@ describe("resolveObtainedLink", () => {
         shipsByName,
         infoboxesByName,
       }),
-    ).toEqual({ name: "item-details", params: { id: 46172 } });
+    ).toEqual({ name: "items", query: { id: "46172" } });
 
     expect(
       resolveObtainedLink("Discovery: Emerald Chain Lock Box", {

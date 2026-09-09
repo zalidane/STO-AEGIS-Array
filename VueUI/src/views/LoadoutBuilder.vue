@@ -796,7 +796,7 @@ watch(activeLoadout, (loadout) => {
               <RouterLink
                 v-if="ship.uniConsole"
                 class="grant-link"
-                :to="`/items/${ship.uniConsole.id}`"
+                :to="`/items?id=${ship.uniConsole.id}`"
               >
                 <div class="slot-card__name">{{ ship.uniConsole.name }}</div>
                 <div v-if="ship.uniConsole.rarity" class="slot-card__meta">
@@ -818,7 +818,7 @@ watch(activeLoadout, (loadout) => {
               <RouterLink
                 v-if="ship.experimentalWeaponItem"
                 class="grant-link"
-                :to="`/items/${ship.experimentalWeaponItem.id}`"
+                :to="`/items?id=${ship.experimentalWeaponItem.id}`"
               >
                 <div class="slot-card__name">
                   {{ ship.experimentalWeaponItem.name }}
