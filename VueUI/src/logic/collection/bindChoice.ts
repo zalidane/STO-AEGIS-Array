@@ -99,6 +99,13 @@ export const SHIP_BIND_CHOICE_CONDITIONS: BindChoiceCondition[] = [
           numericAmount(part.amount) > EXPENSIVE_ZEN_THRESHOLD,
       ),
   },
+  {
+    id: "shipyard-dil-requisition",
+    prompt:
+      "Dilithium shipyard hulls bought with faction starship requisition can be bound to this captain, or unlocked for the account (Phoenix / Event reclaim style).",
+    matches: ({ codes }) =>
+      codes.includes("dil") && codes.some((code) => code.startsWith("sr")),
+  },
 ];
 
 export function matchingBindChoiceConditions(
