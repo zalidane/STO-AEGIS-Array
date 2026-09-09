@@ -48,7 +48,7 @@ import {
 import type { ShareCatalogItem, SharePayload } from "@/logic/share/payload";
 import type { LoadoutEquipContext } from "@/logic/loadout/types";
 import {
-  applyCaptainTraitFills,
+  applyCaptainTraitLoadout,
   equipCaptainTraitSlot,
   unequipCaptainTraitSlot,
   type CaptainTraitEquipContext,
@@ -310,6 +310,7 @@ export const useCollectionStore = defineStore("collection", () => {
 
   function equipCaptainTrait(
     input: {
+      loadoutId: string;
       slotId: string;
       itemId: number;
       catalogKind: CaptainTraitFill["catalogKind"];
@@ -318,13 +319,13 @@ export const useCollectionStore = defineStore("collection", () => {
   ) {
     const result = equipCaptainTraitSlot(state.value, input, context);
     if (!result.ok) return result;
-    state.value = applyCaptainTraitFills(state.value, result.fills);
+    state.value = applyCaptainTraitLoadout(state.value, result.loadout);
     persist();
     return result;
   }
 
-  function unequipCaptainTrait(slotId: string) {
-    state.value = unequipCaptainTraitSlot(state.value, slotId);
+  function unequipCaptainTrait(loadoutId: string, slotId: string) {
+    state.value = unequipCaptainTraitSlot(state.value, { loadoutId, slotId });
     persist();
   }
 

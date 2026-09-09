@@ -620,7 +620,7 @@ describe("matchSetBonuses", () => {
   });
 });
 
-describe("hydrateCollectionState v1 to v3", () => {
+describe("hydrateCollectionState v1 to v4", () => {
   it("keeps captains, adds loadouts, and assigns a default PC account", () => {
     const migrated = hydrateCollectionState({
       version: 1,
@@ -630,7 +630,7 @@ describe("hydrateCollectionState v1 to v3", () => {
       ],
       entries: [],
     });
-    expect(migrated.version).toBe(3);
+    expect(migrated.version).toBe(4);
     expect(migrated.characters).toHaveLength(1);
     expect(migrated.characters[0]?.accountId).toBe("account-default");
     expect(migrated.accounts).toEqual([
@@ -833,7 +833,7 @@ describe("loadout costs", () => {
     ]);
   });
 
-  it("unions hull fills with captain-board traits without duplicating", () => {
+  it("unions hull fills with loadout-board traits without duplicating", () => {
     const catalog: LoadoutItem[] = [
       { id: 10, name: "Console A", type: "universal console", catalogKind: "item" },
       { id: 90, name: "Trait A", type: "starship trait", catalogKind: "starshipTrait" },
@@ -843,11 +843,9 @@ describe("loadout costs", () => {
         slots: [
           { slotId: "universalConsole-0", itemId: 10, catalogKind: "item" },
           { slotId: "starshipTrait-0", itemId: 90, catalogKind: "starshipTrait" },
+          { slotId: "captainStarship-0", itemId: 90, catalogKind: "starshipTrait" },
         ],
       },
-      captainFills: [
-        { slotId: "captainStarship-0", itemId: 90, catalogKind: "starshipTrait" },
-      ],
       items: catalog,
     });
     expect(seated.map((item) => item.id)).toEqual([10, 90]);
@@ -894,10 +892,15 @@ describe("loadout costs", () => {
   it("adds a captain starship trait’s granting-ship cost", () => {
     const summary = aggregateLoadoutCosts({
       seated: seatedItemsForCosts({
-        loadout: { slots: [] },
-        captainFills: [
-          { slotId: "captainStarship-0", itemId: 90, catalogKind: "starshipTrait" },
-        ],
+        loadout: {
+          slots: [
+            {
+              slotId: "captainStarship-0",
+              itemId: 90,
+              catalogKind: "starshipTrait",
+            },
+          ],
+        },
         items: [
           {
             id: 90,

@@ -18,7 +18,6 @@ import {
   type BoffStationSlot,
 } from "@/logic/loadout/boffPowers";
 import {
-  fillForCaptainSlot,
   type CaptainTraitSlot,
 } from "@/logic/loadout/captainTraits";
 import { fillForSlot } from "@/logic/loadout/state";
@@ -54,10 +53,7 @@ export function useLoadoutPicker(input: {
   }
 
   function seatedFills() {
-    return [
-      ...(toValue(input.activeLoadout)?.slots ?? []),
-      ...(activeCharacter.value?.traitSlots ?? []),
-    ];
+    return [...(toValue(input.activeLoadout)?.slots ?? [])];
   }
 
   function captainIdentity() {
@@ -90,14 +86,13 @@ export function useLoadoutPicker(input: {
   }
 
   function itemInCaptainSlot(slot: CaptainTraitSlot): LoadoutItem | null {
-    const fill =
-      slot.storage === "loadout"
-        ? fillForSlot(toValue(input.activeLoadout), slot.id)
-        : fillForCaptainSlot(activeCharacter.value?.traitSlots, slot.id);
+    const fill = fillForSlot(toValue(input.activeLoadout), slot.id);
     if (!fill) return null;
     return lookupLoadoutItem(
       toValue(input.itemByKey),
-      fill.catalogKind,
+      fill.catalogKind === "trait" || fill.catalogKind === "starshipTrait"
+        ? fill.catalogKind
+        : slot.catalogKind,
       fill.itemId,
     );
   }
@@ -205,27 +200,11 @@ export function useLoadoutPicker(input: {
 
     const captainSlot = pickerCaptainSlot.value;
     if (captainSlot) {
-      if (captainSlot.storage === "loadout") {
-        const loadout = toValue(input.activeLoadout);
-        if (!loadout) return;
-        const result = store.equipSlot(
-          {
-            loadoutId: loadout.id,
-            slotId: captainSlot.id,
-            itemId: item.id,
-            catalogKind: "starshipTrait",
-          },
-          equipContext(),
-        );
-        if (!result.ok) {
-          pickerError.value = equipMessage(result.reason);
-          return;
-        }
-        pickerOpen.value = false;
-        return;
-      }
+      const loadout = toValue(input.activeLoadout);
+      if (!loadout) return;
       const result = store.equipCaptainTrait(
         {
+          loadoutId: loadout.id,
           slotId: captainSlot.id,
           itemId: item.id,
           catalogKind:
@@ -279,10 +258,9 @@ export function useLoadoutPicker(input: {
 
   function clearPickerSlot() {
     if (pickerCaptainSlot.value) {
-      if (pickerCaptainSlot.value.storage === "loadout") {
-        clearSlot(pickerCaptainSlot.value.id);
-      } else {
-        store.unequipCaptainTrait(pickerCaptainSlot.value.id);
+      const loadout = toValue(input.activeLoadout);
+      if (loadout) {
+        store.unequipCaptainTrait(loadout.id, pickerCaptainSlot.value.id);
       }
       pickerOpen.value = false;
       return;
