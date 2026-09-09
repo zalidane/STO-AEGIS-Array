@@ -1,0 +1,32 @@
+[
+  {
+    "modifier": "[HullCap]",
+    "stats": "+__ Starship Hull Capacity",
+    "type": "Ship Deflector Dish,Ship Secondary Deflector",
+    "available": null,
+    "isunique": "1",
+    "isepic": "0",
+    "info": "Supplement: standalone Hull Capacity (wiki Cargo only publishes combo tokens such as [HullCap/DrainX])."
+  },
+  {
+    "modifier": "[ShCap]",
+    "stats": "+__ Starship Shield Capacity",
+    "type": "Ship Deflector Dish,Ship Secondary Deflector",
+    "available": null,
+    "isunique": "1",
+    "isepic": "0",
+    "info": "Supplement: standalone Shield Capacity (wiki Cargo only publishes combo tokens such as [ShCap/CtrlX])."
+  },
+  {
+    "modifier": "[HullHeal]",
+    "stats": "+__ Starship Hull Restoration",
+    "type": "Ship Deflector Dish",
+    "available": null,
+    "isunique": "1",
+    "isepic": "0",
+    "info": null,
+    "_merge": {
+      "clearAvailable": true
+    }
+  }
+]

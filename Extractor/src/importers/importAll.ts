@@ -24,6 +24,20 @@ const IMPORT_ORDER = [
   "TraySkill",
 ] as const;
 
+/** Cargo hash, or cargo+supplement when a table uses a committed overlay. */
+async function tableImportHash(
+  filePath: string,
+  config: { supplementFile?: string },
+): Promise<string> {
+  const cargoHash = await getFileHash(filePath);
+  const supplementPath = config.supplementFile;
+  if (!supplementPath || !existsSync(supplementPath)) {
+    return cargoHash;
+  }
+  const supplementHash = await getFileHash(supplementPath);
+  return `${cargoHash}:${supplementHash}`;
+}
+
 export async function importAll(forceImport = false) {
   // Create client only after env is loaded (see main.ts loadEnv).
   const { prisma, pool } = createPrismaClient();
@@ -37,7 +51,7 @@ export async function importAll(forceImport = false) {
       if (!config) continue;
 
       const filePath = `output/${table}.json`;
-      const currentHash = await getFileHash(filePath);
+      const currentHash = await tableImportHash(filePath, config);
       const previousHash = state[table]?.hash;
 
       if (!forceImport && currentHash === previousHash) {
