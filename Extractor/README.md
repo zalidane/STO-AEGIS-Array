@@ -70,7 +70,7 @@ Import order is Infobox → Ships → StarshipTraits → Mastery → Modifiers �
 
 | File | Merges into | Purpose |
 |------|-------------|---------|
-| `output/supplements/Modifiers.json` | Modifiers | Missing tokens (e.g. `[HullCap]`, `[ShCap]`); widen or clear `available` (e.g. `[HullHeal]`) |
+| `output/supplements/Modifiers.json` | Modifiers | Missing tokens (e.g. `[HullCap]`, `[ShCap]`); widen or clear `available` (e.g. `[HullHeal]`); widen `[Proc]` Type with `Ship Fore Weapon` |
 
 Modifier supplement rows are Cargo-shaped. Optional `_merge` metadata (stripped before DB write):
 

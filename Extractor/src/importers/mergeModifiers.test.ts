@@ -209,4 +209,33 @@ describe("mergeModifiers", () => {
 
     assert.equal("_merge" in merged[0]!, false);
   });
+
+  it("widens [Proc] to include Ship Fore Weapon (#10)", () => {
+    const cargoProc: ModifierCargoRow = {
+      modifier: "[Proc]",
+      stats: null,
+      type: "Body Armor,EV Suit,Ground Weapon,Kit,Personal Shield,Ship Aft Weapon,Ship Weapon",
+      available: null,
+      isunique: "1",
+      isepic: "0",
+      info: null,
+    };
+
+    const merged = mergeModifiers([cargoProc], [
+      {
+        modifier: "[Proc]",
+        type: "Body Armor,EV Suit,Ground Weapon,Kit,Personal Shield,Ship Aft Weapon,Ship Weapon,Ship Fore Weapon",
+        available: null,
+        isunique: "1",
+        isepic: "0",
+        info: "supplement",
+      },
+    ]);
+
+    assert.equal(merged.length, 1);
+    assert.match(merged[0]!.type, /Ship Fore Weapon/);
+    assert.match(merged[0]!.type, /Ship Weapon/);
+    assert.equal(merged[0]!.available, null);
+    assert.equal(merged[0]!.info, null);
+  });
 });
