@@ -1,0 +1,20 @@
+{
+  "name": "STO AEGIS Array",
+  "user": "ubuntu",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "graphql",
+      "command": "npm run dev:graphql"
+    },
+    {
+      "name": "vue",
+      "command": "npm run dev:vue"
+    }
+  ],
+  "ports": [
+    { "name": "GraphQL API", "port": 4000 },
+    { "name": "Vue UI", "port": 5173 }
+  ]
+}
