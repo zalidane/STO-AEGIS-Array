@@ -14,6 +14,8 @@ export type SetBonusSource = {
   reqItems: number | null;
   passives: string | null;
   procs?: string | null;
+  /** Newline or semicolon-separated item name globs. */
+  members?: string | null;
 };
 
 export type SetBonusItem = Pick<LoadoutItem, "name" | "who"> & {
@@ -152,48 +154,175 @@ function inferredSetId(kind: string, label: string): number {
 }
 
 function bonusText(set: SetBonusSource): string | null {
-  const passives = set.passives?.trim() || null;
-  if (passives) return passives;
-  const procs = set.procs?.trim() || null;
-  return procs;
+  const parts = [set.passives, set.procs]
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
+  return parts.length > 0 ? parts.join("\n") : null;
 }
 
-function sortSetBonuses(sets: ActiveSetBonus[]): ActiveSetBonus[] {
-  return [...sets].sort(
-    (a, b) => b.equipped - a.equipped || a.name.localeCompare(b.name),
+function stripMarkSuffix(name: string): string {
+  return decodeHtmlEntities(name)
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\s+Mk\s+[IVX∞0-9]+.*$/i, "");
+}
+
+export function parseSetMembers(members: string | null | undefined): string[] {
+  if (!members?.trim()) return [];
+  return members
+    .split(/\r?\n|;/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Glob-style member match (`*` = any run of characters). Ignores Mk suffixes. */
+export function itemMatchesMemberPattern(
+  itemName: string,
+  pattern: string,
+): boolean {
+  const item = stripMarkSuffix(itemName).toLowerCase();
+  const glob = decodeHtmlEntities(pattern).replace(/\s+/g, " ").trim().toLowerCase();
+  if (!glob) return false;
+  if (!glob.includes("*")) {
+    return item === glob || item.startsWith(`${glob} `);
+  }
+  const regex = new RegExp(
+    `^${escapeRegex(glob).replace(/\\\*/g, ".*")}$`,
+    "i",
   );
+  return regex.test(item);
+}
+
+function itemMatchesSet(itemName: string, set: SetBonusSource): boolean {
+  const patterns = parseSetMembers(set.members);
+  if (patterns.length > 0) {
+    return patterns.some((pattern) =>
+      itemMatchesMemberPattern(itemName, pattern),
+    );
+  }
+  return (
+    itemBelongsToSet(itemName, set.name) ||
+    (set.setPage != null && itemBelongsToSet(itemName, set.setPage))
+  );
+}
+
+function matchSetPieces(
+  equipped: ReadonlyArray<SetBonusItem>,
+  set: SetBonusSource,
+): { pieces: string[]; missing: string[] } {
+  const patterns = parseSetMembers(set.members);
+  if (patterns.length === 0) {
+    const pieces = equipped
+      .filter((item) => itemMatchesSet(item.name, set))
+      .map((item) => item.name);
+    return { pieces, missing: [] };
+  }
+
+  const remaining = [...equipped];
+  const pieces: string[] = [];
+  const missing: string[] = [];
+  for (const pattern of patterns) {
+    const index = remaining.findIndex((item) =>
+      itemMatchesMemberPattern(item.name, pattern),
+    );
+    if (index < 0) {
+      missing.push(pattern.replace(/\*/g, "").replace(/\s+/g, " ").trim());
+      continue;
+    }
+    pieces.push(remaining[index]!.name);
+    remaining.splice(index, 1);
+  }
+  return { pieces, missing };
+}
+
+function setGroupKey(set: SetBonusSource): string {
+  const page = set.setPage?.trim();
+  if (page) return page.toLowerCase();
+  return set.name.trim().toLowerCase();
 }
 
 function cargoSetBonuses(
   equipped: ReadonlyArray<SetBonusItem>,
   sets: ReadonlyArray<SetBonusSource>,
 ): ActiveSetBonus[] {
-  return sets
-    .map((set) => {
-      const pieces = equipped
-        .filter(
-          (item) =>
-            itemBelongsToSet(item.name, set.name) ||
-            (set.setPage != null && itemBelongsToSet(item.name, set.setPage)),
-        )
-        .map((item) => item.name);
-      const equippedCount = pieces.length;
-      const required =
-        set.reqItems != null && set.reqItems > 0
-          ? set.reqItems
-          : DEFAULT_NAMED_SET_SIZE;
-      return {
-        id: set.id,
-        name: set.setPage?.trim() || set.name,
-        equipped: equippedCount,
-        required,
-        complete: equippedCount >= required,
-        passives: bonusText(set),
-        pieces,
-        missing: [],
-      };
-    })
-    .filter((set) => set.equipped >= 2);
+  const groups = new Map<string, SetBonusSource[]>();
+  for (const set of sets) {
+    const key = setGroupKey(set);
+    const group = groups.get(key) ?? [];
+    group.push(set);
+    groups.set(key, group);
+  }
+
+  const results: ActiveSetBonus[] = [];
+  for (const group of groups.values()) {
+    const primary =
+      group.find((row) => parseSetMembers(row.members).length > 0) ?? group[0]!;
+    const { pieces, missing } = matchSetPieces(equipped, primary);
+    const equippedCount = pieces.length;
+    if (equippedCount < 2) continue;
+
+    const required = Math.max(
+      ...group.map((row) =>
+        row.reqItems != null && row.reqItems > 0
+          ? row.reqItems
+          : DEFAULT_NAMED_SET_SIZE,
+      ),
+    );
+    const distinctNames = new Set(
+      group.map((row) => row.name.trim().toLowerCase()).filter(Boolean),
+    );
+    const prefixLabels = distinctNames.size > 1;
+
+    function rowNeed(row: SetBonusSource): number {
+      return row.reqItems != null && row.reqItems > 0 ? row.reqItems : 2;
+    }
+
+    let unlockedRows = group.filter((row) => equippedCount >= rowNeed(row));
+    if (unlockedRows.length === 0) {
+      const preview = [...group]
+        .filter((row) => bonusText(row))
+        .sort((left, right) => rowNeed(left) - rowNeed(right))[0];
+      if (preview) unlockedRows = [preview];
+    }
+
+    const unlocked: string[] = [];
+    const seenText = new Set<string>();
+    for (const row of unlockedRows) {
+      const text = bonusText(row);
+      if (!text) continue;
+      const label = row.name.trim();
+      const page = (row.setPage ?? "").trim();
+      const formatted =
+        prefixLabels && page && label.toLowerCase() !== page.toLowerCase()
+          ? `${label}: ${text}`
+          : text;
+      if (seenText.has(formatted)) continue;
+      seenText.add(formatted);
+      unlocked.push(formatted);
+    }
+
+    results.push({
+      id: primary.id,
+      name: primary.setPage?.trim() || primary.name,
+      equipped: equippedCount,
+      required,
+      complete: equippedCount >= required,
+      passives: unlocked.length > 0 ? unlocked.join("\n") : null,
+      pieces,
+      missing,
+    });
+  }
+  return results;
+}
+
+function sortSetBonuses(sets: ActiveSetBonus[]): ActiveSetBonus[] {
+  return [...sets].sort(
+    (a, b) => b.equipped - a.equipped || a.name.localeCompare(b.name),
+  );
 }
 
 function whoSetBonuses(
@@ -302,6 +431,7 @@ function namesCoveredByCargo(
  * Match seated items to set bonuses.
  * Wiki cargo is sparse, so unique consoles that share a who-restriction
  * and items that share a distinctive name prefix are inferred locally.
+ * Supplement `members` globs match packs whose names do not include the set page.
  */
 export function matchSetBonuses(
   equipped: ReadonlyArray<SetBonusItem>,
