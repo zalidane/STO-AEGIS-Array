@@ -22,6 +22,10 @@ import {
 } from "@/logic/loadout/pickerRank";
 import { matchesPickerQuery } from "@/logic/loadout/pickerSearch";
 import {
+  hangarPetFitsShip,
+  type HangarShip,
+} from "@/logic/loadout/hangarWho";
+import {
   itemFitsHullSlot,
   itemHasOpenCopy,
   loadoutOwnershipKey,
@@ -46,9 +50,13 @@ export function fittingItems(input: {
   collectedOnly: boolean;
   ownedKeys: ReadonlySet<string>;
   exceptSlotId?: string;
+  ship?: HangarShip | null;
 }): LoadoutItem[] {
   return input.catalog.filter((item) => {
     if (!itemFitsHullSlot(item, input.kind)) return false;
+    if (input.kind === "hangar" && !hangarPetFitsShip(item, input.ship)) {
+      return false;
+    }
     if (!itemHasOpenCopy(item, input.seated, input.exceptSlotId)) return false;
     if (!input.collectedOnly) return true;
     return input.ownedKeys.has(
@@ -116,6 +124,7 @@ export function pickerCandidatesFor(input: {
   collectedOnly: boolean;
   ownedKeys: ReadonlySet<string>;
   identity: PickerCaptainIdentity;
+  ship?: HangarShip | null;
 }): LoadoutItem[] {
   const query = input.query.trim();
   const captainSlot = input.captainSlot ?? null;
@@ -146,6 +155,7 @@ export function pickerCandidatesFor(input: {
             collectedOnly: input.collectedOnly,
             ownedKeys: input.ownedKeys,
             exceptSlotId: hullSlot.id,
+            ship: input.ship,
           })
         : [];
 

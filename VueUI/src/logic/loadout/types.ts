@@ -1,5 +1,6 @@
 import type { CombatParseSummary } from "@/logic/combatlog/types";
 import type { LoadoutBoardPrefs } from "./boardPrefs";
+import type { HangarShip } from "./hangarWho";
 
 export type LoadoutCatalogKind = "item" | "starshipTrait" | "trait" | "traySkill";
 
@@ -68,6 +69,8 @@ export type LoadoutEquipContext = {
   modifiers?: ReadonlyArray<import("./slotModifiers").LoadoutModifier>;
   /** When false, unowned catalog items may still be seated. Defaults to true. */
   requireOwned?: boolean;
+  /** Hangar-pet `who` matching; ignored for non-hangar slots. */
+  ship?: HangarShip | null;
 };
 
 export type EquipFailure =
