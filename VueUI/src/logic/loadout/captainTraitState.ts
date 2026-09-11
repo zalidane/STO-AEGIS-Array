@@ -61,12 +61,12 @@ export function equipCaptainTraitSlot(
   }
   if (slot.locked) return { ok: false, reason: "locked-slot" };
 
-  const trait = context.traits.find(
+  const matches = context.traits.filter(
     (row) =>
       row.id === input.itemId &&
       (row.catalogKind ?? "trait") === input.catalogKind,
   );
-  if (!trait) return { ok: false, reason: "unknown-item" };
+  if (matches.length === 0) return { ok: false, reason: "unknown-item" };
 
   const requireOwned = context.requireOwned !== false;
   if (
@@ -77,12 +77,17 @@ export function equipCaptainTraitSlot(
   ) {
     return { ok: false, reason: "not-owned" };
   }
-  if (
-    !traitFitsCaptainSlot(trait, slot, {
+  // Catalog kinds share a numeric id space (an infobox item and a personal
+  // trait can both have id 1), and asCaptainTrait maps non-starship items to
+  // "trait", so several rows can match the same (id, kind). Seat the one that
+  // actually fits this slot rather than the first id collision.
+  const trait = matches.find((row) =>
+    traitFitsCaptainSlot(row, slot, {
       career: context.career,
       raceLabel: context.raceLabel,
-    })
-  ) {
+    }),
+  );
+  if (!trait) {
     return { ok: false, reason: "illegal-slot" };
   }
 
