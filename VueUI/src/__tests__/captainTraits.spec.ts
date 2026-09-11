@@ -419,6 +419,48 @@ describe("captain trait slots", () => {
     ]);
   });
 
+  it("keeps board prefs and trait seats when hydrating a v4 save (#17)", () => {
+    const hydrated = hydrateCollectionState({
+      version: 4,
+      activeCharacterId: "c1",
+      characters: [
+        {
+          id: "c1",
+          name: "Alice",
+          createdAt: "2026-08-29T00:00:00.000Z",
+          career: "tactical",
+          faction: "federation",
+          race: "human",
+          traitSlots: [],
+        },
+      ],
+      entries: [],
+      loadouts: [
+        {
+          id: "lo-1",
+          characterId: "c1",
+          shipId: 10,
+          name: "Build 1",
+          createdAt: "2026-08-29T00:00:00.000Z",
+          updatedAt: "2026-08-29T00:00:00.000Z",
+          boardPrefs: { hullUpgrade: "stock", hideModifiers: true },
+          slots: [
+            { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+            { slotId: "foreWeapon-0", itemId: 1, catalogKind: "item" },
+          ],
+        },
+      ],
+    });
+    expect(hydrated.loadouts[0]?.boardPrefs).toEqual({
+      hullUpgrade: "stock",
+      hideModifiers: true,
+    });
+    expect(hydrated.loadouts[0]?.slots).toEqual([
+      { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+      { slotId: "foreWeapon-0", itemId: 1, catalogKind: "item" },
+    ]);
+  });
+
   it("stores captain specializations and drops a duplicate secondary", () => {
     let state = createCharacter(
       createEmptyCollectionState(),

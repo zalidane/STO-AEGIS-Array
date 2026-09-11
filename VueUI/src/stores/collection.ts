@@ -32,6 +32,7 @@ import {
   loadoutsForCharacter,
   renameLoadout,
   unequipLoadoutSlot,
+  updateLoadoutBoardPrefs,
   updateLoadoutSlotMods,
 } from "@/logic/loadout/state";
 import {
@@ -47,6 +48,7 @@ import {
 } from "@/logic/share/copyToCaptain";
 import type { ShareCatalogItem, SharePayload } from "@/logic/share/payload";
 import type { LoadoutEquipContext } from "@/logic/loadout/types";
+import type { LoadoutBoardPrefs } from "@/logic/loadout/boardPrefs";
 import {
   applyCaptainTraitLoadout,
   equipCaptainTraitSlot,
@@ -298,6 +300,11 @@ export const useCollectionStore = defineStore("collection", () => {
     persist();
   }
 
+  function updateBoardPrefs(loadoutId: string, patch: LoadoutBoardPrefs) {
+    state.value = updateLoadoutBoardPrefs(state.value, loadoutId, patch);
+    persist();
+  }
+
   function saveCombatParse(loadoutId: string, parse: CombatParseSummary) {
     state.value = attachCombatParse(state.value, loadoutId, parse);
     persist();
@@ -408,6 +415,7 @@ export const useCollectionStore = defineStore("collection", () => {
     equipSlot,
     unequipSlot,
     updateSlotMods,
+    updateBoardPrefs,
     saveCombatParse,
     removeCombatParse,
     equipCaptainTrait,

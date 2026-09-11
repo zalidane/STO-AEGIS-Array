@@ -1,4 +1,5 @@
 import type { CombatParseSummary } from "@/logic/combatlog/types";
+import type { LoadoutBoardPrefs } from "./boardPrefs";
 
 export type LoadoutCatalogKind = "item" | "starshipTrait" | "trait" | "traySkill";
 
@@ -29,6 +30,8 @@ export type CollectionLoadout = {
   boffSeatCareers?: Record<string, "Tactical" | "Engineering" | "Science">;
   /** Measured parse summary. Raw combatlog.log is never stored. */
   combatParse?: CombatParseSummary;
+  /** Hide/lock unused extras and hide modifier pickers (#17). */
+  boardPrefs?: LoadoutBoardPrefs;
 };
 
 export type LoadoutItem = {
@@ -57,6 +60,7 @@ export type LoadoutEquipContext = {
     id: string;
     kind: import("./slotClass").HullSlotKind;
     index: number;
+    locked?: boolean;
   }>;
   items: ReadonlyArray<LoadoutItem>;
   ownedKeys: ReadonlySet<string>;
@@ -73,6 +77,7 @@ export type EquipFailure =
   | "unknown-item"
   | "not-owned"
   | "illegal-slot"
+  | "locked-slot"
   | "equip-limit";
 
 export type EquipResult =

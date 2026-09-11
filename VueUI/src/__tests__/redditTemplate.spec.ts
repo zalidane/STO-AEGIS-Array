@@ -159,6 +159,27 @@ describe("reddit template helpers", () => {
     ).toBe("Phaser Dual Cannons Mk XV [CrtD]x3 [Pen]");
   });
 
+  it("omits mark rank from devices", () => {
+    expect(
+      formatRedditItemLine(
+        {
+          id: 30,
+          name: "Red Matter Capacitor",
+          type: "ship device",
+          catalogKind: "item",
+        },
+        {
+          slotId: "device-0",
+          itemId: 30,
+          catalogKind: "item",
+          quality: "Epic",
+          mark: "XV",
+        },
+        "device",
+      ),
+    ).toBe("Red Matter Capacitor");
+  });
+
   it("titles BOff stations the way the Reddit template does", () => {
     const station = stations[0];
     expect(station).toBeDefined();
@@ -217,5 +238,37 @@ describe("exportRedditTemplate", () => {
     expect(markdown).toContain("Angle On The Bow");
     expect(markdown).toContain("Terran Task Force | 2/3 | +5% Phaser Damage");
     expect(markdown).toContain("r/stobuilds");
+  });
+
+  it("omits empty locked upgrade extras from the hull table (#17)", () => {
+    const markdown = exportRedditTemplate({
+      title: "Stock T6",
+      shipName: "Advanced Heavy Cruiser (T6)",
+      loadout: {
+        ...loadout,
+        slots: [loadout.slots[0]!],
+      },
+      items,
+      hullSlots: [
+        ...hullSlots,
+        {
+          id: "universalConsole-0",
+          kind: "universalConsole",
+          group: "universalConsoles",
+          label: "Universal (T6-X)",
+          index: 0,
+          extraRuleId: "t6-x",
+          locked: true,
+        },
+      ],
+      captainSlots: buildCaptainTraitSlots({
+        faction: "federation",
+        race: "human",
+      }),
+      boffStations: stations,
+    });
+    expect(markdown).toContain("Phaser Dual Cannons");
+    expect(markdown).not.toContain("T6-X");
+    expect(markdown).not.toContain("Universal Consoles");
   });
 });

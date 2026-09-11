@@ -9,6 +9,7 @@ import {
   qualityColor,
   qualityFromRarity,
   slotUsesItemMods,
+  slotUsesMark,
 } from "@/logic/loadout/slotQuality";
 import type { LoadoutSlotFill } from "@/logic/loadout/types";
 
@@ -28,6 +29,40 @@ describe("slotQuality", () => {
   it("skips quality and mark on starship trait sockets", () => {
     expect(slotUsesItemMods("foreWeapon")).toBe(true);
     expect(slotUsesItemMods("starshipTrait")).toBe(false);
+  });
+
+  it("keeps quality on devices but skips mark rank", () => {
+    expect(slotUsesMark("foreWeapon")).toBe(true);
+    expect(slotUsesMark("device")).toBe(false);
+    expect(slotUsesMark("tacticalConsole", "ship device")).toBe(false);
+    expect(slotUsesItemMods("device")).toBe(true);
+    expect(
+      modsForNewFill({
+        kind: "device",
+        catalogKind: "item",
+        itemType: "ship device",
+        rarity: "Epic",
+        inherited: { quality: "Rare", mark: "XV" },
+      }),
+    ).toEqual({ quality: "Rare" });
+    expect(
+      inheritModsFromPreviousSameKind(
+        [
+          { id: "device-0", kind: "device", index: 0 },
+          { id: "device-1", kind: "device", index: 1 },
+        ],
+        [
+          {
+            slotId: "device-0",
+            itemId: 9,
+            catalogKind: "item",
+            quality: "Ultra Rare",
+            mark: "XV",
+          },
+        ],
+        { kind: "device", index: 1 },
+      ),
+    ).toEqual({ quality: "Ultra Rare" });
   });
 
   it("inherits quality, mark, and suffix mods from the previous same-kind fill", () => {

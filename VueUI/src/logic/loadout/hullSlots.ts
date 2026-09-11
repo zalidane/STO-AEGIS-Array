@@ -25,6 +25,9 @@ export type HullSlot = {
   group: HullSlotGroup;
   label: string;
   index: number;
+  /** Extra hull-upgrade rule that created this socket (T5-U / X-pack / MW). */
+  extraRuleId?: string;
+  locked?: boolean;
 };
 
 export type HullSlotSource = {
@@ -75,14 +78,52 @@ function single(
  * plus Commander Miracle Worker. Unique ship consoles occupy a
  * fillable console slot; they are not locked grants.
  */
+const CAREER_EXTRA_KINDS: ReadonlyArray<{
+  key: "tacticalConsoles" | "engineeringConsoles" | "scienceConsoles";
+  kind: Extract<
+    HullSlot["kind"],
+    "tacticalConsole" | "engineeringConsole" | "scienceConsole"
+  >;
+  group: Extract<
+    HullSlotGroup,
+    "tacticalConsoles" | "engineeringConsoles" | "scienceConsoles"
+  >;
+  stock: (ship: HullSlotSource) => number;
+}> = [
+  {
+    key: "tacticalConsoles",
+    kind: "tacticalConsole",
+    group: "tacticalConsoles",
+    stock: (ship) => count(ship.tacticalSlots),
+  },
+  {
+    key: "engineeringConsoles",
+    kind: "engineeringConsole",
+    group: "engineeringConsoles",
+    stock: (ship) => count(ship.engineeringSlots),
+  },
+  {
+    key: "scienceConsoles",
+    kind: "scienceConsole",
+    group: "scienceConsoles",
+    stock: (ship) => count(ship.scienceSlots),
+  },
+];
+
 export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
   const extras = extraHullSlotSummary(ship);
   const extraConsoleSlots: HullSlot[] = [];
   const extraTraitSlots: HullSlot[] = [];
   const extraDeviceSlots: HullSlot[] = [];
+  const extraCareerSlots: HullSlot[] = [];
   let universalIndex = 0;
   let traitIndex = 0;
   let deviceIndex = count(ship.devices);
+  const careerIndex: Record<string, number> = {
+    tacticalConsole: count(ship.tacticalSlots),
+    engineeringConsole: count(ship.engineeringSlots),
+    scienceConsole: count(ship.scienceSlots),
+  };
   for (const rule of extras.rules) {
     for (let i = 0; i < rule.universalConsoles; i += 1) {
       extraConsoleSlots.push({
@@ -91,6 +132,7 @@ export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
         group: "universalConsoles",
         label: rule.consoleLabel,
         index: universalIndex,
+        extraRuleId: rule.id,
       });
       universalIndex += 1;
     }
@@ -101,6 +143,7 @@ export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
         group: "traits",
         label: rule.traitLabel ?? `Starship Trait (${rule.detailLabel})`,
         index: traitIndex,
+        extraRuleId: rule.id,
       });
       traitIndex += 1;
     }
@@ -111,8 +154,24 @@ export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
         group: "devices",
         label: rule.deviceLabel ?? `Device (${rule.detailLabel})`,
         index: deviceIndex,
+        extraRuleId: rule.id,
       });
       deviceIndex += 1;
+    }
+    for (const career of CAREER_EXTRA_KINDS) {
+      const added = rule[career.key] ?? 0;
+      for (let i = 0; i < added; i += 1) {
+        const index = careerIndex[career.kind] ?? career.stock(ship);
+        extraCareerSlots.push({
+          id: `${career.kind}-${index}`,
+          kind: career.kind,
+          group: career.group,
+          label: rule.consoleLabel,
+          index,
+          extraRuleId: rule.id,
+        });
+        careerIndex[career.kind] = index + 1;
+      }
     }
   }
 
@@ -147,20 +206,23 @@ export function buildHullSlots(ship: HullSlotSource): HullSlot[] {
       "engineeringConsole",
       "engineeringConsoles",
       "Engineering",
-      count(ship.engineeringSlots) + extras.engineeringConsoles,
+      count(ship.engineeringSlots),
     ),
+    ...extraCareerSlots.filter((slot) => slot.kind === "engineeringConsole"),
     ...numbered(
       "scienceConsole",
       "scienceConsoles",
       "Science",
-      count(ship.scienceSlots) + extras.scienceConsoles,
+      count(ship.scienceSlots),
     ),
+    ...extraCareerSlots.filter((slot) => slot.kind === "scienceConsole"),
     ...numbered(
       "tacticalConsole",
       "tacticalConsoles",
       "Tactical",
-      count(ship.tacticalSlots) + extras.tacticalConsoles,
+      count(ship.tacticalSlots),
     ),
+    ...extraCareerSlots.filter((slot) => slot.kind === "tacticalConsole"),
     ...numbered("hangar", "hangars", "Hangar", count(ship.hangars)),
     ...extraTraitSlots,
   ];

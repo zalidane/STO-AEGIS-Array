@@ -55,6 +55,16 @@ export function slotUsesItemMods(kind: HullSlotKind): boolean {
   return kind !== "starshipTrait";
 }
 
+/** Devices have quality (and sometimes suffixes) but no Mk rank. */
+export function slotUsesMark(
+  kind: HullSlotKind,
+  itemType?: string | null,
+): boolean {
+  if (!slotUsesItemMods(kind)) return false;
+  if (kind === "device") return false;
+  return !itemSlotClassesFromType(itemType).includes("device");
+}
+
 export function qualityFromRarity(
   rarity: string | null | undefined,
 ): ItemQuality {
@@ -98,7 +108,7 @@ export function inheritModsFromPreviousSameKind(
   if (!fill) return {};
   return {
     quality: fill.quality,
-    mark: fill.mark,
+    ...(slotUsesMark(current.kind) ? { mark: fill.mark } : {}),
     ...(fill.modifiers?.length ? { modifiers: [...fill.modifiers] } : {}),
   };
 }
@@ -127,15 +137,20 @@ export function modsForNewFill(input: {
   }
   const modifiers =
     input.existing?.modifiers ?? input.inherited?.modifiers;
+  const usesMark = slotUsesMark(input.kind, input.itemType);
   return {
     quality:
       input.existing?.quality ??
       input.inherited?.quality ??
       qualityFromRarity(input.rarity),
-    mark:
-      input.existing?.mark ??
-      input.inherited?.mark ??
-      defaultItemMark(input.kind, input.itemType),
+    ...(usesMark
+      ? {
+          mark:
+            input.existing?.mark ??
+            input.inherited?.mark ??
+            defaultItemMark(input.kind, input.itemType),
+        }
+      : {}),
     ...(modifiers?.length ? { modifiers: [...modifiers] } : {}),
   };
 }
