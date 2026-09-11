@@ -16,8 +16,14 @@ import {
   type ModifierCargoRow,
   type ModifierSupplementRow,
 } from "./mergeModifiers.js";
+import {
+  mergeSetBonus,
+  type SetBonusCargoRow,
+  type SetBonusSupplementRow,
+} from "./mergeSetBonus.js";
 
 export const MODIFIERS_SUPPLEMENT_PATH = "output/supplements/Modifiers.json";
+export const SET_BONUS_SUPPLEMENT_PATH = "output/supplements/SetBonus.json";
 
 function mergeModifiersSupplement(
   cargo: Record<string, unknown>[],
@@ -29,6 +35,19 @@ function mergeModifiersSupplement(
   return mergeModifiers(
     cargo as ModifierCargoRow[],
     supplement as ModifierSupplementRow[],
+  ) as Record<string, unknown>[];
+}
+
+function mergeSetBonusSupplement(
+  cargo: Record<string, unknown>[],
+  supplement: unknown,
+): Record<string, unknown>[] {
+  if (!Array.isArray(supplement)) {
+    throw new Error("SetBonus supplement must be a JSON array");
+  }
+  return mergeSetBonus(
+    cargo as SetBonusCargoRow[],
+    supplement as SetBonusSupplementRow[],
   ) as Record<string, unknown>[];
 }
 
@@ -68,6 +87,8 @@ export const importMappings = {
     model: "setBonus",
     uniqueFields: ["name"],
     mapper: mapSetBonus,
+    supplementFile: SET_BONUS_SUPPLEMENT_PATH,
+    mergeSupplement: mergeSetBonusSupplement,
   },
   Ships: {
     model: "ship",

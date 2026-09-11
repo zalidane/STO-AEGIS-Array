@@ -7,6 +7,7 @@ type SetBonus {
   traySkills: String
   procs: String
   abilities: String
+  members: String
   rawData: JSON!
   createdAt: DateTime!
   updatedAt: DateTime!

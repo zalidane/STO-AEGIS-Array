@@ -258,6 +258,7 @@ export function mapSetBonus(row: RawSetBonus) {
     traySkills: row.TraySkills,
     procs: row.Procs,
     abilities: row.Abilities,
+    members: row.Members ?? null,
     rawData: row,
   };
 }

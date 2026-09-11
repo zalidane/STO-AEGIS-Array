@@ -1,0 +1,52 @@
+[
+  {
+    "Name": "Nausicaan Weaponry Augmentation (2)",
+    "SetPage": "Nausicaan Weaponry Augmentation",
+    "ReqItems": "2",
+    "Passives": "On Hold: Disruptor Damage per sec for 5 sec (Nausicaan Weaponry Augmentation).",
+    "TraySkills": null,
+    "Procs": null,
+    "Abilities": null,
+    "Members": "Nausicaan Energy Torpedo Launcher\nNausicaan Disruptor *\nConsole - Science - Nausicaan Siphon Capacitor"
+  },
+  {
+    "Name": "Nausicaan Weaponry Augmentation (3)",
+    "SetPage": "Nausicaan Weaponry Augmentation",
+    "ReqItems": "3",
+    "Passives": null,
+    "TraySkills": null,
+    "Procs": null,
+    "Abilities": null,
+    "Members": "Nausicaan Energy Torpedo Launcher\nNausicaan Disruptor *\nConsole - Science - Nausicaan Siphon Capacitor"
+  },
+  {
+    "Name": "Bio-Molecular Instability",
+    "SetPage": "Counter-Command Ordnance",
+    "ReqItems": "2",
+    "Passives": "+7.5% Bonus Phaser, Disruptor, Plasma, and Tetryon Energy Damage; 2% increased chance for Bio-Molecular weapons to apply their Incubation debuffs",
+    "TraySkills": null,
+    "Procs": null,
+    "Abilities": null,
+    "Members": "Heavy Bio-Molecular * Turret\nEnhanced Bio-Molecular Photon Torpedo Launcher\nConsole - Universal - Hydrodynamics Compensator\nConsole - Tactical - Counter-Command Multi-Conduit Energy Relay"
+  },
+  {
+    "Name": "Heavy Bio-Molecular Turret Barrage",
+    "SetPage": "Counter-Command Ordnance",
+    "ReqItems": "3",
+    "Passives": null,
+    "TraySkills": null,
+    "Procs": "Targets Self; 3 min Recharge; Upgrades your Heavy Bio-Molecular Turret to deal damage to foes within 5km. Applies Bio-Molecular Incubation to all affected targets.",
+    "Abilities": null,
+    "Members": "Heavy Bio-Molecular * Turret\nEnhanced Bio-Molecular Photon Torpedo Launcher\nConsole - Universal - Hydrodynamics Compensator\nConsole - Tactical - Counter-Command Multi-Conduit Energy Relay"
+  },
+  {
+    "Name": "Degenerative Wave Signature",
+    "SetPage": "Counter-Command Ordnance",
+    "ReqItems": "4",
+    "Passives": "Energy Weapons have a 1% chance to: Reduce Hull Healing by 50% for 10 sec; Disable Hull Regeneration for 10 sec; Remove one active Heal-Over-Time effect. Chance increases to 10% vs. Undine.",
+    "TraySkills": null,
+    "Procs": null,
+    "Abilities": null,
+    "Members": "Heavy Bio-Molecular * Turret\nEnhanced Bio-Molecular Photon Torpedo Launcher\nConsole - Universal - Hydrodynamics Compensator\nConsole - Tactical - Counter-Command Multi-Conduit Energy Relay"
+  }
+]
