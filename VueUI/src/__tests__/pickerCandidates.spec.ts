@@ -72,6 +72,36 @@ const fore1: HullSlot = {
   index: 1,
 };
 
+const hangar0: HullSlot = {
+  id: "hangar-0",
+  kind: "hangar",
+  group: "hangars",
+  label: "Hangar 1",
+  index: 0,
+};
+
+const genericPet: LoadoutItem = {
+  id: 30,
+  name: "Hangar - To'Duj Fighters",
+  type: "hangar bay",
+  catalogKind: "item",
+  who: null,
+};
+
+const universePet: LoadoutItem = {
+  id: 31,
+  name: "Hangar - Universe Colony Support Craft",
+  type: "hangar bay",
+  catalogKind: "item",
+  who: "Universe Temporal Heavy Dreadnought Cruiser",
+};
+
+const obeliskShip = {
+  name: "Obelisk Carrier",
+  type: "Engineering Carrier",
+  tier: 5,
+};
+
 describe("pickerCandidates", () => {
   it("keeps hull items that fit and have an open copy", () => {
     expect(
@@ -181,5 +211,37 @@ describe("pickerCandidates", () => {
       identity: {},
     });
     expect(hits.map((item) => item.id)).toEqual([2]);
+  });
+
+  it("hides hangar pets whose who does not fit the hull", () => {
+    expect(
+      fittingItems({
+        kind: "hangar",
+        catalog: [genericPet, universePet, phaser],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        ship: obeliskShip,
+      }).map((item) => item.id),
+    ).toEqual([30]);
+    expect(
+      pickerCandidatesFor({
+        query: "",
+        hullSlot: hangar0,
+        catalog: [genericPet, universePet],
+        stations: [],
+        hullSlots: [hangar0],
+        hullFills: [],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        identity: {},
+        ship: {
+          name: "Universe Temporal Heavy Dreadnought Cruiser",
+          type: "Heavy Dreadnought Cruiser",
+          tier: 6,
+        },
+      }).map((item) => item.id),
+    ).toEqual([30, 31]);
   });
 });
