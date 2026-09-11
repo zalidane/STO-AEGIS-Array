@@ -19,6 +19,7 @@ import {
   applyCaptainTraitLoadout,
   equipCaptainTraitSlot,
 } from "@/logic/loadout/captainTraitState";
+import { asCaptainTrait, buildLoadoutCatalog } from "@/logic/loadout/catalogMap";
 import {
   createCharacter,
   hydrateCollectionState,
@@ -208,6 +209,53 @@ describe("captain trait slots", () => {
     expect(state.characters[0]?.traitSlots ?? []).toEqual([]);
     expect(state.loadouts[0]?.slots).toEqual([
       { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+    ]);
+  });
+
+  it("seats the real trait when an infobox item shares its numeric id (#16)", () => {
+    loadoutSeq = 0;
+    let state = createCharacter(createEmptyCollectionState(), {
+      name: "Alice",
+      career: "tactical",
+      faction: "federation",
+      race: "human",
+    }, clock);
+    state = createLoadout(state, { shipId: 10 }, loadoutClock);
+    const loadoutId = state.loadouts[0]!.id;
+    const slots = buildCaptainTraitSlots({
+      faction: "federation",
+      race: "human",
+    });
+    // A ground weapon (infobox item) and a personal space trait both use id 1.
+    // buildLoadoutCatalog lists items before traits, and asCaptainTrait maps
+    // non-starship items to catalogKind "trait", so the weapon appears first
+    // in the mapped list and previously shadowed the real trait.
+    const traits = buildLoadoutCatalog({
+      items: [{ id: 1, name: '"Improvise"', type: "Ground Weapon" }],
+      traits: [
+        { id: 1, name: "A Good Day to Die", type: "char", environment: "space" },
+      ],
+    }).map(asCaptainTrait);
+    const result = equipCaptainTraitSlot(
+      state,
+      {
+        loadoutId,
+        slotId: "personalSpace-0",
+        itemId: 1,
+        catalogKind: "trait",
+      },
+      {
+        slots,
+        traits,
+        ownedKeys: new Set(["trait:1"]),
+        career: "tactical",
+        raceLabel: "Human",
+      },
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.loadout.slots).toEqual([
+      { slotId: "personalSpace-0", itemId: 1, catalogKind: "trait" },
     ]);
   });
 
