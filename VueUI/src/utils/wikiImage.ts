@@ -45,12 +45,27 @@ function stripTrailingModsAndInfinity(name: string): string {
   }
 }
 
+/**
+ * Hangar Advanced/Elite pets usually reuse the standard pet’s wiki icon.
+ * Keep in sync with Extractor `dropHangarRankPrefix`.
+ */
+const HANGAR_RANK_PREFIX = /^(Hangar -\s+)(?:Advanced|Elite)\s+/i;
+
+export function dropHangarRankPrefix(name: string): string | undefined {
+  const stripped = name.replace(HANGAR_RANK_PREFIX, "$1").replace(/\s+/g, " ").trim();
+  return stripped && stripped.toLowerCase() !== name.toLowerCase()
+    ? stripped
+    : undefined;
+}
+
 /** Wiki item icons omit Mk XII and [Acc]/[Dmg] suffixes from Cargo names. */
 export function itemIconLookupName(name: string): string {
   const decoded = normalizedFileStem(name);
   const withoutMods = stripTrailingModsAndInfinity(decoded);
   const withoutMark = withoutMods.replace(ITEM_MARK_SUFFIX, "").trim();
-  return withoutMark || withoutMods || decoded;
+  const hangarBase =
+    dropHangarRankPrefix(withoutMark) ?? dropHangarRankPrefix(decoded);
+  return hangarBase || withoutMark || withoutMods || decoded;
 }
 
 /** encodeURIComponent leaves `'` unescaped; percent-encode it so img src cannot truncate. */
