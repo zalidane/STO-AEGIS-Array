@@ -186,6 +186,8 @@ export interface RawSetBonus {
   TraySkills: string | null;
   Procs: string;
   Abilities: string | null;
+  /** Newline-separated item name globs; supplement-only until wiki Cargo grows. */
+  Members?: string | null;
 }
 
 export interface RawTraySkill {

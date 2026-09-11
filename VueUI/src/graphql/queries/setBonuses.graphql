@@ -6,5 +6,6 @@ query SetBonuses {
     reqItems
     passives
     procs
+    members
   }
 }
