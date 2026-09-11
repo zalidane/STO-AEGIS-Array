@@ -123,4 +123,22 @@ describe("wikiImage", () => {
       ),
     ).toBe("/images/tray-skills/Overwhelm_Power_Regulators_icon.png");
   });
+
+  it("falls back Advanced/Elite hangar pets to the standard pet icon (#15)", () => {
+    expect(itemIconLookupName("Hangar - Advanced Aeon Timeships")).toBe(
+      "Hangar - Aeon Timeships",
+    );
+    expect(itemIconLookupName("Hangar - Elite Alliance Fighter Squadrons")).toBe(
+      "Hangar - Alliance Fighter Squadrons",
+    );
+    expect(
+      getItemImageUrl(null, "Hangar - Advanced 32c. Federation Shuttlecraft"),
+    ).toBe("/images/items/Hangar_-_32c._Federation_Shuttlecraft_icon.png");
+    expect(
+      getItemImageUrl(
+        "Hangar_-_Advanced_Baltim_Raider_icon.png",
+        "Hangar - Advanced Baltim Raider",
+      ),
+    ).toBe("/images/items/Hangar_-_Advanced_Baltim_Raider_icon.png");
+  });
 });
