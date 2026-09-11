@@ -24,6 +24,14 @@ import {
   type HullSlot,
 } from "@/logic/loadout/hullSlots";
 import {
+  applyBoardPrefsToHullSlots,
+  hullHasMiracleWorkerConsole,
+  hullHasUpgradeExtras,
+  hullUpgradeChoices,
+  type ExtraSlotDisplay,
+  type HullUpgradeLevel,
+} from "@/logic/loadout/boardPrefs";
+import {
   fillForSlot,
   loadoutsForCharacter,
   orphanedFills,
@@ -70,6 +78,7 @@ import {
   previousSameKindFill,
   qualityColor,
   slotUsesItemMods,
+  slotUsesMark,
   type ItemQuality,
 } from "@/logic/loadout/slotQuality";
 import {
@@ -118,13 +127,38 @@ const {
   loading,
 } = useLoadoutCatalog(shipId);
 
-const hullSlots = computed(() => (ship.value ? buildHullSlots(ship.value) : []));
+const rawHullSlots = computed(() =>
+  ship.value ? buildHullSlots(ship.value) : [],
+);
+const hullSlots = computed(() =>
+  ship.value
+    ? applyBoardPrefsToHullSlots(
+        rawHullSlots.value,
+        activeLoadout.value?.boardPrefs,
+        ship.value,
+      )
+    : [],
+);
 const slotSections = computed(() => groupHullSlots(hullSlots.value));
 const captainSlots = computed(() =>
   buildCaptainTraitSlots({
     faction: activeCharacter.value?.faction,
     race: activeCharacter.value?.race,
+    hullTraitSlots: hullSlots.value.filter(
+      (slot) => slot.kind === "starshipTrait",
+    ),
   }),
+);
+const legalSlotIds = computed(
+  () =>
+    new Set([
+      ...rawHullSlots.value.map((slot) => slot.id),
+      ...buildCaptainTraitSlots({
+        faction: activeCharacter.value?.faction,
+        race: activeCharacter.value?.race,
+      }).map((slot) => slot.id),
+      ...boffSlotIds(boffStations.value),
+    ]),
 );
 
 const shipLoadouts = computed(() =>
@@ -190,14 +224,7 @@ const setBonuses = computed(() =>
 const warnings = computed(() => {
   const loadout = activeLoadout.value;
   if (!loadout) return [];
-  return orphanedFills(
-    loadout,
-    new Set([
-      ...hullSlots.value.map((slot) => slot.id),
-      ...boffSlotIds(boffStations.value),
-    ]),
-    ownedKeys.value,
-  );
+  return orphanedFills(loadout, legalSlotIds.value, ownedKeys.value);
 });
 
 const sharePayload = computed(() => {
@@ -428,6 +455,47 @@ const captainSubtitle = computed(() => {
   return parts.join(" · ");
 });
 
+const hideModifiers = computed(
+  () => activeLoadout.value?.boardPrefs?.hideModifiers === true,
+);
+const upgradeChoices = computed(() =>
+  ship.value ? hullUpgradeChoices(ship.value) : [],
+);
+const showMiracleWorkerToggle = computed(() =>
+  ship.value ? hullHasMiracleWorkerConsole(ship.value) : false,
+);
+const showUpgradeSelect = computed(() =>
+  ship.value ? hullHasUpgradeExtras(ship.value) : false,
+);
+const extraSlotDisplayChoices = [
+  { value: "hide", title: "Hide unused extras" },
+  { value: "lock", title: "Show locked extras" },
+] as const;
+
+function onHullUpgrade(level: HullUpgradeLevel | null) {
+  const loadout = activeLoadout.value;
+  if (!loadout || !level) return;
+  store.updateBoardPrefs(loadout.id, { hullUpgrade: level });
+}
+
+function onMiracleWorkerConsole(enabled: boolean | null) {
+  const loadout = activeLoadout.value;
+  if (!loadout || enabled == null) return;
+  store.updateBoardPrefs(loadout.id, { miracleWorkerConsole: enabled });
+}
+
+function onExtraSlotDisplay(display: ExtraSlotDisplay | null) {
+  const loadout = activeLoadout.value;
+  if (!loadout || !display) return;
+  store.updateBoardPrefs(loadout.id, { extraSlotDisplay: display });
+}
+
+function onHideModifiers(hidden: boolean | null) {
+  const loadout = activeLoadout.value;
+  if (!loadout || hidden == null) return;
+  store.updateBoardPrefs(loadout.id, { hideModifiers: hidden });
+}
+
 function itemInSlot(slotId: string): LoadoutItem | null {
   const fill = fillForSlot(activeLoadout.value, slotId);
   if (!fill) return null;
@@ -515,6 +583,7 @@ function collectAllSeated() {
 }
 
 function slotTitle(slot: HullSlot): string {
+  if (slot.locked) return `${slot.label} · Locked`;
   const item = itemInSlot(slot.id);
   if (item) return `${slot.label}: ${item.name}`;
   const owned = ownedFittingItems(slot.kind).length;
@@ -523,6 +592,7 @@ function slotTitle(slot: HullSlot): string {
 }
 
 function onHullSlotClick(slot: HullSlot) {
+  if (slot.locked) return;
   if (itemInSlot(slot.id)) {
     openPicker(slot);
     return;
@@ -644,6 +714,52 @@ watch(activeLoadout, (loadout) => {
           </div>
         </div>
 
+        <div class="loadout-prefs">
+          <v-select
+            v-if="showUpgradeSelect"
+            :model-value="activeLoadout.boardPrefs?.hullUpgrade ?? 'full'"
+            :items="upgradeChoices"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            hide-details
+            label="Hull extras"
+            variant="outlined"
+            class="loadout-prefs__select"
+            @update:model-value="onHullUpgrade"
+          />
+          <v-select
+            v-if="showUpgradeSelect || showMiracleWorkerToggle"
+            :model-value="activeLoadout.boardPrefs?.extraSlotDisplay ?? 'hide'"
+            :items="[...extraSlotDisplayChoices]"
+            item-title="title"
+            item-value="value"
+            density="compact"
+            hide-details
+            label="Unused extras"
+            variant="outlined"
+            class="loadout-prefs__select"
+            @update:model-value="onExtraSlotDisplay"
+          />
+          <v-switch
+            v-if="showMiracleWorkerToggle"
+            :model-value="activeLoadout.boardPrefs?.miracleWorkerConsole !== false"
+            color="primary"
+            density="compact"
+            hide-details
+            label="Miracle Worker console"
+            @update:model-value="onMiracleWorkerConsole"
+          />
+          <v-switch
+            :model-value="hideModifiers"
+            color="primary"
+            density="compact"
+            hide-details
+            label="Hide modifiers"
+            @update:model-value="onHideModifiers"
+          />
+        </div>
+
         <v-alert v-if="warnings.length" type="warning" variant="tonal" class="mb-4">
           {{ warnings.length }} seated item{{ warnings.length === 1 ? "" : "s" }}
           {{ warnings.length === 1 ? "is" : "are" }} missing from this captain’s
@@ -686,10 +802,14 @@ watch(activeLoadout, (loadout) => {
                   <button
                     type="button"
                     class="equip-slot"
-                    :class="{ 'equip-slot--filled': itemInSlot(slot.id) }"
+                    :class="{
+                      'equip-slot--filled': itemInSlot(slot.id),
+                      'equip-slot--locked': slot.locked,
+                    }"
                     :style="slotFillStyle(slot)"
                     :title="slotTitle(slot)"
                     :aria-label="slotTitle(slot)"
+                    :disabled="slot.locked"
                     @click="onHullSlotClick(slot)"
                   >
                     <WikiIcon
@@ -699,6 +819,12 @@ watch(activeLoadout, (loadout) => {
                       :size="44"
                     />
                     <span
+                      v-else-if="slot.locked"
+                      class="equip-slot__lock"
+                    >
+                      LOCK
+                    </span>
+                    <span
                       v-else-if="ownedFittingItems(slot.kind).length"
                       class="equip-slot__owned"
                     >
@@ -706,8 +832,11 @@ watch(activeLoadout, (loadout) => {
                     </span>
                   </button>
                   <div
-                    v-if="slotUsesItemMods(slot.kind)"
+                    v-if="slotUsesItemMods(slot.kind) && !hideModifiers"
                     class="equip-slot__mods"
+                    :class="{
+                      'equip-slot__mods--no-mark': !slotUsesMark(slot.kind),
+                    }"
                     @click.stop
                   >
                     <v-menu
@@ -752,6 +881,7 @@ watch(activeLoadout, (loadout) => {
                       </div>
                     </v-menu>
                     <select
+                      v-if="slotUsesMark(slot.kind)"
                       class="equip-mod equip-mod--mark"
                       :value="slotMark(slot)"
                       :disabled="!itemInSlot(slot.id)"
@@ -1153,6 +1283,19 @@ watch(activeLoadout, (loadout) => {
   color: #7dd3fc;
 }
 
+.loadout-prefs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  margin: -0.35rem 0 1.15rem;
+}
+
+.loadout-prefs__select {
+  min-width: 11.5rem;
+  max-width: 16rem;
+}
+
 .loadout-board {
   display: grid;
   grid-template-columns: minmax(18.5rem, 22rem) minmax(0, 1fr) 18rem;
@@ -1236,19 +1379,31 @@ watch(activeLoadout, (loadout) => {
   border-color: var(--slot-quality, rgba(125, 211, 252, 0.5));
 }
 
+.equip-slot--locked {
+  cursor: default;
+  opacity: 0.55;
+}
+
 .equip-slot__owned {
   font-size: 0.78rem;
   font-weight: 650;
   color: #7dd3fc;
 }
 
-.equip-slot:hover,
-.equip-slot:focus-visible {
+.equip-slot__lock {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.equip-slot:not(:disabled):hover,
+.equip-slot:not(:disabled):focus-visible {
   border-color: rgba(125, 211, 252, 0.9);
 }
 
-.equip-slot--filled:hover,
-.equip-slot--filled:focus-visible {
+.equip-slot--filled:not(:disabled):hover,
+.equip-slot--filled:not(:disabled):focus-visible {
   border-color: var(--slot-quality, rgba(125, 211, 252, 0.9));
 }
 
@@ -1256,6 +1411,10 @@ watch(activeLoadout, (loadout) => {
   display: grid;
   grid-template-columns: 1.5rem minmax(0, 1fr);
   gap: 0.15rem;
+}
+
+.equip-slot__mods--no-mark {
+  grid-template-columns: 1.5rem;
 }
 
 .equip-mod {

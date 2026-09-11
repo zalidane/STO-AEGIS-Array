@@ -111,6 +111,27 @@ describe("parseSharePayload", () => {
     assert.equal(parsed.payload.slots[1]?.catalogKind, "trait");
   });
 
+  it("accepts optional board prefs without rejecting trait seats", () => {
+    const parsed = parseSharePayload({
+      ...payload,
+      boardPrefs: { hullUpgrade: "stock", hideModifiers: true },
+      slots: [
+        { slotId: "personalSpace-0", catalogKind: "trait", name: "Beam Training" },
+      ],
+    });
+    assert.equal(parsed.ok, true);
+    if (!parsed.ok) return;
+    assert.deepEqual(parsed.payload.boardPrefs, {
+      hullUpgrade: "stock",
+      hideModifiers: true,
+    });
+    assert.equal(parsed.payload.slots[0]?.catalogKind, "trait");
+    assert.equal(
+      parseSharePayload({ ...payload, boardPrefs: "nope" }).ok,
+      true,
+    );
+  });
+
   it("rejects unknown catalog kinds and invalid seat careers", () => {
     const kind = parseSharePayload({
       ...payload,

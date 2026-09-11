@@ -1,5 +1,9 @@
 import { decodeHtmlEntities } from "@/utils/decodeHtmlEntities";
-import { itemSlotClassesFromType, type HullSlotKind } from "./slotClass";
+import {
+  itemSlotClassesFromType,
+  type HullSlotKind,
+  type ItemSlotClass,
+} from "./slotClass";
 import {
   ITEM_QUALITIES,
   type ItemQuality,
@@ -36,17 +40,22 @@ const QUALITY_MODIFIER_SLOTS: Record<ItemQuality, number> = {
   Epic: 5,
 };
 
-const CAREER_CONSOLE_KINDS: ReadonlySet<HullSlotKind> = new Set([
+const CAREER_CONSOLE_CLASSES: ReadonlySet<ItemSlotClass> = new Set([
   "tacticalConsole",
   "engineeringConsole",
   "scienceConsole",
 ]);
 
-const CAREER_CONSOLE_TYPES = [
-  "ship tactical console",
-  "ship engineering console",
-  "ship science console",
-] as const;
+function itemIsUniversalConsole(itemType?: string | null): boolean {
+  return itemSlotClassesFromType(itemType).includes("universalConsole");
+}
+
+function itemIsCareerConsole(itemType?: string | null): boolean {
+  if (itemIsUniversalConsole(itemType)) return false;
+  return itemSlotClassesFromType(itemType).some((slotClass) =>
+    CAREER_CONSOLE_CLASSES.has(slotClass),
+  );
+}
 
 export function modifierSlotCountForQuality(
   quality: string | null | undefined,
@@ -59,13 +68,18 @@ export function modifierSlotCountForQuality(
   return QUALITY_MODIFIER_SLOTS[matched];
 }
 
+/**
+ * Universal consoles are not re-engineerable. Career consoles may be, but only
+ * when Modifiers.available lists that console — not every Tac/Eng/Sci seat.
+ */
 export function slotAllowsSuffixModifiers(
   kind: HullSlotKind,
   itemType?: string | null,
 ): boolean {
   if (kind === "starshipTrait") return false;
-  if (!CAREER_CONSOLE_KINDS.has(kind)) return true;
-  return itemSlotClassesFromType(itemType).includes("universalConsole");
+  if (kind === "universalConsole") return false;
+  if (itemIsUniversalConsole(itemType)) return false;
+  return true;
 }
 
 export function parseTypeParts(type: string | null | undefined): string[] {
@@ -84,16 +98,7 @@ export function parseTypeParts(type: string | null | undefined): string[] {
 export function itemTypePartsForModifiers(
   itemType: string | null | undefined,
 ): string[] {
-  const parts = parseTypeParts(itemType);
-  if (!parts.includes("universal console")) return parts;
-  const seen = new Set(parts);
-  const expanded = [...parts];
-  for (const extra of CAREER_CONSOLE_TYPES) {
-    if (seen.has(extra)) continue;
-    seen.add(extra);
-    expanded.push(extra);
-  }
-  return expanded;
+  return parseTypeParts(itemType);
 }
 
 function availableNames(available: string | null | undefined): string[] | null {
@@ -105,23 +110,38 @@ function availableNames(available: string | null | undefined): string[] | null {
   return names.length > 0 ? names : null;
 }
 
+function availableListsItem(
+  names: readonly string[],
+  itemName: string | null | undefined,
+): boolean {
+  const needle = itemName?.trim().toLowerCase() ?? "";
+  if (!needle) return false;
+  for (const listed of names) {
+    if (listed === needle) return true;
+    if (listed.endsWith(` - ${needle}`)) return true;
+    if (needle.endsWith(` - ${listed}`)) return true;
+  }
+  return false;
+}
+
 export function modifierFitsItem(
   modifier: Pick<LoadoutModifier, "type" | "available">,
   item: { type?: string | null; name?: string | null },
 ): boolean {
-  const itemParts = itemTypePartsForModifiers(item.type);
+  const itemParts = parseTypeParts(item.type);
   if (itemParts.length === 0) return false;
   const itemPartSet = new Set(itemParts);
   const overlaps = parseTypeParts(modifier.type).some((part) =>
     itemPartSet.has(part),
   );
   if (!overlaps) return false;
-  if (itemPartSet.has("universal console")) return true;
+  if (itemIsUniversalConsole(item.type)) return false;
   const names = availableNames(modifier.available);
+  if (itemIsCareerConsole(item.type)) {
+    return names != null && availableListsItem(names, item.name);
+  }
   if (!names) return true;
-  const needle = item.name?.trim().toLowerCase() ?? "";
-  if (!needle) return false;
-  return names.includes(needle);
+  return availableListsItem(names, item.name);
 }
 
 export function modifierFitsSocket(
@@ -280,11 +300,16 @@ export function slotShowsSuffixModifiers(input: {
   catalog: ReadonlyArray<LoadoutModifier>;
 }): boolean {
   if (!slotAllowsSuffixModifiers(input.kind, input.itemType)) return false;
-  if (input.selected?.some((token) => token.trim())) return true;
-  return itemHasSuffixCatalog(input.catalog, {
-    type: input.itemType,
-    name: input.itemName,
-  });
+  if (
+    itemHasSuffixCatalog(input.catalog, {
+      type: input.itemType,
+      name: input.itemName,
+    })
+  ) {
+    return true;
+  }
+  if (itemIsCareerConsole(input.itemType)) return false;
+  return input.selected?.some((token) => token.trim()) ?? false;
 }
 
 function optionFromModifier(row: LoadoutModifier): ModifierOption {

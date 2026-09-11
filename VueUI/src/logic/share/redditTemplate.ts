@@ -23,7 +23,11 @@ import {
   type HullSlotGroup,
 } from "@/logic/loadout/hullSlots";
 import { loadoutOwnershipKey, type ActiveSetBonus } from "@/logic/loadout/setBonus";
-import { displayedMark, slotUsesItemMods } from "@/logic/loadout/slotQuality";
+import {
+  displayedMark,
+  slotUsesItemMods,
+  slotUsesMark,
+} from "@/logic/loadout/slotQuality";
 import { fillForSlot } from "@/logic/loadout/state";
 import type {
   CollectionLoadout,
@@ -145,7 +149,9 @@ export function formatRedditItemLine(
   if (!item) return "";
   const chunks = [item.name.trim()];
   if (slotUsesItemMods(kind)) {
-    chunks.push(`Mk ${displayedMark(fill, kind, item.type)}`);
+    if (slotUsesMark(kind, item.type)) {
+      chunks.push(`Mk ${displayedMark(fill, kind, item.type)}`);
+    }
     if (fill?.modifiers?.length) {
       const mods = collapseModifierTokens(fill.modifiers);
       if (mods) chunks.push(mods);
@@ -212,15 +218,20 @@ function hullTable(
 ): string {
   const rows: string[][] = [];
   for (const section of groupHullSlots(hullSlots)) {
+    const visible = section.slots.filter((slot) => {
+      if (!slot.locked) return true;
+      return fillForSlot(loadout, slot.id) != null;
+    });
+    if (visible.length === 0) continue;
     const redditLabel =
       REDDIT_HULL_GROUP_LABEL[
         section.group as Exclude<HullSlotGroup, "traits">
       ] ?? section.label;
     const header =
-      section.slots.length > 1
-        ? `**${redditLabel}: ${section.slots.length}**`
+      visible.length > 1
+        ? `**${redditLabel}: ${visible.length}**`
         : `**${redditLabel}**`;
-    section.slots.forEach((slot, index) => {
+    visible.forEach((slot, index) => {
       const fill = fillForSlot(loadout, slot.id);
       const item = lookup(byKey, fill);
       rows.push([

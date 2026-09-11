@@ -78,22 +78,22 @@ describe("slotModifiers", () => {
     expect(modifierSlotCountForQuality("epic")).toBe(5);
   });
 
-  it("allows suffix mods on ship gear except career consoles", () => {
+  it("blocks suffix mods on universal consoles, not listed career consoles (#17)", () => {
     expect(slotAllowsSuffixModifiers("foreWeapon", "ship fore weapon")).toBe(
       true,
     );
     expect(slotAllowsSuffixModifiers("universalConsole", "universal console")).toBe(
-      true,
+      false,
     );
     expect(
       slotAllowsSuffixModifiers("tacticalConsole", "universal console"),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       slotAllowsSuffixModifiers("tacticalConsole", "ship tactical console"),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       slotAllowsSuffixModifiers("engineeringConsole", "ship engineering console"),
-    ).toBe(false);
+    ).toBe(true);
     expect(slotAllowsSuffixModifiers("starshipTrait", "starship trait")).toBe(
       false,
     );
@@ -131,7 +131,7 @@ describe("slotModifiers", () => {
         type: "universal console",
         name: "Console - Universal - Phase Shift",
       }),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       modifierFitsItem(
         {
@@ -143,12 +143,24 @@ describe("slotModifiers", () => {
           name: "Console - Universal - Micro-Quantum Torpedoes Phalanx Array",
         },
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       modifierFitsItem(catalog[4]!, {
         type: "ship tactical console",
         name: "Vulnerability Locator",
       }),
+    ).toBe(false);
+    expect(
+      modifierFitsItem(
+        {
+          ...catalog[4]!,
+          available: "Console - Tactical - Vulnerability Locator",
+        },
+        {
+          type: "ship tactical console",
+          name: "Console - Tactical - Vulnerability Locator",
+        },
+      ),
     ).toBe(true);
     expect(modifierFitsItem(catalog[5]!, phaser)).toBe(false);
     expect(
@@ -229,15 +241,49 @@ describe("slotModifiers", () => {
     ).toEqual(["[Dmg]", "", "[CrtH]"]);
   });
 
-  it("strips suffix mods from career consoles even when inherited", () => {
+  it("keeps suffix mods only on career consoles listed in Modifiers.available", () => {
+    const listed = {
+      ...catalog[4]!,
+      available:
+        "Console - Engineering - Conductive RCS Accelerator,Console - Tactical - Energetic Protomatter Matrix Infuser,Console - Science - Plasma-Generating Weapon Signature Amplifier",
+    };
+    const consoleCatalog = [listed];
+    expect(
+      seatedSuffixModifiers({
+        kind: "engineeringConsole",
+        itemType: "ship engineering console",
+        itemName: "Console - Engineering - Conductive RCS Accelerator",
+        quality: "Epic",
+        selected: ["[Beams]"],
+        catalog: consoleCatalog,
+      }),
+    ).toEqual(["[Beams]"]);
     expect(
       seatedSuffixModifiers({
         kind: "tacticalConsole",
         itemType: "ship tactical console",
-        itemName: "Vulnerability Locator",
+        itemName: "Console - Tactical - Energetic Protomatter Matrix Infuser",
+        quality: "Very Rare",
+        selected: ["[Beams]"],
+        catalog: consoleCatalog,
+      }),
+    ).toEqual(["[Beams]"]);
+    expect(
+      slotShowsSuffixModifiers({
+        kind: "scienceConsole",
+        itemType: "ship science console",
+        itemName: "Plasma-Generating Weapon Signature Amplifier",
+        catalog: consoleCatalog,
+      }),
+    ).toBe(true);
+    expect(
+      seatedSuffixModifiers({
+        kind: "tacticalConsole",
+        itemType: "ship tactical console",
+        itemName: "Console - Tactical - Terran Task Force Munitions",
         quality: "Epic",
         selected: ["[Beams]"],
-        catalog,
+        catalog: consoleCatalog,
       }),
     ).toBeUndefined();
     expect(
@@ -247,9 +293,18 @@ describe("slotModifiers", () => {
         itemName: "Console - Universal - Phase Shift",
         quality: "Uncommon",
         selected: ["[Beams]"],
-        catalog,
+        catalog: consoleCatalog,
       }),
-    ).toEqual(["[Beams]"]);
+    ).toBeUndefined();
+    expect(
+      slotShowsSuffixModifiers({
+        kind: "engineeringConsole",
+        itemType: "ship engineering console",
+        itemName: "Console - Engineering - Neutronium Alloy",
+        selected: ["[Beams]"],
+        catalog: consoleCatalog,
+      }),
+    ).toBe(false);
   });
 
   it("hides suffix pickers when the catalog has no fitting mods", () => {
