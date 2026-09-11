@@ -14,7 +14,7 @@ export const SHARE_VISIBILITY = {
 export type ShareVisibility =
   (typeof SHARE_VISIBILITY)[keyof typeof SHARE_VISIBILITY];
 
-export type ShareCatalogKind = "item" | "starshipTrait" | "traySkill";
+export type ShareCatalogKind = "item" | "starshipTrait" | "traySkill" | "trait";
 
 export type SharePlayableCareer = "Tactical" | "Engineering" | "Science";
 
@@ -62,6 +62,7 @@ const CATALOG_KINDS = new Set<ShareCatalogKind>([
   "item",
   "starshipTrait",
   "traySkill",
+  "trait",
 ]);
 
 const PLAYABLE_CAREERS = new Set<SharePlayableCareer>([
