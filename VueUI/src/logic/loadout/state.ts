@@ -9,6 +9,11 @@ import {
 } from "./setBonus";
 import { seatedSuffixModifiers, trimModifiersForQuality } from "./slotModifiers";
 import { inheritModsFromPreviousSameKind, modsForNewFill } from "./slotQuality";
+import {
+  mergeBoardPrefs,
+  slotAcceptsFills,
+  type LoadoutBoardPrefs,
+} from "./boardPrefs";
 import type { CombatParseSummary } from "@/logic/combatlog/types";
 import type {
   CollectionLoadout,
@@ -88,6 +93,7 @@ export function importSharedLoadout(
     name?: string;
     slots: LoadoutSlotFill[];
     boffSeatCareers?: CollectionLoadout["boffSeatCareers"];
+    boardPrefs?: CollectionLoadout["boardPrefs"];
   },
   clock: CollectionClock = defaultCollectionClock(),
 ): CollectionState {
@@ -110,6 +116,9 @@ export function importSharedLoadout(
     slots: input.slots.map((fill) => ({ ...fill })),
     ...(input.boffSeatCareers
       ? { boffSeatCareers: { ...input.boffSeatCareers } }
+      : {}),
+    ...(input.boardPrefs
+      ? { boardPrefs: { ...input.boardPrefs } }
       : {}),
   };
 
@@ -228,6 +237,7 @@ export function equipLoadoutSlot(
 
   const slot = context.hullSlots.find((row) => row.id === input.slotId);
   if (!slot) return { ok: false, reason: "unknown-slot" };
+  if (!slotAcceptsFills(slot)) return { ok: false, reason: "locked-slot" };
 
   const item = context.items.find(
     (row) =>
@@ -345,6 +355,23 @@ export function updateLoadoutSlotMods(
           ...(modifiers?.length ? { modifiers } : {}),
         };
       }),
+    };
+  });
+}
+
+export function updateLoadoutBoardPrefs(
+  state: CollectionState,
+  loadoutId: string,
+  patch: LoadoutBoardPrefs,
+  clock: CollectionClock = defaultCollectionClock(),
+): CollectionState {
+  return replaceLoadout(state, loadoutId, (loadout) => {
+    const boardPrefs = mergeBoardPrefs(loadout.boardPrefs, patch);
+    const { boardPrefs: _dropped, ...rest } = loadout;
+    return {
+      ...rest,
+      updatedAt: clock.now(),
+      ...(boardPrefs ? { boardPrefs } : {}),
     };
   });
 }

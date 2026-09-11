@@ -31,7 +31,7 @@ The API URL defaults to `http://localhost:4000/graphql`. Override with `VITE_GRA
 - **Collection** — captains, owned ships/items/traits, bind scope; stored in `localStorage` (not the API)
 - **Build** — `/ships/:id/loadout` seats gear on hull slots, captain traits, quality/mark, set bonuses, granted unique console / experimental weapon
 
-Hull slots use wiki Tac/Eng/Sci counts plus assumed **full upgrades**: T5-U career console when `t5uConsole` is set, T5-X/X2 or T6-X/X2 extras, and Commander Miracle Worker universal.
+Hull slots use wiki Tac/Eng/Sci counts plus optional extras (T5-U career console, T5-X/X2 or T6-X/X2, Commander Miracle Worker universal). Each loadout can hide or lock unused extras and hide quality/mark/suffix pickers. Universal consoles never take suffix mods; career consoles do when listed in Modifiers `available`.
 
 ## Layout
 

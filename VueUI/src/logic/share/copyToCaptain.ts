@@ -48,6 +48,7 @@ export function copyShareToCaptain(
       name: input.payload.title,
       slots,
       boffSeatCareers: input.payload.boffSeatCareers,
+      boardPrefs: input.payload.boardPrefs,
     },
     clock,
   );
