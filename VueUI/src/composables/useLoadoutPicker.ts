@@ -23,6 +23,7 @@ import {
 import { fillForSlot } from "@/logic/loadout/state";
 import { loadoutOwnershipKey } from "@/logic/loadout/setBonus";
 import type { HullSlot } from "@/logic/loadout/hullSlots";
+import { hangarShipFromCatalog } from "@/logic/loadout/hangarWho";
 import type { CollectionLoadout, LoadoutItem } from "@/logic/loadout/types";
 import type { LoadoutModifier } from "@/logic/loadout/slotModifiers";
 import { abbreviateBoffPart } from "@/utils/formatters";
@@ -37,6 +38,15 @@ export function useLoadoutPicker(input: {
   boffStations: MaybeRefOrGetter<ReadonlyArray<BoffStation>>;
   activeLoadout: MaybeRefOrGetter<CollectionLoadout | null>;
   onlyCollected: MaybeRefOrGetter<boolean>;
+  ship?: MaybeRefOrGetter<{
+    name: string;
+    wikiName?: string | null;
+    type?: string | null;
+    displayType?: string | null;
+    displayClass?: string | null;
+    shipType?: { name?: string | null } | null;
+    tier?: number | null;
+  } | null>;
 }) {
   const store = useCollectionStore();
   const { activeCharacter } = storeToRefs(store);
@@ -66,6 +76,10 @@ export function useLoadoutPicker(input: {
     };
   }
 
+  function currentShip() {
+    return hangarShipFromCatalog(toValue(input.ship));
+  }
+
   function equipContext() {
     return {
       hullSlots: toValue(input.hullSlots),
@@ -73,6 +87,7 @@ export function useLoadoutPicker(input: {
       ownedKeys: toValue(input.ownedKeys),
       modifiers: toValue(input.modifierCatalog),
       requireOwned: toValue(input.onlyCollected),
+      ship: currentShip(),
     };
   }
 
@@ -141,6 +156,7 @@ export function useLoadoutPicker(input: {
       collectedOnly: toValue(input.onlyCollected),
       ownedKeys: toValue(input.ownedKeys),
       identity: captainIdentity(),
+      ship: currentShip(),
     }),
   );
 

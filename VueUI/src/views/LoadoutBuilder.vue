@@ -207,6 +207,7 @@ const {
   boffStations,
   activeLoadout,
   onlyCollected,
+  ship,
 });
 
 const equippedItems = computed(() =>
@@ -400,6 +401,7 @@ function ownedFittingItems(kind: HullSlot["kind"]): LoadoutItem[] {
     seated: seatedFills(),
     collectedOnly: true,
     ownedKeys: ownedKeys.value,
+    ship: equipContext().ship,
   });
 }
 

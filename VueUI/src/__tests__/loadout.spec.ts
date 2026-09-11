@@ -663,6 +663,51 @@ describe("loadout equip", () => {
       modifiers: ["[Dmg]", "[CrtH]", "[Dmg]", "[Pen]"],
     });
   });
+
+  it("refuses a hangar pet that this hull cannot launch", () => {
+    const hangarItems: LoadoutItem[] = [
+      ...items,
+      {
+        id: 90,
+        name: "Hangar - To'Duj Fighters",
+        type: "hangar bay",
+        who: null,
+      },
+      {
+        id: 91,
+        name: "Hangar - Universe Colony Support Craft",
+        type: "hangar bay",
+        who: "Universe Temporal Heavy Dreadnought Cruiser",
+      },
+    ];
+    const hangarSlots = buildHullSlots({ ...escort, hangars: 1 });
+    const hangarContext = {
+      hullSlots: hangarSlots,
+      items: hangarItems,
+      ownedKeys: new Set(hangarItems.map((item) => `item:${item.id}`)),
+      ship: {
+        name: "Obelisk Carrier",
+        type: "Engineering Carrier",
+        tier: 5,
+      },
+    };
+    const state = withLoadout();
+    const loadoutId = state.loadouts[0]!.id;
+    const ok = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "hangar-0", itemId: 90 },
+      hangarContext,
+      clock,
+    );
+    expect(ok.ok).toBe(true);
+    const illegal = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "hangar-0", itemId: 91 },
+      hangarContext,
+      clock,
+    );
+    expect(illegal).toEqual({ ok: false, reason: "illegal-slot" });
+  });
 });
 
 describe("matchSetBonuses", () => {
