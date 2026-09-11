@@ -93,10 +93,28 @@ describe("parseSharePayload", () => {
     assert.deepEqual(parsed.payload.boffSeatCareers, { "0": "Tactical" });
   });
 
+  it("accepts personal and reputation traits seated on the loadout (#16)", () => {
+    const parsed = parseSharePayload({
+      ...payload,
+      slots: [
+        { slotId: "personalSpace-0", catalogKind: "trait", name: "Beam Training" },
+        {
+          slotId: "spaceReputation-0",
+          catalogKind: "trait",
+          name: "Advanced Targeting Systems",
+        },
+      ],
+    });
+    assert.equal(parsed.ok, true);
+    if (!parsed.ok) return;
+    assert.equal(parsed.payload.slots[0]?.catalogKind, "trait");
+    assert.equal(parsed.payload.slots[1]?.catalogKind, "trait");
+  });
+
   it("rejects unknown catalog kinds and invalid seat careers", () => {
     const kind = parseSharePayload({
       ...payload,
-      slots: [{ slotId: "boff-0", catalogKind: "trait", name: "Ablative" }],
+      slots: [{ slotId: "boff-0", catalogKind: "console", name: "Ablative" }],
     });
     assert.equal(kind.ok, false);
     if (!kind.ok) assert.equal(kind.reason, "bad-slot");
