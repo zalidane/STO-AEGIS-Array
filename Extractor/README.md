@@ -2,7 +2,7 @@
 
 Extracts Star Trek Online game data from [STOWiki](https://stowiki.net) Cargo tables into `output/*.json`, then imports those files into PostgreSQL via `@sto-aegis/database`. Image files are downloaded into `VueUI/public/images/`. After Cargo extract, experimental-weapon names are scraped from hull wikitext into `output/ShipExperimentalWeapons.json` (not a Cargo table).
 
-Committed **supplements** under `output/supplements/` fill Cargo gaps (missing modifier tokens, incomplete `available` lists, and later other tables). Import merges each supplement with its Cargo file before writing Prisma models. Cargo remains primary: supplements insert missing rows and may widen `type` / `available`, but do not overwrite non-empty wiki `stats`.
+Committed **supplements** under `output/supplements/` fill Cargo gaps (missing modifier tokens, incomplete `available` lists, incomplete set-bonus membership, and later other tables). Import merges each supplement with its Cargo file before writing Prisma models. Cargo remains primary: supplements insert missing rows and may widen `type` / `available` / `Members`, but do not overwrite non-empty wiki `stats` or `Passives`.
 
 **Workflow**
 
@@ -71,11 +71,14 @@ Import order is Infobox → Ships → StarshipTraits → Mastery → Modifiers �
 | File | Merges into | Purpose |
 |------|-------------|---------|
 | `output/supplements/Modifiers.json` | Modifiers | Missing tokens (e.g. `[HullCap]`, `[ShCap]`); widen or clear `available` (e.g. `[HullHeal]`); widen `[Proc]` Type with `Ship Fore Weapon` |
+| `output/supplements/SetBonus.json` | SetBonus | Missing set pages (Nausicaan Weaponry Augmentation, Counter-Command Ordnance) plus `Members` globs so the loadout card can match weapons + career consoles (#13) |
 
 Modifier supplement rows are Cargo-shaped. Optional `_merge` metadata (stripped before DB write):
 
 - `clearAvailable: true` — drop the Cargo item-name allowlist so eligibility follows **Type**
 - `matchType: "…"` — when several Cargo rows share a modifier name, pick which `type` blob to widen
+
+SetBonus supplement rows are also Cargo-shaped. Optional `Members` is a newline-separated list of item-name globs (`*` = any run of characters). The loadout matcher ignores Mk suffixes and counts at most one seated item per pattern (so two Heavy Bio-Molecular turrets still count as one piece).
 
 Import hashes Cargo + supplement together, so editing only the supplement still re-imports that table.
 
@@ -100,7 +103,7 @@ From the monorepo root:
 npm run test:extractor
 ```
 
-Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier supplement merge, and import name dedupe.
+Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier and set-bonus supplement merge, and import name dedupe.
 
 ## Images
 
