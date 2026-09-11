@@ -74,6 +74,23 @@ describe("normalizeWikiFileTitle", () => {
     );
   });
 
+  it("drops Hangar Advanced/Elite rank so pets reuse the standard icon (#15)", () => {
+    assert.deepEqual(itemIconNameCandidates("Hangar - Advanced Aeon Timeships"), [
+      "Hangar - Advanced Aeon Timeships",
+      "Hangar - Aeon Timeships",
+    ]);
+    assert.deepEqual(
+      itemIconNameCandidates("Hangar - Elite 32c. Federation Shuttlecraft"),
+      [
+        "Hangar - Elite 32c. Federation Shuttlecraft",
+        "Hangar - 32c. Federation Shuttlecraft",
+      ],
+    );
+    assert.deepEqual(itemIconNameCandidates("Hangar - Peregrine Fighters"), [
+      "Hangar - Peregrine Fighters",
+    ]);
+  });
+
   it("uses underscores for local filenames", () => {
     assert.equal(
       localFilename("File:Phaser Beam Array icon.png"),
@@ -202,6 +219,37 @@ describe("applyImageIndexToInfoboxes", () => {
       stamped[0]?.image,
       "Omni-Directional_Antichroniton_Infused_Tetryon_Beam_Array_icon.png",
     );
+  });
+
+  it("stamps Advanced hangar pets from the standard pet’s downloaded icon (#15)", () => {
+    const stamped = applyImageIndexToInfoboxes(
+      [
+        { name: "Hangar - Advanced Aeon Timeships" },
+        { name: "Hangar - Advanced Baltim Raider" },
+      ],
+      [
+        {
+          kind: "items",
+          wikiTitle: "File:Hangar - Advanced Aeon Timeships icon.png",
+          localFilename: "Hangar_-_Advanced_Aeon_Timeships_icon.png",
+          status: "missing",
+        },
+        {
+          kind: "items",
+          wikiTitle: "File:Hangar - Aeon Timeships icon.png",
+          localFilename: "Hangar_-_Aeon_Timeships_icon.png",
+          status: "exists",
+        },
+        {
+          kind: "items",
+          wikiTitle: "File:Hangar - Advanced Baltim Raider icon.png",
+          localFilename: "Hangar_-_Advanced_Baltim_Raider_icon.png",
+          status: "downloaded",
+        },
+      ],
+    );
+    assert.equal(stamped[0]?.image, "Hangar_-_Aeon_Timeships_icon.png");
+    assert.equal(stamped[1]?.image, "Hangar_-_Advanced_Baltim_Raider_icon.png");
   });
 });
 

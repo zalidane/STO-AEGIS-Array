@@ -80,12 +80,27 @@ function stripTrailingModsAndInfinity(name: string): string {
   }
 }
 
+/**
+ * Hangar Advanced/Elite pets usually reuse the standard pet’s wiki icon.
+ * Keep the full name first so a distinct Advanced/Elite file still wins.
+ */
+const HANGAR_RANK_PREFIX = /^(Hangar -\s+)(?:Advanced|Elite)\s+/i;
+
+export function dropHangarRankPrefix(name: string): string | undefined {
+  const stripped = name.replace(HANGAR_RANK_PREFIX, "$1").replace(/\s+/g, " ").trim();
+  return stripped && stripped.toLowerCase() !== name.toLowerCase()
+    ? stripped
+    : undefined;
+}
+
 /** Exact cargo name, then without mods, then without Mk — first wiki hit wins. */
 export function itemIconNameCandidates(name: string): string[] {
   const decoded = decodeHtmlEntities(name).replace(INVISIBLE_CHARS, "").trim();
   const withoutMods = stripTrailingModsAndInfinity(decoded);
   const withoutMark = withoutMods.replace(ITEM_MARK_SUFFIX, "").trim();
-  return uniqueNames([decoded, withoutMods, withoutMark]);
+  const hangarBase =
+    dropHangarRankPrefix(withoutMark) ?? dropHangarRankPrefix(decoded);
+  return uniqueNames([decoded, withoutMods, withoutMark, hangarBase ?? ""]);
 }
 
 /** ASCII/Unicode apostrophes and ampersands. Strip so public paths stay POSIX/WAF/URL-safe. */
