@@ -18,8 +18,10 @@ import {
   equipLoadoutSlot,
   filledSlotMap,
   unequipLoadoutSlot,
+  updateLoadoutBoardPrefs,
   updateLoadoutSlotMods,
 } from "@/logic/loadout/state";
+import { applyBoardPrefsToHullSlots } from "@/logic/loadout/boardPrefs";
 import { itemFitsSlot, itemSlotClassesFromType } from "@/logic/loadout/slotClass";
 import { matchSetBonuses } from "@/logic/loadout/setBonus";
 import {
@@ -70,6 +72,7 @@ const items: LoadoutItem[] = [
   { id: 5, name: "Universal Console — Phase Shift", type: "universal console", equiplimit: 1 },
   { id: 6, name: "Tactical Console", type: "ship tactical console", equiplimit: null },
   { id: 7, name: "Ground Armor", type: "ground armor", equiplimit: null },
+  { id: 8, name: "Red Matter Capacitor", type: "ship device", equiplimit: null },
 ];
 
 describe("slotClass", () => {
@@ -278,7 +281,16 @@ describe("buildHullSlots", () => {
       slots
         .filter((slot) => slot.kind === "tacticalConsole")
         .map((slot) => slot.label),
-    ).toEqual(["Tactical 1", "Tactical 2", "Tactical 3", "Tactical 4", "Tactical 5"]);
+    ).toEqual([
+      "Tactical 1",
+      "Tactical 2",
+      "Tactical 3",
+      "Tactical 4",
+      "Tactical (T5-U)",
+    ]);
+    expect(
+      slots.find((slot) => slot.label === "Tactical (T5-U)")?.extraRuleId,
+    ).toBe("t5-u");
   });
 });
 
@@ -311,6 +323,55 @@ describe("loadout equip", () => {
       clock,
     );
     expect(illegal).toEqual({ ok: false, reason: "illegal-slot" });
+  });
+
+  it("refuses to seat gear in a locked upgrade socket (#17)", () => {
+    const t6 = { ...escort, tier: 6 as const };
+    const locked = applyBoardPrefsToHullSlots(
+      buildHullSlots(t6),
+      { hullUpgrade: "stock", extraSlotDisplay: "lock", miracleWorkerConsole: false },
+      t6,
+    );
+    const xSlot = locked.find((slot) => slot.label === "Universal (T6-X)");
+    expect(xSlot?.locked).toBe(true);
+    const state = withLoadout();
+    const result = equipLoadoutSlot(
+      state,
+      {
+        loadoutId: state.loadouts[0]!.id,
+        slotId: xSlot!.id,
+        itemId: 5,
+      },
+      { hullSlots: locked, items, ownedKeys },
+      clock,
+    );
+    expect(result).toEqual({ ok: false, reason: "locked-slot" });
+  });
+
+  it("stores board prefs without touching trait seats on the loadout (#16)", () => {
+    let state = withLoadout();
+    const loadoutId = state.loadouts[0]!.id;
+    state = applyLoadout(state, {
+      ...state.loadouts[0]!,
+      slots: [
+        { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+        { slotId: "foreWeapon-0", itemId: 1, catalogKind: "item" },
+      ],
+    });
+    state = updateLoadoutBoardPrefs(
+      state,
+      loadoutId,
+      { hullUpgrade: "stock", hideModifiers: true },
+      clock,
+    );
+    expect(state.loadouts[0]?.boardPrefs).toEqual({
+      hullUpgrade: "stock",
+      hideModifiers: true,
+    });
+    expect(state.loadouts[0]?.slots).toEqual([
+      { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+      { slotId: "foreWeapon-0", itemId: 1, catalogKind: "item" },
+    ]);
   });
 
   it("enforces wiki equiplimit on unique copies", () => {
@@ -528,6 +589,25 @@ describe("loadout equip", () => {
       mark: "XII",
       modifiers: ["[Dmg]", "[CrtH]", "[Dmg]", "[Pen]", "[Ac/Dm]"],
     });
+  });
+
+  it("stores quality on devices without a mark rank", () => {
+    const state = withLoadout();
+    const loadoutId = state.loadouts[0]!.id;
+    const seated = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "device-0", itemId: 8 },
+      context,
+      clock,
+    );
+    expect(seated.ok).toBe(true);
+    if (!seated.ok) return;
+    expect(seated.loadout.slots[0]).toMatchObject({
+      slotId: "device-0",
+      itemId: 8,
+      quality: "Very Rare",
+    });
+    expect(seated.loadout.slots[0]).not.toHaveProperty("mark");
   });
 
   it("does not duplicate a unique item onto the next same-kind slot", () => {

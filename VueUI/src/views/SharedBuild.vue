@@ -13,6 +13,7 @@ import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
 import { useCollectionStore } from "@/stores/collection";
 import { buildHullSlots, groupHullSlots } from "@/logic/loadout/hullSlots";
+import { applyBoardPrefsToHullSlots } from "@/logic/loadout/boardPrefs";
 import type { SharePayload } from "@/logic/share/payload";
 import { resolveShareSlots } from "@/logic/share/payload";
 import type { LoadoutItem } from "@/logic/loadout/types";
@@ -72,9 +73,15 @@ const fillBySlot = computed(() => {
 });
 
 const ship = computed(() => shared.value?.ship ?? null);
-const slotSections = computed(() =>
-  ship.value ? groupHullSlots(buildHullSlots(ship.value)) : [],
-);
+const slotSections = computed(() => {
+  if (!ship.value) return [];
+  const slots = applyBoardPrefsToHullSlots(
+    buildHullSlots(ship.value),
+    payload.value?.boardPrefs,
+    ship.value,
+  );
+  return groupHullSlots(slots);
+});
 
 const copyError = computed(() => {
   if (!store.activeCharacter) return "Create a captain before copying this board.";

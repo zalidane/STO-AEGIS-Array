@@ -1,4 +1,6 @@
 import { fillCatalogKind, loadoutOwnershipKey } from "@/logic/loadout/setBonus";
+import type { LoadoutBoardPrefs } from "@/logic/loadout/boardPrefs";
+import { compactBoardPrefs } from "@/logic/loadout/boardPrefs";
 import type {
   CollectionLoadout,
   LoadoutCatalogKind,
@@ -28,6 +30,7 @@ export type SharePayload = {
   title: string;
   slots: ShareSlot[];
   boffSeatCareers?: CollectionLoadout["boffSeatCareers"];
+  boardPrefs?: LoadoutBoardPrefs;
 };
 
 export type ShareCatalogItem = Pick<
@@ -81,6 +84,7 @@ export function encodeSharePayload(input: {
     if (fill.abilityRank != null) slot.abilityRank = fill.abilityRank;
     slots.push(slot);
   }
+  const boardPrefs = compactBoardPrefs(input.loadout.boardPrefs);
   return {
     v: SHARE_SCHEMA_VERSION,
     shipName: input.shipName.trim(),
@@ -89,6 +93,7 @@ export function encodeSharePayload(input: {
     ...(input.loadout.boffSeatCareers
       ? { boffSeatCareers: { ...input.loadout.boffSeatCareers } }
       : {}),
+    ...(boardPrefs ? { boardPrefs } : {}),
   };
 }
 

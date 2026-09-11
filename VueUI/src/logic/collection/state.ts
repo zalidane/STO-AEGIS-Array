@@ -42,6 +42,7 @@ import {
   stripLoadoutsForCharacter,
 } from "@/logic/loadout/state";
 import { sanitizeBoffSeatCareers } from "@/logic/loadout/boffPowers";
+import { sanitizeBoardPrefs } from "@/logic/loadout/boardPrefs";
 
 function characterName(
   state: CollectionState,
@@ -831,13 +832,21 @@ function isLoadout(value: unknown): value is CollectionLoadout {
 
 function sanitizeLoadoutParse(loadout: CollectionLoadout): CollectionLoadout {
   const careers = sanitizeBoffSeatCareers(loadout.boffSeatCareers);
+  const boardPrefs = sanitizeBoardPrefs(loadout.boardPrefs);
   const withCareers: CollectionLoadout =
     careers === undefined && loadout.boffSeatCareers === undefined
       ? loadout
       : { ...loadout, boffSeatCareers: careers };
-  if (withCareers.combatParse == null) return withCareers;
-  if (isCombatParseSummary(withCareers.combatParse)) return withCareers;
-  const { combatParse: _dropped, ...rest } = withCareers;
+  const withPrefs: CollectionLoadout = boardPrefs
+    ? { ...withCareers, boardPrefs }
+    : (() => {
+        if (withCareers.boardPrefs == null) return withCareers;
+        const { boardPrefs: _dropped, ...rest } = withCareers;
+        return rest;
+      })();
+  if (withPrefs.combatParse == null) return withPrefs;
+  if (isCombatParseSummary(withPrefs.combatParse)) return withPrefs;
+  const { combatParse: _dropped, ...rest } = withPrefs;
   return rest;
 }
 

@@ -112,6 +112,39 @@ describe("encodeSharePayload", () => {
     expect(payload.slots.map((slot) => slot.name)).toContain("Crippling Fire");
   });
 
+  it("includes non-default board prefs without dropping trait seats (#17)", () => {
+    const withPrefs: CollectionLoadout = {
+      ...loadout,
+      boardPrefs: { hullUpgrade: "stock", hideModifiers: true },
+      slots: [
+        ...loadout.slots,
+        { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+      ],
+    };
+    const catalog = [
+      ...items,
+      {
+        id: 8,
+        name: "Crippling Fire",
+        type: "char",
+        catalogKind: "trait" as const,
+      },
+    ];
+    const payload = encodeSharePayload({
+      shipName: "Advanced Heavy Cruiser (T6)",
+      title: "Energy 1",
+      loadout: withPrefs,
+      items: catalog,
+    });
+    expect(payload.boardPrefs).toEqual({
+      hullUpgrade: "stock",
+      hideModifiers: true,
+    });
+    expect(payload.slots.some((slot) => slot.catalogKind === "trait")).toBe(
+      true,
+    );
+  });
+
   it("keeps tray-skill roman rank when II and III share an officer rank", () => {
     const payload = encodeSharePayload({
       shipName: "Atlantis Temporal Destroyer",
@@ -192,6 +225,29 @@ describe("copyShareToCaptain", () => {
     expect(result.loadout.id).toBe("share-2");
     expect(result.loadout.id).not.toBe(loadout.id);
     expect(result.loadout.slots).toHaveLength(3);
+  });
+
+  it("restores board prefs onto the copied loadout", () => {
+    clockIds = 0;
+    const state = createCharacter(createEmptyCollectionState(), "Alice", clock);
+    const payload = encodeSharePayload({
+      shipName: "Advanced Heavy Cruiser (T6)",
+      title: "Energy 1",
+      loadout: { ...loadout, boardPrefs: { hullUpgrade: "stock" } },
+      items,
+    });
+    const result = copyShareToCaptain(
+      state,
+      {
+        payload,
+        items,
+        ships: [{ id: 7, wikiName: "Advanced Heavy Cruiser (T6)" }],
+      },
+      clock,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.loadout.boardPrefs).toEqual({ hullUpgrade: "stock" });
   });
 
   it("fails without a captain or an unknown wiki hull", () => {

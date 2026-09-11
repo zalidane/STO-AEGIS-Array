@@ -138,20 +138,33 @@ export function shipSpecificSectionLabel(shipName: string | null | undefined): s
 export function buildCaptainTraitSlots(input: {
   faction?: string | null;
   race?: string | null;
+  /** Hull starship-trait sockets after board prefs. Drives the ship-specific row. */
+  hullTraitSlots?: ReadonlyArray<{
+    id: string;
+    index: number;
+    locked?: boolean;
+  }>;
 }): CaptainTraitSlot[] {
   const personal = personalSpaceSlotCount(input.faction, input.race);
 
-  const shipSpecific: CaptainTraitSlot[] = Array.from(
-    { length: SHIP_SPECIFIC_SLOTS },
-    (_, index) => ({
-      id: `starshipTrait-${index}`,
-      group: "shipSpecific" as const,
-      label: CAPTAIN_TRAIT_GROUP_LABEL.shipSpecific,
-      index,
-      catalogKind: "starshipTrait" as const,
-      storage: "loadout" as const,
-    }),
-  );
+  const shipSpecific: CaptainTraitSlot[] = input.hullTraitSlots
+    ? input.hullTraitSlots.map((slot) => ({
+        id: slot.id,
+        group: "shipSpecific" as const,
+        label: CAPTAIN_TRAIT_GROUP_LABEL.shipSpecific,
+        index: slot.index,
+        catalogKind: "starshipTrait" as const,
+        storage: "loadout" as const,
+        locked: slot.locked,
+      }))
+    : Array.from({ length: SHIP_SPECIFIC_SLOTS }, (_, index) => ({
+        id: `starshipTrait-${index}`,
+        group: "shipSpecific" as const,
+        label: CAPTAIN_TRAIT_GROUP_LABEL.shipSpecific,
+        index,
+        catalogKind: "starshipTrait" as const,
+        storage: "loadout" as const,
+      }));
 
   return [
     ...numbered(

@@ -35,6 +35,14 @@ export type SharePayload = {
   title: string;
   slots: ShareSlot[];
   boffSeatCareers?: Record<string, SharePlayableCareer>;
+  boardPrefs?: ShareBoardPrefs;
+};
+
+export type ShareBoardPrefs = {
+  hullUpgrade?: "full" | "x" | "u" | "stock";
+  miracleWorkerConsole?: boolean;
+  extraSlotDisplay?: "hide" | "lock";
+  hideModifiers?: boolean;
 };
 
 export type ShareFillRow = {
@@ -113,6 +121,31 @@ function parseAbilityRank(value: unknown): number | null | undefined {
     return null;
   }
   return value;
+}
+
+function parseBoardPrefs(value: unknown): ShareBoardPrefs | undefined {
+  if (value == null) return undefined;
+  const row = asRecord(value);
+  if (!row) return undefined;
+  const prefs: ShareBoardPrefs = {};
+  if (
+    row.hullUpgrade === "full" ||
+    row.hullUpgrade === "x" ||
+    row.hullUpgrade === "u" ||
+    row.hullUpgrade === "stock"
+  ) {
+    prefs.hullUpgrade = row.hullUpgrade;
+  }
+  if (typeof row.miracleWorkerConsole === "boolean") {
+    prefs.miracleWorkerConsole = row.miracleWorkerConsole;
+  }
+  if (row.extraSlotDisplay === "hide" || row.extraSlotDisplay === "lock") {
+    prefs.extraSlotDisplay = row.extraSlotDisplay;
+  }
+  if (typeof row.hideModifiers === "boolean") {
+    prefs.hideModifiers = row.hideModifiers;
+  }
+  return Object.keys(prefs).length > 0 ? prefs : undefined;
 }
 
 function parseBoffSeatCareers(
@@ -196,6 +229,7 @@ export function parseSharePayload(raw: unknown): ParseShareResult {
   if (boffSeatCareers === null) {
     return { ok: false, reason: "bad-boff-careers" };
   }
+  const boardPrefs = parseBoardPrefs(value.boardPrefs);
 
   return {
     ok: true,
@@ -205,6 +239,7 @@ export function parseSharePayload(raw: unknown): ParseShareResult {
       title: value.title.trim(),
       slots,
       ...(boffSeatCareers ? { boffSeatCareers } : {}),
+      ...(boardPrefs ? { boardPrefs } : {}),
     },
   };
 }
