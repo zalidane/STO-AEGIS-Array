@@ -148,24 +148,31 @@ describe("matchSetBonuses inferred sets", () => {
     ).toEqual([]);
   });
 
-  it("infers named equipment sets from a shared name prefix", () => {
-    const active = matchSetBonuses(
-      [
-        { name: "Temporal Defense Initiative Deflector Array Mk XII" },
-        { name: "Temporal Defense Initiative Combat Impulse Engines Mk XII" },
-      ],
-      [],
-    );
-    expect(active).toHaveLength(1);
-    expect(active[0]).toMatchObject({
-      name: "Temporal Defense Initiative",
-      equipped: 2,
-      required: 3,
-      complete: false,
-    });
+  it("does not invent a set from similar weapon names", () => {
+    expect(
+      matchSetBonuses(
+        [
+          { name: "Agony Phaser Beam Array" },
+          { name: "Agony Phaser Dual Beam Bank" },
+        ],
+        [],
+      ),
+    ).toEqual([]);
   });
 
-  it("keeps cargo matches and does not duplicate them as a name prefix", () => {
+  it("does not infer a named set from a shared prefix without cargo membership", () => {
+    expect(
+      matchSetBonuses(
+        [
+          { name: "Temporal Defense Initiative Deflector Array Mk XII" },
+          { name: "Temporal Defense Initiative Combat Impulse Engines Mk XII" },
+        ],
+        [],
+      ),
+    ).toEqual([]);
+  });
+
+  it("keeps cargo matches for items whose names include the set page", () => {
     const active = matchSetBonuses(
       [
         { name: "Temporal Defense Initiative Deflector" },
