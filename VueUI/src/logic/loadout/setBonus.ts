@@ -35,15 +35,6 @@ export type ActiveSetBonus = {
 
 const MIN_SET_NAME_LENGTH = 6;
 const DEFAULT_NAMED_SET_SIZE = 3;
-const GENERIC_PREFIX_WORDS = new Set([
-  "console",
-  "universal",
-  "tactical",
-  "engineering",
-  "science",
-  "kit",
-  "module",
-]);
 
 function catalogByKey(
   items: ReadonlyArray<LoadoutItem>,
@@ -110,37 +101,6 @@ function setNameFromWho(who: string): string {
     .trim()
     .replace(/^Equippable on /i, "")
     .replace(/^(Any|All) /i, "");
-}
-
-function stripItemNameForSet(name: string): string {
-  return decodeHtmlEntities(name)
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\s+Mk\s+[IVX∞0-9]+.*$/i, "")
-    .replace(
-      /^Console\s*-\s*(?:Universal|Tactical|Engineering|Science)\s*-\s*/i,
-      "",
-    );
-}
-
-function commonWordPrefix(left: string, right: string): string {
-  const leftWords = left.split(" ").filter(Boolean);
-  const rightWords = right.split(" ").filter(Boolean);
-  const shared: string[] = [];
-  for (let i = 0; i < Math.min(leftWords.length, rightWords.length); i += 1) {
-    if (leftWords[i]!.toLowerCase() !== rightWords[i]!.toLowerCase()) break;
-    shared.push(leftWords[i]!);
-  }
-  return shared.join(" ");
-}
-
-function isUsefulSetPrefix(prefix: string): boolean {
-  const words = prefix.split(" ").filter(Boolean);
-  if (prefix.length < MIN_SET_NAME_LENGTH || words.length < 2) return false;
-  const distinctive = words.filter(
-    (word) => !GENERIC_PREFIX_WORDS.has(word.toLowerCase()),
-  );
-  return distinctive.length >= 2;
 }
 
 function inferredSetId(kind: string, label: string): number {
@@ -369,58 +329,6 @@ function whoSetBonuses(
   return results;
 }
 
-function namePrefixSetBonuses(
-  equipped: ReadonlyArray<SetBonusItem>,
-  claimedNames: ReadonlySet<string>,
-): ActiveSetBonus[] {
-  const remaining = equipped.filter((item) => !claimedNames.has(item.name));
-  if (remaining.length < 2) return [];
-
-  const stripped = remaining.map((item) => ({
-    item,
-    stripped: stripItemNameForSet(item.name),
-  }));
-
-  const prefixByName = new Map<string, string>();
-  for (const current of stripped) {
-    let best = "";
-    for (const other of stripped) {
-      if (other.item.name === current.item.name) continue;
-      const prefix = commonWordPrefix(current.stripped, other.stripped);
-      if (isUsefulSetPrefix(prefix) && prefix.length > best.length) {
-        best = prefix;
-      }
-    }
-    if (best) prefixByName.set(current.item.name, best);
-  }
-
-  const grouped = new Map<string, SetBonusItem[]>();
-  for (const item of remaining) {
-    const prefix = prefixByName.get(item.name);
-    if (!prefix) continue;
-    const group = grouped.get(prefix) ?? [];
-    group.push(item);
-    grouped.set(prefix, group);
-  }
-
-  const results: ActiveSetBonus[] = [];
-  for (const [prefix, pieces] of grouped) {
-    if (pieces.length < 2) continue;
-    const required = Math.max(DEFAULT_NAMED_SET_SIZE, pieces.length);
-    results.push({
-      id: inferredSetId("name", prefix),
-      name: prefix,
-      equipped: pieces.length,
-      required,
-      complete: pieces.length >= required,
-      passives: null,
-      pieces: pieces.map((item) => item.name),
-      missing: [],
-    });
-  }
-  return results;
-}
-
 function namesCoveredByCargo(
   cargo: ReadonlyArray<ActiveSetBonus>,
 ): Set<string> {
@@ -429,9 +337,10 @@ function namesCoveredByCargo(
 
 /**
  * Match seated items to set bonuses.
- * Wiki cargo is sparse, so unique consoles that share a who-restriction
- * and items that share a distinctive name prefix are inferred locally.
- * Supplement `members` globs match packs whose names do not include the set page.
+ * Membership comes from wiki cargo (set name in the item name), supplement
+ * `members` globs, or unique consoles that share a who-restriction.
+ * Similar names alone are not a set — weapon families like Agony Phaser
+ * share a prefix without being a pack.
  */
 export function matchSetBonuses(
   equipped: ReadonlyArray<SetBonusItem>,
@@ -443,11 +352,7 @@ export function matchSetBonuses(
   const fromWho = whoSetBonuses(equipped, catalog).filter(
     (set) => !set.pieces.every((name) => claimed.has(name)),
   );
-  for (const set of fromWho) {
-    for (const name of set.pieces) claimed.add(name);
-  }
-  const fromPrefix = namePrefixSetBonuses(equipped, claimed);
-  return sortSetBonuses([...cargo, ...fromWho, ...fromPrefix]);
+  return sortSetBonuses([...cargo, ...fromWho]);
 }
 
 export function isUniqueLimited(item: Pick<LoadoutItem, "equiplimit">): boolean {
