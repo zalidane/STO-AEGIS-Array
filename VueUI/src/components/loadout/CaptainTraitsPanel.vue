@@ -11,6 +11,8 @@ export type CaptainTraitSlotView = {
 const props = defineProps<{
   title: string;
   subtitle?: string;
+  /** Shared / public builds: show seats without picker chrome. */
+  readonly?: boolean;
   sections: Array<{
     group: CaptainTraitGroup;
     label: string;
@@ -25,8 +27,15 @@ const emit = defineEmits<{
 function slotTitle(view: CaptainTraitSlotView): string {
   if (view.slot.locked) return `${view.slot.label} · Locked`;
   if (view.item) return `${view.slot.label}: ${view.item.name}`;
-  if (view.ownedCount) return `Empty ${view.slot.label} · ${view.ownedCount} owned`;
+  if (!props.readonly && view.ownedCount) {
+    return `Empty ${view.slot.label} · ${view.ownedCount} owned`;
+  }
   return `Empty ${view.slot.label}`;
+}
+
+function onPick(slot: CaptainTraitSlot) {
+  if (props.readonly || slot.locked) return;
+  emit("pick", slot);
 }
 </script>
 
@@ -53,11 +62,12 @@ function slotTitle(view: CaptainTraitSlotView): string {
           :class="{
             'trait-slot--filled': view.item,
             'trait-slot--locked': view.slot.locked,
+            'trait-slot--readonly': readonly,
           }"
-          :disabled="view.slot.locked"
+          :disabled="readonly || view.slot.locked"
           :title="slotTitle(view)"
           :aria-label="slotTitle(view)"
-          @click="emit('pick', view.slot)"
+          @click="onPick(view.slot)"
         >
           <WikiIcon
             v-if="view.item"
@@ -67,7 +77,7 @@ function slotTitle(view: CaptainTraitSlotView): string {
           />
           <span v-else-if="view.slot.locked" class="trait-slot__lock">LOCK</span>
           <span
-            v-else-if="view.ownedCount"
+            v-else-if="!readonly && view.ownedCount"
             class="trait-slot__owned"
           >
             {{ view.ownedCount }}
@@ -196,7 +206,8 @@ function slotTitle(view: CaptainTraitSlotView): string {
   opacity: 0.55;
 }
 
-.trait-slot:disabled:not(.trait-slot--locked) {
+.trait-slot:disabled:not(.trait-slot--locked),
+.trait-slot--readonly {
   cursor: default;
 }
 

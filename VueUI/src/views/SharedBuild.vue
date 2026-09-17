@@ -7,21 +7,28 @@ import {
   SharedBuildDocument,
   ShipsDocument,
   StarshipTraitsDocument,
+  TraitsDocument,
+  TraySkillsDocument,
 } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
+import CaptainTraitsPanel from "@/components/loadout/CaptainTraitsPanel.vue";
+import BoffStationsPanel from "@/components/loadout/BoffStationsPanel.vue";
 import { useCollectionStore } from "@/stores/collection";
 import { buildHullSlots, groupHullSlots } from "@/logic/loadout/hullSlots";
 import { applyBoardPrefsToHullSlots } from "@/logic/loadout/boardPrefs";
 import type { SharePayload } from "@/logic/share/payload";
 import { resolveShareSlots } from "@/logic/share/payload";
+import {
+  sharedBoffStationRows,
+  sharedCaptainTraitSections,
+} from "@/logic/share/sharedBoard";
 import type { LoadoutItem } from "@/logic/loadout/types";
 import {
+  buildLoadoutCatalog,
   indexLoadoutItemsByKey,
   lookupLoadoutItem,
-  toLoadoutItem,
-  toLoadoutTrait,
 } from "@/logic/loadout/catalogMap";
 import { FALLBACK_SHIP_IMAGE, getShipImageUrl } from "@/utils/shipImage";
 
@@ -36,6 +43,8 @@ const { result, loading, error } = useQuery(SharedBuildDocument, () => ({
 const { result: shipsResult } = useQuery(ShipsDocument);
 const { result: itemsResult } = useQuery(InfoboxesDocument);
 const { result: traitsResult } = useQuery(StarshipTraitsDocument);
+const { result: personalTraitsResult } = useQuery(TraitsDocument);
+const { result: traySkillsResult } = useQuery(TraySkillsDocument);
 
 const shared = computed(() => result.value?.sharedBuild ?? null);
 const payload = computed<SharePayload | null>(() => {
@@ -46,10 +55,14 @@ const payload = computed<SharePayload | null>(() => {
   return value;
 });
 
-const catalogItems = computed<LoadoutItem[]>(() => [
-  ...(itemsResult.value?.infoboxes ?? []).map(toLoadoutItem),
-  ...(traitsResult.value?.starshipTraits ?? []).map(toLoadoutTrait),
-]);
+const catalogItems = computed<LoadoutItem[]>(() =>
+  buildLoadoutCatalog({
+    items: itemsResult.value?.infoboxes,
+    starshipTraits: traitsResult.value?.starshipTraits,
+    traits: personalTraitsResult.value?.traits,
+    traySkills: traySkillsResult.value?.traySkills,
+  }),
+);
 
 const itemByKey = computed(() => indexLoadoutItemsByKey(catalogItems.value));
 
@@ -73,15 +86,38 @@ const fillBySlot = computed(() => {
 });
 
 const ship = computed(() => shared.value?.ship ?? null);
-const slotSections = computed(() => {
+
+const hullSlots = computed(() => {
   if (!ship.value) return [];
-  const slots = applyBoardPrefsToHullSlots(
+  return applyBoardPrefsToHullSlots(
     buildHullSlots(ship.value),
     payload.value?.boardPrefs,
     ship.value,
   );
-  return groupHullSlots(slots);
 });
+
+const slotSections = computed(() => groupHullSlots(hullSlots.value));
+
+const captainTraitBoard = computed(() =>
+  sharedCaptainTraitSections({
+    shipName: ship.value?.name,
+    hullTraitSlots: hullSlots.value.filter(
+      (slot) => slot.kind === "starshipTrait",
+    ),
+    itemInSlot,
+  }),
+);
+
+const boffStationBoard = computed(() =>
+  ship.value
+    ? sharedBoffStationRows({
+        boffs: ship.value.boffs,
+        boffSeatCareers: payload.value?.boffSeatCareers,
+        fills: resolvedFills.value,
+        itemInSlot,
+      })
+    : [],
+);
 
 const copyError = computed(() => {
   if (!store.activeCharacter) return "Create a captain before copying this board.";
@@ -150,12 +186,27 @@ function copyToCaptain() {
       </header>
 
       <div class="shared-board">
-        <img
-          v-if="ship"
-          class="shared-art"
-          :src="ship.image ? getShipImageUrl(ship.image) : FALLBACK_SHIP_IMAGE"
-          :alt="ship.name"
-        />
+        <div class="shared-primary">
+          <img
+            v-if="ship"
+            class="shared-art"
+            :src="ship.image ? getShipImageUrl(ship.image) : FALLBACK_SHIP_IMAGE"
+            :alt="ship.name"
+          />
+          <CaptainTraitsPanel
+            class="captain-traits-board"
+            title="Captain space traits"
+            subtitle="Seated on this shared loadout"
+            :sections="captainTraitBoard"
+            readonly
+          />
+          <BoffStationsPanel
+            v-if="boffStationBoard.length"
+            class="boff-stations-board"
+            :stations="boffStationBoard"
+            readonly
+          />
+        </div>
         <div class="loadout-slots">
           <section
             v-for="section in slotSections"
@@ -229,13 +280,26 @@ function copyToCaptain() {
 
 .shared-board {
   display: grid;
-  grid-template-columns: minmax(12rem, 0.4fr) minmax(0, 1fr);
+  grid-template-columns: minmax(18.5rem, 22rem) minmax(0, 1fr);
   gap: 1.25rem;
+  align-items: start;
+}
+
+.shared-primary {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
 }
 
 .shared-art {
   width: 100%;
   object-fit: contain;
+}
+
+.captain-traits-board,
+.boff-stations-board {
+  min-width: 0;
 }
 
 .loadout-slots {
