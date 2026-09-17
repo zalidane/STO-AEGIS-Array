@@ -2,15 +2,15 @@ import { REWARDS, TIERS, TIER_BY_ID } from "./data";
 import type { RewardDefinition, RewardTierId } from "./types";
 
 /**
- * Official per-item odds were not published in the news post (they land in the
- * in-game Pack description). Tier weights use the inverse of each tier's
- * schematic-choice value from the article so rarer tiers drop less often.
- * Items inside a tier share weight equally.
+ * Tier drop weights from the livestream published odds table (1-in-N).
+ * Items inside a tier share that tier's weight equally.
+ * Weights are normalized when rolling because the published percents sum
+ * slightly over 100%.
  */
-export function provisionalTierWeight(tierId: RewardTierId): number {
+export function publishedTierWeight(tierId: RewardTierId): number {
   const tier = TIER_BY_ID.get(tierId);
-  if (!tier || tier.schematicChoice <= 0) return 0;
-  return 1 / tier.schematicChoice;
+  if (!tier || tier.oneIn <= 0) return 0;
+  return 1 / tier.oneIn;
 }
 
 export function buildRewardWeights(
@@ -28,7 +28,7 @@ export function buildRewardWeights(
     const count = tierItemCounts.get(reward.tierId) ?? 1;
     return {
       reward,
-      weight: provisionalTierWeight(reward.tierId) / count,
+      weight: publishedTierWeight(reward.tierId) / count,
     };
   });
 }
@@ -50,18 +50,25 @@ export function pickWeightedReward(
   return weighted[weighted.length - 1]!.reward;
 }
 
-export function provisionalTierOdds(): {
+export function publishedTierOdds(): {
   tierId: RewardTierId;
   label: string;
-  percent: number;
+  oddsLabel: string;
+  oneIn: number;
+  publishedPercent: number;
+  /** Normalized percent used by the roller (sums to 100). */
+  rollPercent: number;
 }[] {
   const total = TIERS.reduce(
-    (sum, tier) => sum + provisionalTierWeight(tier.id),
+    (sum, tier) => sum + publishedTierWeight(tier.id),
     0,
   );
   return TIERS.map((tier) => ({
     tierId: tier.id,
     label: tier.label,
-    percent: (provisionalTierWeight(tier.id) / total) * 100,
+    oddsLabel: tier.oddsLabel,
+    oneIn: tier.oneIn,
+    publishedPercent: tier.publishedPercent,
+    rollPercent: (publishedTierWeight(tier.id) / total) * 100,
   }));
 }

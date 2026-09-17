@@ -13,7 +13,7 @@ import {
   openPack,
   ownedCount,
   pickWeightedReward,
-  provisionalTierOdds,
+  publishedTierOdds,
   purchaseAndOpenAll,
   purchasePacks,
   resetSimulator,
@@ -85,25 +85,42 @@ describe("pack simulator data", () => {
       ["ensign", 20, 5],
     ]);
   });
+
+  it("uses livestream published 1-in-N tier odds", () => {
+    expect(TIERS.map((t) => [t.oddsLabel, t.oneIn, t.publishedPercent])).toEqual(
+      [
+        ["Grand Prize", 100, 1],
+        ["Admiral", 40, 2.5],
+        ["Captain", 20, 5],
+        ["Commander", 10, 10],
+        ["Lieutenant", 4, 25],
+        ["Ensign", 1.75, 57.143],
+      ],
+    );
+  });
 });
 
 describe("pack simulator odds", () => {
-  it("gives lower provisional odds to rarer tiers", () => {
-    const odds = provisionalTierOdds();
-    const percent = (tierId: string) => {
+  it("rolls with livestream tier weights and rarer tiers less often", () => {
+    const odds = publishedTierOdds();
+    const rollPercent = (tierId: string) => {
       const match = odds.find((entry) => entry.tierId === tierId);
       if (!match) throw new Error(`missing odds for ${tierId}`);
-      return match.percent;
+      return match.rollPercent;
     };
-    expect(percent("ensign")).toBeGreaterThan(percent("lieutenant"));
-    expect(percent("lieutenant")).toBeGreaterThan(percent("commander"));
-    expect(percent("commander")).toBeGreaterThan(percent("captain"));
-    expect(percent("captain")).toBeGreaterThan(percent("admiral"));
-    expect(percent("admiral")).toBeGreaterThan(percent("fleetAdmiral"));
-    expect(odds.reduce((sum, entry) => sum + entry.percent, 0)).toBeCloseTo(
+    expect(rollPercent("ensign")).toBeGreaterThan(rollPercent("lieutenant"));
+    expect(rollPercent("lieutenant")).toBeGreaterThan(rollPercent("commander"));
+    expect(rollPercent("commander")).toBeGreaterThan(rollPercent("captain"));
+    expect(rollPercent("captain")).toBeGreaterThan(rollPercent("admiral"));
+    expect(rollPercent("admiral")).toBeGreaterThan(rollPercent("fleetAdmiral"));
+    expect(odds.reduce((sum, entry) => sum + entry.rollPercent, 0)).toBeCloseTo(
       100,
       5,
     );
+    expect(odds.find((o) => o.tierId === "fleetAdmiral")?.publishedPercent).toBe(
+      1,
+    );
+    expect(odds.find((o) => o.tierId === "ensign")?.oneIn).toBe(1.75);
   });
 
   it("can force a deterministic reward with a stubbed RNG", () => {
