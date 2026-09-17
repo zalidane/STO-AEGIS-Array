@@ -298,8 +298,10 @@ function historyLabel(event: SimulatorState["history"][number]): string {
         </div>
       </div>
       <p v-else class="pack-sim__hint">
-        Configure targets and auto-take on the Configuration tab. Pending opens
-        pause here so you can keep the prize or take Schematics.
+        Configure targets and auto-take on the Configuration tab. Open 1 pauses
+        for a keep / Schematics choice. Open all and Buy &amp; open apply
+        auto-take without prompting (non-targets → Schematics when auto-take is
+        on; otherwise prizes are kept).
       </p>
     </section>
 
