@@ -38,6 +38,27 @@ const uni: LoadoutItem = {
   catalogKind: "item",
 };
 
+const tacticalConsole: LoadoutItem = {
+  id: 11,
+  name: "Console - Tactical - Vulnerability Locator",
+  type: "ship tactical console",
+  catalogKind: "item",
+};
+
+const engineeringConsole: LoadoutItem = {
+  id: 12,
+  name: "Console - Engineering - Neutronium Alloy",
+  type: "ship engineering console",
+  catalogKind: "item",
+};
+
+const scienceConsole: LoadoutItem = {
+  id: 13,
+  name: "Console - Science - Flow Capacitors",
+  type: "ship science console",
+  catalogKind: "item",
+};
+
 const barrage: LoadoutItem = {
   id: 21,
   name: "Beam Barrage",
@@ -77,6 +98,14 @@ const hangar0: HullSlot = {
   kind: "hangar",
   group: "hangars",
   label: "Hangar 1",
+  index: 0,
+};
+
+const universalConsole0: HullSlot = {
+  id: "universalConsole-0",
+  kind: "universalConsole",
+  group: "universalConsoles",
+  label: "Universal 1",
   index: 0,
 };
 
@@ -123,6 +152,38 @@ describe("pickerCandidates", () => {
         exceptSlotId: "foreWeapon-1",
       }).map((item) => item.id),
     ).toEqual([1]);
+  });
+
+  it("lets any console type into a universal console seat", () => {
+    expect(
+      fittingItems({
+        kind: "universalConsole",
+        catalog: [
+          uni,
+          tacticalConsole,
+          engineeringConsole,
+          scienceConsole,
+          phaser,
+        ],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+      }).map((item) => item.id),
+    ).toEqual([10, 11, 12, 13]);
+    expect(
+      pickerCandidatesFor({
+        query: "",
+        hullSlot: universalConsole0,
+        catalog: [uni, tacticalConsole, engineeringConsole, phaser],
+        stations: [],
+        hullSlots: [universalConsole0],
+        hullFills: [],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        identity: {},
+      }).map((item) => item.id),
+    ).toEqual([10, 11, 12]);
   });
 
   it("expands Jam Targeting Sensors I and II for the matching BOff ranks", () => {
