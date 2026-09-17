@@ -65,7 +65,13 @@ const SLOT_ACCEPTS: Record<HullSlotKind, readonly ItemSlotClass[]> = {
   tacticalConsole: ["tacticalConsole", "universalConsole"],
   engineeringConsole: ["engineeringConsole", "universalConsole"],
   scienceConsole: ["scienceConsole", "universalConsole"],
-  universalConsole: ["universalConsole"],
+  // Universal seats take any console career — same as in STO.
+  universalConsole: [
+    "tacticalConsole",
+    "engineeringConsole",
+    "scienceConsole",
+    "universalConsole",
+  ],
   starshipTrait: ["starshipTrait"],
   deflector: ["deflector"],
   secondaryDeflector: ["secondaryDeflector"],
