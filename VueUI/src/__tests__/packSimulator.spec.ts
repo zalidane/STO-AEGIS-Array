@@ -9,18 +9,21 @@ import {
   buyFromStore,
   canPurchase,
   createInitialState,
+  groupInventoryByTier,
   keepReward,
   openPack,
   ownedCount,
   pickWeightedReward,
-  provisionalTierOdds,
+  publishedTierOdds,
   purchaseAndOpenAll,
   purchasePacks,
   resetSimulator,
+  schematicsValueForEntry,
   setAutoTakeSchematics,
   shipRewards,
   takeSchematics,
   toggleTarget,
+  totalInventorySchematicsValue,
 } from "@/logic/packSimulator";
 
 function randomForReward(rewardId: string): () => number {
@@ -85,25 +88,42 @@ describe("pack simulator data", () => {
       ["ensign", 20, 5],
     ]);
   });
+
+  it("uses livestream published 1-in-N tier odds", () => {
+    expect(TIERS.map((t) => [t.oddsLabel, t.oneIn, t.publishedPercent])).toEqual(
+      [
+        ["Grand Prize", 100, 1],
+        ["Admiral", 40, 2.5],
+        ["Captain", 20, 5],
+        ["Commander", 10, 10],
+        ["Lieutenant", 4, 25],
+        ["Ensign", 1.75, 57.143],
+      ],
+    );
+  });
 });
 
 describe("pack simulator odds", () => {
-  it("gives lower provisional odds to rarer tiers", () => {
-    const odds = provisionalTierOdds();
-    const percent = (tierId: string) => {
+  it("rolls with livestream tier weights and rarer tiers less often", () => {
+    const odds = publishedTierOdds();
+    const rollPercent = (tierId: string) => {
       const match = odds.find((entry) => entry.tierId === tierId);
       if (!match) throw new Error(`missing odds for ${tierId}`);
-      return match.percent;
+      return match.rollPercent;
     };
-    expect(percent("ensign")).toBeGreaterThan(percent("lieutenant"));
-    expect(percent("lieutenant")).toBeGreaterThan(percent("commander"));
-    expect(percent("commander")).toBeGreaterThan(percent("captain"));
-    expect(percent("captain")).toBeGreaterThan(percent("admiral"));
-    expect(percent("admiral")).toBeGreaterThan(percent("fleetAdmiral"));
-    expect(odds.reduce((sum, entry) => sum + entry.percent, 0)).toBeCloseTo(
+    expect(rollPercent("ensign")).toBeGreaterThan(rollPercent("lieutenant"));
+    expect(rollPercent("lieutenant")).toBeGreaterThan(rollPercent("commander"));
+    expect(rollPercent("commander")).toBeGreaterThan(rollPercent("captain"));
+    expect(rollPercent("captain")).toBeGreaterThan(rollPercent("admiral"));
+    expect(rollPercent("admiral")).toBeGreaterThan(rollPercent("fleetAdmiral"));
+    expect(odds.reduce((sum, entry) => sum + entry.rollPercent, 0)).toBeCloseTo(
       100,
       5,
     );
+    expect(odds.find((o) => o.tierId === "fleetAdmiral")?.publishedPercent).toBe(
+      1,
+    );
+    expect(odds.find((o) => o.tierId === "ensign")?.oneIn).toBe(1.75);
   });
 
   it("can force a deterministic reward with a stubbed RNG", () => {
@@ -116,6 +136,10 @@ describe("pack simulator odds", () => {
 });
 
 describe("pack simulator flow", () => {
+  it("defaults auto-take Schematics to off", () => {
+    expect(createInitialState().autoTakeSchematics).toBe(false);
+  });
+
   it("tracks Zen cost when buying offers and limits the 60-pack", () => {
     let state = createInitialState();
     state = purchasePacks(state, "single");
@@ -192,6 +216,35 @@ describe("pack simulator flow", () => {
     state = buyFromStore(state, fleetShip.id);
     expect(state.schematics).toBe(0);
     expect(ownedCount(state.inventory, fleetShip.id)).toBe(1);
+  });
+
+  it("groups inventory by tier and reports Schematics value for kept prizes", () => {
+    const ensign = REWARDS.find((reward) => reward.id === "fleet-ship-module")!;
+    const lieutenant = shipRewards().find(
+      (ship) => ship.tierId === "lieutenant",
+    )!;
+    let state = createInitialState();
+    state = purchasePacks(state, "single");
+    state = openPack(state, randomForReward(ensign.id));
+    state = keepReward(state);
+    state = purchasePacks(state, "single");
+    state = openPack(state, randomForReward(lieutenant.id));
+    state = keepReward(state);
+    state = purchasePacks(state, "single");
+    state = openPack(state, randomForReward(ensign.id));
+    state = keepReward(state);
+
+    expect(schematicsValueForEntry(state.inventory[0]!)).toBe(10);
+    expect(totalInventorySchematicsValue(state.inventory)).toBe(30);
+
+    const groups = groupInventoryByTier(state.inventory);
+    expect(groups.map((group) => group.tierId)).toEqual([
+      "lieutenant",
+      "ensign",
+    ]);
+    expect(groups[0]?.schematicsValue).toBe(20);
+    expect(groups[1]?.schematicsValue).toBe(10);
+    expect(groups[1]?.entries[0]?.count).toBe(2);
   });
 
   it("resets totals while preserving targets", () => {
