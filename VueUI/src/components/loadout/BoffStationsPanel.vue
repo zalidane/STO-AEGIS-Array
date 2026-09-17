@@ -25,6 +25,8 @@ export type BoffStationRowView = {
 
 const props = defineProps<{
   stations: BoffStationRowView[];
+  /** Shared / public builds: show seats without picker chrome. */
+  readonly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -35,10 +37,24 @@ const emit = defineEmits<{
 function slotTitle(station: BoffStationRowView, view: BoffStationSlotView): string {
   const seat = `${station.label} · ${view.slot.rankLabel}`;
   if (view.item) return `${seat}: ${view.item.name}`;
-  if (station.station.needsCareerChoice && !station.station.careerChoice) {
+  if (
+    !props.readonly &&
+    station.station.needsCareerChoice &&
+    !station.station.careerChoice
+  ) {
     return `${seat} · Choose officer career first`;
   }
   return `Empty ${seat}`;
+}
+
+function onPick(slot: BoffStationSlot) {
+  if (props.readonly) return;
+  emit("pick", slot);
+}
+
+function onSetCareer(station: BoffStation, career: BoffPlayableCareer) {
+  if (props.readonly) return;
+  emit("setCareer", station, career);
 }
 
 function careerAbbrev(career: BoffPlayableCareer): string {
@@ -75,7 +91,7 @@ function careerAbbrev(career: BoffPlayableCareer): string {
           <template v-if="row.specLabel">-{{ row.specLabel }}</template>
         </span>
         <div
-          v-if="row.station.needsCareerChoice"
+          v-if="!readonly && row.station.needsCareerChoice"
           class="boff-station__careers"
         >
           <button
@@ -89,7 +105,7 @@ function careerAbbrev(career: BoffPlayableCareer): string {
             :title="`Seat a ${career} officer`"
             :aria-label="`Seat a ${career} officer`"
             :aria-pressed="row.station.careerChoice === career"
-            @click="emit('setCareer', row.station, career)"
+            @click="onSetCareer(row.station, career)"
           >
             {{ careerAbbrev(career) }}
           </button>
@@ -101,10 +117,14 @@ function careerAbbrev(career: BoffPlayableCareer): string {
           :key="view.slot.id"
           type="button"
           class="boff-slot"
-          :class="{ 'boff-slot--filled': view.item }"
+          :class="{
+            'boff-slot--filled': view.item,
+            'boff-slot--readonly': readonly,
+          }"
+          :disabled="readonly"
           :title="slotTitle(row, view)"
           :aria-label="slotTitle(row, view)"
-          @click="emit('pick', view.slot)"
+          @click="onPick(view.slot)"
         >
           <WikiIcon
             v-if="view.item"
@@ -262,6 +282,11 @@ function careerAbbrev(career: BoffPlayableCareer): string {
 .boff-slot--filled {
   border-style: solid;
   border-color: rgba(125, 211, 252, 0.5);
+}
+
+.boff-slot--readonly,
+.boff-slot:disabled {
+  cursor: default;
 }
 
 .boff-slot__rank {
