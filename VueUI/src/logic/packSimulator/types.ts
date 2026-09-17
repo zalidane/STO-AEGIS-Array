@@ -20,8 +20,14 @@ export type RewardDefinition = {
 export type TierDefinition = {
   id: RewardTierId;
   label: string;
+  /** Livestream / published odds table label (e.g. Grand Prize). */
+  oddsLabel: string;
   storeCost: number;
   schematicChoice: number;
+  /** Published "1 in N" chance from the livestream odds table. */
+  oneIn: number;
+  /** Published percentage as shown alongside the 1-in-N figure. */
+  publishedPercent: number;
 };
 
 export type PackOffer = {

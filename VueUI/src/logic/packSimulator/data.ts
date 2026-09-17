@@ -8,42 +8,64 @@ export const ARTICLE_TITLE = "A New Way to Obtain Ships!";
 
 export const PACK_NAME = "60th Anniversary Starship Icons Prize Pack";
 
+/**
+ * Tier store/schematic values from the news post; drop rates from the
+ * published livestream odds table (1-in-N / percent).
+ */
 export const TIERS: readonly TierDefinition[] = [
   {
     id: "fleetAdmiral",
     label: "Fleet Admiral",
+    oddsLabel: "Grand Prize",
     storeCost: 2000,
     schematicChoice: 500,
+    oneIn: 100,
+    publishedPercent: 1,
   },
   {
     id: "admiral",
     label: "Admiral",
+    oddsLabel: "Admiral",
     storeCost: 500,
     schematicChoice: 200,
+    oneIn: 40,
+    publishedPercent: 2.5,
   },
   {
     id: "captain",
     label: "Captain",
+    oddsLabel: "Captain",
     storeCost: 200,
     schematicChoice: 100,
+    oneIn: 20,
+    publishedPercent: 5,
   },
   {
     id: "commander",
     label: "Commander",
+    oddsLabel: "Commander",
     storeCost: 100,
     schematicChoice: 50,
+    oneIn: 10,
+    publishedPercent: 10,
   },
   {
     id: "lieutenant",
     label: "Lieutenant",
+    oddsLabel: "Lieutenant",
     storeCost: 50,
     schematicChoice: 20,
+    oneIn: 4,
+    publishedPercent: 25,
   },
   {
     id: "ensign",
     label: "Ensign",
+    oddsLabel: "Ensign",
     storeCost: 20,
     schematicChoice: 5,
+    oneIn: 1.75,
+    publishedPercent: 57.143,
   },
 ] as const;
 
