@@ -18,7 +18,7 @@ import {
   openPack,
   openRemainingPacks,
   ownedCount,
-  provisionalTierOdds,
+  publishedTierOdds,
   purchaseAndOpenAll,
   purchasePacks,
   resetSimulator,
@@ -35,7 +35,7 @@ const state = ref<SimulatorState>(createInitialState());
 const rewardFilter = ref("");
 const errorMessage = ref<string | null>(null);
 
-const tierOdds = provisionalTierOdds();
+const tierOdds = publishedTierOdds();
 const ships = shipRewards();
 
 const filteredShips = computed(() => {
@@ -153,9 +153,9 @@ function historyLabel(event: SimulatorState["history"][number]): string {
       variant="tonal"
       density="comfortable"
     >
-      Official per-item odds are not in the news post yet (they ship in the
-      in-game Pack description). This simulator uses provisional tier weights
-      from each tier’s schematic-choice value so rarer tiers drop less often.
+      Tier odds match the livestream published chance table (1-in-N). Items
+      inside a tier are equally likely. Rolls normalize the published weights
+      because those percents sum slightly over 100%.
     </v-alert>
 
     <v-alert
@@ -390,16 +390,18 @@ function historyLabel(event: SimulatorState["history"][number]): string {
     </section>
 
     <section class="pack-sim__panel" aria-labelledby="odds-heading">
-      <h2 id="odds-heading">Provisional tier odds</h2>
+      <h2 id="odds-heading">Published tier odds</h2>
       <ul class="odds">
         <li v-for="tier in tierOdds" :key="tier.tierId">
-          <span>{{ tier.label }}</span>
-          <span>{{ tier.percent.toFixed(2) }}%</span>
+          <span>{{ tier.oddsLabel }}</span>
+          <span
+            >1 in {{ tier.oneIn }} · {{ tier.publishedPercent.toFixed(3) }}%</span
+          >
         </li>
       </ul>
       <p class="pack-sim__hint">
-        Ensign items and each ship share weight equally inside their tier.
-        Store costs and schematic-choice amounts match the article tiers
+        Ensign items and each ship share their tier’s weight equally. Store
+        costs / schematic-choice amounts match the article
         ({{
           TIERS.map((t) => `${t.label} ${t.storeCost}/${t.schematicChoice}`)
             .join("; ")
