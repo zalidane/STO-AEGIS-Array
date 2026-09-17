@@ -26,6 +26,7 @@ import ShipTypes from "@/views/ShipTypes.vue";
 import ShipTypeDetails from "@/views/ShipTypeDetails.vue";
 import Attributions from "@/views/Attributions.vue";
 import About from "@/views/About.vue";
+import PackSimulator from "@/views/PackSimulator.vue";
 import HttpError from "@/views/HttpError.vue";
 
 const router = createRouter({
@@ -193,6 +194,12 @@ const router = createRouter({
       name: "ship-type-details",
       component: ShipTypeDetails,
       meta: { breadcrumb: "Ship Type Details", parent: "/ship-types" },
+    },
+    {
+      path: "/pack-simulator",
+      name: "pack-simulator",
+      component: PackSimulator,
+      meta: { breadcrumb: "Pack Simulator" },
     },
     {
       path: "/about",
