@@ -12,6 +12,7 @@ import {
   groupInventoryByTier,
   keepReward,
   openPack,
+  openRemainingPacks,
   ownedCount,
   pickWeightedReward,
   publishedTierOdds,
@@ -245,6 +246,38 @@ describe("pack simulator flow", () => {
     expect(groups[0]?.schematicsValue).toBe(20);
     expect(groups[1]?.schematicsValue).toBe(10);
     expect(groups[1]?.entries[0]?.count).toBe(2);
+  });
+
+  it("Open all applies auto-take without prompting", () => {
+    const target = shipRewards().find(
+      (ship) => ship.id === "constitution-pilot-mmc",
+    )!;
+    const filler = REWARDS.find((reward) => reward.id === "fleet-ship-module")!;
+
+    let withAuto = createInitialState();
+    withAuto = toggleTarget(withAuto, target.id);
+    withAuto = setAutoTakeSchematics(withAuto, true);
+    withAuto = purchasePacks(withAuto, "twelve");
+    // Force a mix: first filler (schematics), then target (kept), rest filler
+    let call = 0;
+    withAuto = openRemainingPacks(withAuto, () => {
+      call += 1;
+      if (call === 2) return randomForReward(target.id)();
+      return randomForReward(filler.id)();
+    });
+    expect(withAuto.pending).toBeNull();
+    expect(withAuto.unopenedPacks).toBe(0);
+    expect(withAuto.packsOpened).toBe(12);
+    expect(ownedCount(withAuto.inventory, target.id)).toBe(1);
+    expect(withAuto.schematics).toBe(5 * 11);
+
+    let withoutAuto = createInitialState();
+    withoutAuto = purchasePacks(withoutAuto, "twelve");
+    withoutAuto = openRemainingPacks(withoutAuto, randomForReward(filler.id));
+    expect(withoutAuto.pending).toBeNull();
+    expect(withoutAuto.unopenedPacks).toBe(0);
+    expect(ownedCount(withoutAuto.inventory, filler.id)).toBe(12);
+    expect(withoutAuto.schematics).toBe(0);
   });
 
   it("resets totals while preserving targets", () => {
