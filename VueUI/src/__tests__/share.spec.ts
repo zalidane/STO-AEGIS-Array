@@ -20,6 +20,10 @@ import {
   upsertShareRecord,
 } from "@/logic/share/records";
 import { publicUsageLabel } from "@/logic/share/usage";
+import {
+  sharedBoffStationRows,
+  sharedCaptainTraitSections,
+} from "@/logic/share/sharedBoard";
 import type { CollectionLoadout, LoadoutItem } from "@/logic/loadout/types";
 
 const clock: CollectionClock = {
@@ -65,6 +69,47 @@ const loadout: CollectionLoadout = {
 };
 
 describe("encodeSharePayload", () => {
+  it("includes tray skills and seat careers for BOff powers", () => {
+    const withBoff: CollectionLoadout = {
+      ...loadout,
+      boffSeatCareers: { "0": "Tactical" },
+      slots: [
+        ...loadout.slots,
+        {
+          slotId: "boff-0-commander",
+          itemId: 30,
+          catalogKind: "traySkill",
+          abilityRank: 2,
+        },
+      ],
+    };
+    const catalog = [
+      ...items,
+      {
+        id: 30,
+        name: "Tactical Team",
+        type: "Tactical",
+        catalogKind: "traySkill" as const,
+      },
+    ];
+    const payload = encodeSharePayload({
+      shipName: "Advanced Heavy Cruiser (T6)",
+      title: "Energy 1",
+      loadout: withBoff,
+      items: catalog,
+    });
+    expect(payload.boffSeatCareers).toEqual({ "0": "Tactical" });
+    expect(
+      payload.slots.some(
+        (slot) =>
+          slot.catalogKind === "traySkill" && slot.name === "Tactical Team",
+      ),
+    ).toBe(true);
+    expect(payload.slots.find((s) => s.catalogKind === "traySkill")?.abilityRank).toBe(
+      2,
+    );
+  });
+
   it("keys fills by wiki name, not catalog id", () => {
     const payload = encodeSharePayload({
       shipName: "Advanced Heavy Cruiser (T6)",
@@ -89,6 +134,7 @@ describe("encodeSharePayload", () => {
       slots: [
         ...loadout.slots,
         { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+        { slotId: "captainStarship-0", itemId: 20, catalogKind: "starshipTrait" },
       ],
     };
     const catalog = [
@@ -110,6 +156,13 @@ describe("encodeSharePayload", () => {
       true,
     );
     expect(payload.slots.map((slot) => slot.name)).toContain("Crippling Fire");
+    expect(
+      payload.slots.some(
+        (slot) =>
+          slot.slotId === "captainStarship-0" &&
+          slot.catalogKind === "starshipTrait",
+      ),
+    ).toBe(true);
   });
 
   it("includes non-default board prefs without dropping trait seats (#17)", () => {
@@ -250,6 +303,68 @@ describe("copyShareToCaptain", () => {
     expect(result.loadout.boardPrefs).toEqual({ hullUpgrade: "stock" });
   });
 
+  it("copies personal traits and tray skills onto the new loadout", () => {
+    clockIds = 0;
+    const state = createCharacter(createEmptyCollectionState(), "Alice", clock);
+    const catalog: LoadoutItem[] = [
+      ...items,
+      {
+        id: 8,
+        name: "Crippling Fire",
+        type: "char",
+        catalogKind: "trait",
+      },
+      {
+        id: 30,
+        name: "Tactical Team",
+        type: "Tactical",
+        catalogKind: "traySkill",
+      },
+    ];
+    const payload = encodeSharePayload({
+      shipName: "Advanced Heavy Cruiser (T6)",
+      title: "Energy 1",
+      loadout: {
+        ...loadout,
+        boffSeatCareers: { "0": "Tactical" },
+        slots: [
+          ...loadout.slots,
+          { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+          {
+            slotId: "boff-0-ensign",
+            itemId: 30,
+            catalogKind: "traySkill",
+            abilityRank: 0,
+          },
+        ],
+      },
+      items: catalog,
+    });
+    const result = copyShareToCaptain(
+      state,
+      {
+        payload,
+        items: catalog,
+        ships: [{ id: 7, wikiName: "Advanced Heavy Cruiser (T6)" }],
+      },
+      clock,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.unresolved).toEqual([]);
+    expect(result.loadout.boffSeatCareers).toEqual({ "0": "Tactical" });
+    expect(
+      result.loadout.slots.some(
+        (fill) => fill.slotId === "personalSpace-0" && fill.catalogKind === "trait",
+      ),
+    ).toBe(true);
+    expect(
+      result.loadout.slots.some(
+        (fill) => fill.slotId === "boff-0-ensign" && fill.catalogKind === "traySkill",
+      ),
+    ).toBe(true);
+  });
+
   it("fails without a captain or an unknown wiki hull", () => {
     const result = copyShareToCaptain(createEmptyCollectionState(), {
       payload: encodeSharePayload({
@@ -305,5 +420,65 @@ describe("public usage label", () => {
     expect(publicUsageLabel(1)).toBe("Used in 1 public build");
     expect(publicUsageLabel(8)).toBe("Used in 8 public builds");
     expect(MIN_PUBLIC_FILLS).toBe(8);
+  });
+});
+
+describe("shared board views", () => {
+  it("surfaces captain trait fills for the shared page", () => {
+    const trait: LoadoutItem = {
+      id: 8,
+      name: "Crippling Fire",
+      type: "char",
+      catalogKind: "trait",
+      image: "/traits/crippling.png",
+    };
+    const starship: LoadoutItem = {
+      id: 3,
+      name: "A Call to Arms",
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+    };
+    const sections = sharedCaptainTraitSections({
+      shipName: "Atlantis",
+      itemInSlot: (slotId) => {
+        if (slotId === "personalSpace-0") return trait;
+        if (slotId === "captainStarship-0") return starship;
+        return null;
+      },
+    });
+    const personal = sections.find((section) => section.group === "personalSpace");
+    expect(personal?.slots[0]?.item?.name).toBe("Crippling Fire");
+    const captainStarship = sections.find((section) => section.group === "starship");
+    expect(captainStarship?.slots[0]?.slot.id).toBe("captainStarship-0");
+    expect(captainStarship?.slots[0]?.item?.name).toBe("A Call to Arms");
+    const shipSpecific = sections.find(
+      (section) => section.group === "shipSpecific",
+    );
+    expect(shipSpecific?.label).toBe("Atlantis Traits");
+  });
+
+  it("surfaces BOff power fills with roman ability ranks", () => {
+    const power: LoadoutItem = {
+      id: 30,
+      name: "Recursive Shearing",
+      type: "Temporal Operative",
+      catalogKind: "traySkill",
+      ranks: [null, "Commander", "Commander", null, null],
+    };
+    const rows = sharedBoffStationRows({
+      boffs: "Commander Science-Temporal Operative",
+      fills: [
+        {
+          slotId: "boff-0-commander",
+          itemId: 30,
+          catalogKind: "traySkill",
+          abilityRank: 2,
+        },
+      ],
+      itemInSlot: (slotId) => (slotId === "boff-0-commander" ? power : null),
+    });
+    expect(rows).toHaveLength(1);
+    const commander = rows[0]?.slots.find((s) => s.slot.id === "boff-0-commander");
+    expect(commander?.item?.name).toBe("Recursive Shearing III");
   });
 });
