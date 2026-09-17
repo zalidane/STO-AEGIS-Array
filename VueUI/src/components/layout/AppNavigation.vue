@@ -19,6 +19,11 @@ const items = [
   { title: "Masteries", icon: "mdi-trophy", to: "/masteries" },
   { title: "Reputations", icon: "mdi-medal", to: "/reputations" },
   { title: "Modifiers", icon: "mdi-delta", to: "/modifiers" },
+  {
+    title: "Pack Simulator",
+    icon: "mdi-package-variant-closed",
+    to: "/pack-simulator",
+  },
   { title: "About", icon: "mdi-information-outline", to: "/about" },
   { title: "Attributions", icon: "mdi-scale-balance", to: "/attributions" },
 ];

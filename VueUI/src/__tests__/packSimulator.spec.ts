@@ -1,0 +1,210 @@
+import { describe, expect, it } from "vitest";
+import {
+  ARTICLE_URL,
+  PACK_OFFERS,
+  REWARDS,
+  TIERS,
+  allTargetsHit,
+  buildRewardWeights,
+  buyFromStore,
+  canPurchase,
+  createInitialState,
+  keepReward,
+  openPack,
+  ownedCount,
+  pickWeightedReward,
+  provisionalTierOdds,
+  purchaseAndOpenAll,
+  purchasePacks,
+  resetSimulator,
+  setAutoTakeSchematics,
+  shipRewards,
+  takeSchematics,
+  toggleTarget,
+} from "@/logic/packSimulator";
+
+function randomForReward(rewardId: string): () => number {
+  const weighted = buildRewardWeights();
+  const total = weighted.reduce((sum, entry) => sum + entry.weight, 0);
+  let cumulative = 0;
+  for (const entry of weighted) {
+    const mid = cumulative + entry.weight / 2;
+    cumulative += entry.weight;
+    if (entry.reward.id === rewardId) {
+      return () => mid / total;
+    }
+  }
+  throw new Error(`Reward ${rewardId} not found in weights`);
+}
+
+describe("pack simulator data", () => {
+  it("matches the published Zen Store offers", () => {
+    expect(PACK_OFFERS).toEqual([
+      expect.objectContaining({
+        id: "single",
+        zenCost: 450,
+        packCount: 1,
+        bonusSchematics: 0,
+      }),
+      expect.objectContaining({
+        id: "twelve",
+        zenCost: 4500,
+        packCount: 12,
+        bonusSchematics: 0,
+      }),
+      expect.objectContaining({
+        id: "sixty",
+        zenCost: 22500,
+        packCount: 60,
+        bonusSchematics: 60,
+        oncePerAccount: true,
+      }),
+    ]);
+    expect(ARTICLE_URL).toContain("11583056");
+  });
+
+  it("includes every listed ship and Ensign item from the article", () => {
+    // Article summary says "61 starships"; the published reward list has 56 ships + 6 Ensign items.
+    expect(shipRewards()).toHaveLength(56);
+    expect(REWARDS).toHaveLength(62);
+    expect(REWARDS.filter((r) => r.tierId === "fleetAdmiral")).toHaveLength(1);
+    expect(REWARDS.filter((r) => r.tierId === "admiral")).toHaveLength(15);
+    expect(REWARDS.filter((r) => r.tierId === "captain")).toHaveLength(15);
+    expect(REWARDS.filter((r) => r.tierId === "commander")).toHaveLength(15);
+    expect(REWARDS.filter((r) => r.tierId === "lieutenant")).toHaveLength(10);
+    expect(REWARDS.filter((r) => r.tierId === "ensign")).toHaveLength(6);
+  });
+
+  it("uses the published schematic store and choice amounts", () => {
+    expect(TIERS.map((t) => [t.id, t.storeCost, t.schematicChoice])).toEqual([
+      ["fleetAdmiral", 2000, 500],
+      ["admiral", 500, 200],
+      ["captain", 200, 100],
+      ["commander", 100, 50],
+      ["lieutenant", 50, 20],
+      ["ensign", 20, 5],
+    ]);
+  });
+});
+
+describe("pack simulator odds", () => {
+  it("gives lower provisional odds to rarer tiers", () => {
+    const odds = provisionalTierOdds();
+    const percent = (tierId: string) => {
+      const match = odds.find((entry) => entry.tierId === tierId);
+      if (!match) throw new Error(`missing odds for ${tierId}`);
+      return match.percent;
+    };
+    expect(percent("ensign")).toBeGreaterThan(percent("lieutenant"));
+    expect(percent("lieutenant")).toBeGreaterThan(percent("commander"));
+    expect(percent("commander")).toBeGreaterThan(percent("captain"));
+    expect(percent("captain")).toBeGreaterThan(percent("admiral"));
+    expect(percent("admiral")).toBeGreaterThan(percent("fleetAdmiral"));
+    expect(odds.reduce((sum, entry) => sum + entry.percent, 0)).toBeCloseTo(
+      100,
+      5,
+    );
+  });
+
+  it("can force a deterministic reward with a stubbed RNG", () => {
+    const weighted = buildRewardWeights();
+    const first = pickWeightedReward(() => 0, weighted);
+    const last = pickWeightedReward(() => 0.999999, weighted);
+    expect(first.id).toBe(weighted[0]!.reward.id);
+    expect(last.id).toBe(weighted[weighted.length - 1]!.reward.id);
+  });
+});
+
+describe("pack simulator flow", () => {
+  it("tracks Zen cost when buying offers and limits the 60-pack", () => {
+    let state = createInitialState();
+    state = purchasePacks(state, "single");
+    expect(state.zenSpent).toBe(450);
+    expect(state.unopenedPacks).toBe(1);
+
+    state = purchasePacks(state, "twelve");
+    expect(state.zenSpent).toBe(4950);
+    expect(state.unopenedPacks).toBe(13);
+
+    state = purchasePacks(state, "sixty");
+    expect(state.zenSpent).toBe(27450);
+    expect(state.unopenedPacks).toBe(73);
+    expect(state.schematics).toBe(60);
+    expect(state.boughtSixtyBundle).toBe(true);
+    expect(canPurchase(state, "sixty").ok).toBe(false);
+  });
+
+  it("lets the player keep a prize or take Schematics", () => {
+    const ensign = REWARDS.find((reward) => reward.id === "fleet-ship-module")!;
+    let state = purchasePacks(createInitialState(), "single");
+    state = setAutoTakeSchematics(state, false);
+    state = openPack(state, randomForReward(ensign.id));
+    expect(state.pending?.reward.id).toBe(ensign.id);
+
+    state = takeSchematics(state);
+    expect(state.pending).toBeNull();
+    expect(state.schematics).toBe(5);
+    expect(state.history[0]).toMatchObject({
+      type: "schematics",
+      rewardId: ensign.id,
+      schematicsGained: 5,
+    });
+
+    state = purchasePacks(state, "single");
+    state = openPack(state, randomForReward(ensign.id));
+    state = keepReward(state);
+    expect(ownedCount(state.inventory, ensign.id)).toBe(1);
+  });
+
+  it("auto-converts non-targets to Schematics and pauses on targets", () => {
+    const target = shipRewards().find(
+      (ship) => ship.id === "constitution-pilot-mmc",
+    )!;
+    const filler = REWARDS.find((reward) => reward.id === "fleet-ship-module")!;
+
+    let state = createInitialState();
+    state = toggleTarget(state, target.id);
+    state = setAutoTakeSchematics(state, true);
+
+    state = purchasePacks(state, "single");
+    state = openPack(state, randomForReward(filler.id));
+    expect(state.pending).toBeNull();
+    expect(state.schematics).toBe(5);
+    expect(allTargetsHit(state)).toBe(false);
+
+    state = purchasePacks(state, "single");
+    state = openPack(state, randomForReward(target.id));
+    expect(state.pending?.reward.id).toBe(target.id);
+    state = keepReward(state);
+    expect(allTargetsHit(state)).toBe(true);
+  });
+
+  it("buys targeted ships from the Icon Store with Schematics", () => {
+    const fleetShip = shipRewards().find(
+      (ship) => ship.tierId === "lieutenant",
+    )!;
+    let state = createInitialState();
+    state = {
+      ...state,
+      schematics: 50,
+      targetRewardIds: [fleetShip.id],
+    };
+    state = buyFromStore(state, fleetShip.id);
+    expect(state.schematics).toBe(0);
+    expect(ownedCount(state.inventory, fleetShip.id)).toBe(1);
+  });
+
+  it("resets totals while preserving targets", () => {
+    let state = createInitialState();
+    const target = shipRewards()[3]!;
+    state = toggleTarget(state, target.id);
+    state = purchaseAndOpenAll(state, "twelve", () => 0.5);
+    expect(state.zenSpent).toBeGreaterThan(0);
+
+    state = resetSimulator(true, state);
+    expect(state.zenSpent).toBe(0);
+    expect(state.unopenedPacks).toBe(0);
+    expect(state.inventory).toEqual([]);
+    expect(state.targetRewardIds).toEqual([target.id]);
+  });
+});
