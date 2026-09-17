@@ -92,6 +92,7 @@ export function canOpenPack(
 export function openPack(
   state: SimulatorState,
   random: RandomFn = Math.random,
+  options: { bulk?: boolean } = {},
 ): SimulatorState {
   const allowed = canOpenPack(state);
   if (!allowed.ok) throw new Error(allowed.reason);
@@ -104,21 +105,35 @@ export function openPack(
     openedAt: Date.now(),
   };
 
-  let next: SimulatorState = {
+  const next: SimulatorState = {
     ...state,
     unopenedPacks: state.unopenedPacks - 1,
     packsOpened: state.packsOpened + 1,
     pending,
   };
 
-  if (
-    next.autoTakeSchematics &&
-    !next.targetRewardIds.includes(reward.id)
-  ) {
-    next = takeSchematics(next);
-  }
+  return resolveOpenedPack(next, options.bulk === true);
+}
 
-  return next;
+/**
+ * Apply keep-vs-Schematics policy for a pending open.
+ * Interactive opens leave a prompt unless auto-take converts a non-target.
+ * Bulk opens ("Open all" / Buy & open) never prompt: auto-take converts
+ * non-targets to Schematics; everything else is kept.
+ */
+export function resolveOpenedPack(
+  state: SimulatorState,
+  bulk: boolean,
+): SimulatorState {
+  if (!state.pending) return state;
+  const isTarget = state.targetRewardIds.includes(state.pending.reward.id);
+  if (state.autoTakeSchematics && !isTarget) {
+    return takeSchematics(state);
+  }
+  if (bulk) {
+    return keepReward(state);
+  }
+  return state;
 }
 
 export function keepReward(state: SimulatorState): SimulatorState {
@@ -251,8 +266,8 @@ export function purchaseAndOpenAll(
   random: RandomFn = Math.random,
 ): SimulatorState {
   let next = purchasePacks(state, offerId);
-  while (next.unopenedPacks > 0 && !next.pending) {
-    next = openPack(next, random);
+  while (next.unopenedPacks > 0) {
+    next = openPack(next, random, { bulk: true });
   }
   return next;
 }
@@ -262,8 +277,8 @@ export function openRemainingPacks(
   random: RandomFn = Math.random,
 ): SimulatorState {
   let next = state;
-  while (next.unopenedPacks > 0 && !next.pending) {
-    next = openPack(next, random);
+  while (next.unopenedPacks > 0) {
+    next = openPack(next, random, { bulk: true });
   }
   return next;
 }
