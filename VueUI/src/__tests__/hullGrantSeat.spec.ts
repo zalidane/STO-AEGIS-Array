@@ -98,4 +98,20 @@ describe("pendingHullGrantEquips", () => {
     });
     expect(result.equips).toEqual([{ slotId: "scienceConsole-0", itemId: 88 }]);
   });
+
+  it("falls back to a universal seat for career consoles without a match", () => {
+    const tacticalOnly: LoadoutItem = {
+      ...uni,
+      type: "ship tactical console",
+    };
+    const result = pendingHullGrantEquips({
+      ship: { uniconsoleId: 88 },
+      hullSlots: hull.filter((slot) => slot.kind !== "scienceConsole"),
+      loadout: { slots: [] },
+      catalog: [tacticalOnly],
+    });
+    expect(result.equips).toEqual([
+      { slotId: "universalConsole-0", itemId: 88 },
+    ]);
+  });
 });

@@ -94,12 +94,26 @@ describe("slotClass", () => {
   it("lets universal consoles sit in any console slot", () => {
     expect(itemFitsSlot("universal console", "tacticalConsole")).toBe(true);
     expect(itemFitsSlot("universal console", "scienceConsole")).toBe(true);
+    expect(itemFitsSlot("universal console", "engineeringConsole")).toBe(true);
     expect(itemFitsSlot("universal console", "universalConsole")).toBe(true);
+  });
+
+  it("lets any career console sit in a universal console slot", () => {
     expect(itemFitsSlot("ship tactical console", "universalConsole")).toBe(
-      false,
+      true,
     );
+    expect(itemFitsSlot("ship engineering console", "universalConsole")).toBe(
+      true,
+    );
+    expect(itemFitsSlot("ship science console", "universalConsole")).toBe(true);
+  });
+
+  it("keeps career console seats career-specific aside from universals", () => {
     expect(itemFitsSlot("starship trait", "starshipTrait")).toBe(true);
     expect(itemFitsSlot("ship tactical console", "engineeringConsole")).toBe(
+      false,
+    );
+    expect(itemFitsSlot("ship science console", "tacticalConsole")).toBe(
       false,
     );
     expect(itemFitsSlot("ship fore weapon", "aftWeapon")).toBe(false);

@@ -1,4 +1,9 @@
-import { itemFitsSlot, type HullSlotKind } from "./slotClass";
+import {
+  itemFitsSlot,
+  itemSlotClassesFromType,
+  type HullSlotKind,
+  type ItemSlotClass,
+} from "./slotClass";
 import { extraHullSlotSummary } from "./hullExtras";
 import { SHIP_SPECIFIC_SLOTS } from "./captainTraits";
 
@@ -235,6 +240,12 @@ const CONSOLE_KINDS: HullSlotKind[] = [
   "scienceConsole",
 ];
 
+const CAREER_CONSOLE_KINDS: ItemSlotClass[] = [
+  "tacticalConsole",
+  "engineeringConsole",
+  "scienceConsole",
+];
+
 /** First empty-capable console socket a granted unique console should occupy. */
 export function slotForGrantedConsole(
   slots: readonly HullSlot[],
@@ -244,6 +255,31 @@ export function slotForGrantedConsole(
   const fitting = itemType
     ? consoles.filter((slot) => itemFitsSlot(itemType, slot.kind))
     : consoles;
+  if (fitting.length === 0) return null;
+
+  const classes = itemSlotClassesFromType(itemType);
+  // True universal consoles belong on universal seats first.
+  if (classes.includes("universalConsole")) {
+    return (
+      fitting.find((slot) => slot.kind === "universalConsole") ??
+      fitting[0] ??
+      null
+    );
+  }
+
+  // Career consoles prefer their matching seat; universal is the fallback.
+  const careerKind = CAREER_CONSOLE_KINDS.find((kind) =>
+    classes.includes(kind),
+  );
+  if (careerKind) {
+    return (
+      fitting.find((slot) => slot.kind === careerKind) ??
+      fitting.find((slot) => slot.kind === "universalConsole") ??
+      fitting[0] ??
+      null
+    );
+  }
+
   return (
     fitting.find((slot) => slot.kind === "universalConsole") ??
     fitting[0] ??
