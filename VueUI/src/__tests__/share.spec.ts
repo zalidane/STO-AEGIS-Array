@@ -134,6 +134,7 @@ describe("encodeSharePayload", () => {
       slots: [
         ...loadout.slots,
         { slotId: "personalSpace-0", itemId: 8, catalogKind: "trait" },
+        { slotId: "captainStarship-0", itemId: 20, catalogKind: "starshipTrait" },
       ],
     };
     const catalog = [
@@ -155,6 +156,13 @@ describe("encodeSharePayload", () => {
       true,
     );
     expect(payload.slots.map((slot) => slot.name)).toContain("Crippling Fire");
+    expect(
+      payload.slots.some(
+        (slot) =>
+          slot.slotId === "captainStarship-0" &&
+          slot.catalogKind === "starshipTrait",
+      ),
+    ).toBe(true);
   });
 
   it("includes non-default board prefs without dropping trait seats (#17)", () => {
@@ -424,12 +432,25 @@ describe("shared board views", () => {
       catalogKind: "trait",
       image: "/traits/crippling.png",
     };
+    const starship: LoadoutItem = {
+      id: 3,
+      name: "A Call to Arms",
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+    };
     const sections = sharedCaptainTraitSections({
       shipName: "Atlantis",
-      itemInSlot: (slotId) => (slotId === "personalSpace-0" ? trait : null),
+      itemInSlot: (slotId) => {
+        if (slotId === "personalSpace-0") return trait;
+        if (slotId === "captainStarship-0") return starship;
+        return null;
+      },
     });
     const personal = sections.find((section) => section.group === "personalSpace");
     expect(personal?.slots[0]?.item?.name).toBe("Crippling Fire");
+    const captainStarship = sections.find((section) => section.group === "starship");
+    expect(captainStarship?.slots[0]?.slot.id).toBe("captainStarship-0");
+    expect(captainStarship?.slots[0]?.item?.name).toBe("A Call to Arms");
     const shipSpecific = sections.find(
       (section) => section.group === "shipSpecific",
     );
