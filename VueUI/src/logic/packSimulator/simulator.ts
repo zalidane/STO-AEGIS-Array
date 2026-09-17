@@ -2,6 +2,7 @@ import {
   PACK_OFFER_BY_ID,
   REWARD_BY_ID,
   TIER_BY_ID,
+  TIERS,
 } from "./data";
 import { buildRewardWeights, pickWeightedReward } from "./odds";
 import type {
@@ -26,7 +27,7 @@ export function createInitialState(): SimulatorState {
     pending: null,
     inventory: [],
     targetRewardIds: [],
-    autoTakeSchematics: true,
+    autoTakeSchematics: false,
     history: [],
   };
 }
@@ -293,6 +294,56 @@ export function allTargetsHit(state: SimulatorState): boolean {
   if (state.targetRewardIds.length === 0) return false;
   return state.targetRewardIds.every(
     (rewardId) => ownedCount(state.inventory, rewardId) > 0,
+  );
+}
+
+export type InventoryTierGroup = {
+  tierId: OwnedReward["tierId"];
+  label: string;
+  schematicChoice: number;
+  entries: OwnedReward[];
+  /** Schematics that would have been earned if every kept copy took Schematics instead. */
+  schematicsValue: number;
+};
+
+export function schematicsValueForEntry(entry: OwnedReward): number {
+  const tier = TIER_BY_ID.get(entry.tierId);
+  if (!tier) return 0;
+  return entry.count * tier.schematicChoice;
+}
+
+export function groupInventoryByTier(
+  inventory: OwnedReward[],
+): InventoryTierGroup[] {
+  const byTier = new Map<OwnedReward["tierId"], OwnedReward[]>();
+  for (const entry of inventory) {
+    const list = byTier.get(entry.tierId) ?? [];
+    list.push(entry);
+    byTier.set(entry.tierId, list);
+  }
+
+  return TIERS.filter((tier) => byTier.has(tier.id)).map((tier) => {
+    const entries = [...(byTier.get(tier.id) ?? [])].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+    const schematicsValue = entries.reduce(
+      (sum, entry) => sum + schematicsValueForEntry(entry),
+      0,
+    );
+    return {
+      tierId: tier.id,
+      label: tier.label,
+      schematicChoice: tier.schematicChoice,
+      entries,
+      schematicsValue,
+    };
+  });
+}
+
+export function totalInventorySchematicsValue(inventory: OwnedReward[]): number {
+  return inventory.reduce(
+    (sum, entry) => sum + schematicsValueForEntry(entry),
+    0,
   );
 }
 

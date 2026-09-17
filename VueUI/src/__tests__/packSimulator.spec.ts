@@ -9,6 +9,7 @@ import {
   buyFromStore,
   canPurchase,
   createInitialState,
+  groupInventoryByTier,
   keepReward,
   openPack,
   ownedCount,
@@ -17,10 +18,12 @@ import {
   purchaseAndOpenAll,
   purchasePacks,
   resetSimulator,
+  schematicsValueForEntry,
   setAutoTakeSchematics,
   shipRewards,
   takeSchematics,
   toggleTarget,
+  totalInventorySchematicsValue,
 } from "@/logic/packSimulator";
 
 function randomForReward(rewardId: string): () => number {
@@ -133,6 +136,10 @@ describe("pack simulator odds", () => {
 });
 
 describe("pack simulator flow", () => {
+  it("defaults auto-take Schematics to off", () => {
+    expect(createInitialState().autoTakeSchematics).toBe(false);
+  });
+
   it("tracks Zen cost when buying offers and limits the 60-pack", () => {
     let state = createInitialState();
     state = purchasePacks(state, "single");
@@ -209,6 +216,35 @@ describe("pack simulator flow", () => {
     state = buyFromStore(state, fleetShip.id);
     expect(state.schematics).toBe(0);
     expect(ownedCount(state.inventory, fleetShip.id)).toBe(1);
+  });
+
+  it("groups inventory by tier and reports Schematics value for kept prizes", () => {
+    const ensign = REWARDS.find((reward) => reward.id === "fleet-ship-module")!;
+    const lieutenant = shipRewards().find(
+      (ship) => ship.tierId === "lieutenant",
+    )!;
+    let state = createInitialState();
+    state = purchasePacks(state, "single");
+    state = openPack(state, randomForReward(ensign.id));
+    state = keepReward(state);
+    state = purchasePacks(state, "single");
+    state = openPack(state, randomForReward(lieutenant.id));
+    state = keepReward(state);
+    state = purchasePacks(state, "single");
+    state = openPack(state, randomForReward(ensign.id));
+    state = keepReward(state);
+
+    expect(schematicsValueForEntry(state.inventory[0]!)).toBe(10);
+    expect(totalInventorySchematicsValue(state.inventory)).toBe(30);
+
+    const groups = groupInventoryByTier(state.inventory);
+    expect(groups.map((group) => group.tierId)).toEqual([
+      "lieutenant",
+      "ensign",
+    ]);
+    expect(groups[0]?.schematicsValue).toBe(20);
+    expect(groups[1]?.schematicsValue).toBe(10);
+    expect(groups[1]?.entries[0]?.count).toBe(2);
   });
 
   it("resets totals while preserving targets", () => {

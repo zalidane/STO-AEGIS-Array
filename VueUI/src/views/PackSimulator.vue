@@ -14,6 +14,7 @@ import {
   canBuyFromStore,
   canPurchase,
   createInitialState,
+  groupInventoryByTier,
   keepReward,
   openPack,
   openRemainingPacks,
@@ -22,18 +23,23 @@ import {
   purchaseAndOpenAll,
   purchasePacks,
   resetSimulator,
+  schematicsValueForEntry,
   setAutoTakeSchematics,
   shipRewards,
   takeSchematics,
   targetsObtained,
   toggleTarget,
+  totalInventorySchematicsValue,
   type PackOfferId,
   type SimulatorState,
 } from "@/logic/packSimulator";
 
+type SimTab = "configuration" | "history" | "odds";
+
 const state = ref<SimulatorState>(createInitialState());
 const rewardFilter = ref("");
 const errorMessage = ref<string | null>(null);
+const activeTab = ref<SimTab>("configuration");
 
 const tierOdds = publishedTierOdds();
 const ships = shipRewards();
@@ -50,6 +56,12 @@ const filteredShips = computed(() => {
 
 const obtainedTargets = computed(() => targetsObtained(state.value));
 const targetsComplete = computed(() => allTargetsHit(state.value));
+const inventoryGroups = computed(() =>
+  groupInventoryByTier(state.value.inventory),
+);
+const inventorySchematicsValue = computed(() =>
+  totalInventorySchematicsValue(state.value.inventory),
+);
 const zenPerPack = computed(() => {
   if (state.value.packsOpened <= 0) return null;
   return state.value.zenSpent / state.value.packsOpened;
@@ -207,18 +219,20 @@ function historyLabel(event: SimulatorState["history"][number]): string {
         60 bonus Schematics and is once per account.
       </p>
       <div class="pack-sim__actions">
-        <div
-          v-for="offer in PACK_OFFERS"
-          :key="offer.id"
-          class="offer"
-        >
+        <div v-for="offer in PACK_OFFERS" :key="offer.id" class="offer">
           <div class="offer__meta">
             <strong>{{ offer.label }}</strong>
-            <span>{{ formatZen(offer.zenCost) }} Zen · {{ offer.packCount }} packs</span>
+            <span
+              >{{ formatZen(offer.zenCost) }} Zen ·
+              {{ offer.packCount }} packs</span
+            >
             <span v-if="offer.bonusSchematics">
               +{{ offer.bonusSchematics }} bonus Schematics
             </span>
-            <span v-if="offer.oncePerAccount && state.boughtSixtyBundle" class="offer__used">
+            <span
+              v-if="offer.oncePerAccount && state.boughtSixtyBundle"
+              class="offer__used"
+            >
               Already purchased
             </span>
           </div>
@@ -245,19 +259,8 @@ function historyLabel(event: SimulatorState["history"][number]): string {
     </section>
 
     <section class="pack-sim__panel" aria-labelledby="open-heading">
-      <h2 id="open-heading">Open packs</h2>
-      <div class="pack-sim__row">
-        <v-switch
-          :model-value="state.autoTakeSchematics"
-          color="primary"
-          hide-details
-          density="compact"
-          label="Auto-take Schematics unless the reward is targeted"
-          @update:model-value="
-            (value) =>
-              (state = setAutoTakeSchematics(state, Boolean(value)))
-          "
-        />
+      <div class="pack-sim__panel-head">
+        <h2 id="open-heading">Open packs</h2>
         <div class="pack-sim__actions pack-sim__actions--inline">
           <v-btn
             color="primary"
@@ -294,13 +297,97 @@ function historyLabel(event: SimulatorState["history"][number]): string {
           </v-btn>
         </div>
       </div>
+      <p v-else class="pack-sim__hint">
+        Configure targets and auto-take on the Configuration tab. Pending opens
+        pause here so you can keep the prize or take Schematics.
+      </p>
     </section>
 
-    <section class="pack-sim__panel" aria-labelledby="targets-heading">
-      <h2 id="targets-heading">Target ships</h2>
+    <section class="pack-sim__panel" aria-labelledby="inventory-heading">
+      <div class="pack-sim__panel-head">
+        <h2 id="inventory-heading">Inventory</h2>
+        <span
+          v-if="state.inventory.length"
+          class="inventory__forgone"
+          title="Schematics you would have if every kept prize took Schematics instead"
+        >
+          Schematics value:
+          {{ formatZen(inventorySchematicsValue) }}
+        </span>
+      </div>
+      <p v-if="!state.inventory.length" class="pack-sim__hint">
+        No kept or store-bought rewards yet.
+      </p>
+      <div v-else class="inventory-groups">
+        <div
+          v-for="group in inventoryGroups"
+          :key="group.tierId"
+          class="inventory-group"
+        >
+          <div class="inventory-group__head">
+            <h3>{{ group.label }}</h3>
+            <span
+              >{{ formatZen(group.schematicsValue) }} Schematics value ({{
+                group.schematicChoice
+              }}
+              each)</span
+            >
+          </div>
+          <ul class="inventory">
+            <li v-for="entry in group.entries" :key="entry.rewardId">
+              <div class="inventory__main">
+                <strong>×{{ entry.count }}</strong>
+                {{ entry.name }}
+              </div>
+              <span class="inventory__value">
+                Schematics value:
+                {{ formatZen(schematicsValueForEntry(entry)) }}
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <v-tabs
+      v-model="activeTab"
+      color="primary"
+      bg-color="transparent"
+      show-arrows
+      class="pack-sim__tabs"
+    >
+      <v-tab value="configuration">Configuration</v-tab>
+      <v-tab value="history">History</v-tab>
+      <v-tab value="odds">Odds</v-tab>
+    </v-tabs>
+
+    <section
+      v-if="activeTab === 'configuration'"
+      class="pack-sim__panel pack-sim__panel--tab"
+      aria-labelledby="config-heading"
+    >
+      <h2 id="config-heading">Configuration</h2>
+
+      <v-switch
+        :model-value="state.autoTakeSchematics"
+        class="mb-4"
+        color="primary"
+        hide-details
+        density="compact"
+        label="Auto-take Schematics unless the reward is targeted"
+        @update:model-value="
+          (value) => (state = setAutoTakeSchematics(state, Boolean(value)))
+        "
+      />
       <p class="pack-sim__hint">
-        Select one or more ships. With auto-take on, non-targets convert to
-        Schematics so you can buy targets from the Icon Store.
+        Off by default. When on, non-target opens convert to Schematics
+        automatically so you can buy targets from the Icon Store.
+      </p>
+
+      <h3 class="pack-sim__subheader">Target ships</h3>
+      <p class="pack-sim__hint">
+        Select one or more ships to track. Targeted rewards pause for a keep /
+        Schematics choice even when auto-take is on.
       </p>
 
       <div v-if="state.targetRewardIds.length" class="targets-status">
@@ -343,7 +430,9 @@ function historyLabel(event: SimulatorState["history"][number]): string {
           v-for="ship in filteredShips"
           :key="ship.id"
           class="reward-row"
-          :class="{ 'reward-row--target': state.targetRewardIds.includes(ship.id) }"
+          :class="{
+            'reward-row--target': state.targetRewardIds.includes(ship.id),
+          }"
         >
           <v-checkbox
             :model-value="state.targetRewardIds.includes(ship.id)"
@@ -373,29 +462,32 @@ function historyLabel(event: SimulatorState["history"][number]): string {
       </div>
     </section>
 
-    <section class="pack-sim__panel" aria-labelledby="inventory-heading">
-      <h2 id="inventory-heading">Inventory</h2>
-      <p v-if="!state.inventory.length" class="pack-sim__hint">
-        No kept or store-bought rewards yet.
-      </p>
-      <ul v-else class="inventory">
-        <li v-for="entry in state.inventory" :key="entry.rewardId">
-          <strong>×{{ entry.count }}</strong>
-          {{ entry.name }}
-          <span class="inventory__tier">{{
-            TIER_BY_ID.get(entry.tierId)?.label
-          }}</span>
+    <section
+      v-else-if="activeTab === 'history'"
+      class="pack-sim__panel pack-sim__panel--tab"
+      aria-labelledby="history-heading"
+    >
+      <h2 id="history-heading">History</h2>
+      <p v-if="!state.history.length" class="pack-sim__hint">No actions yet.</p>
+      <ol v-else class="history">
+        <li v-for="(event, index) in state.history.slice(0, 80)" :key="index">
+          {{ historyLabel(event) }}
         </li>
-      </ul>
+      </ol>
     </section>
 
-    <section class="pack-sim__panel" aria-labelledby="odds-heading">
+    <section
+      v-else
+      class="pack-sim__panel pack-sim__panel--tab"
+      aria-labelledby="odds-heading"
+    >
       <h2 id="odds-heading">Published tier odds</h2>
       <ul class="odds">
         <li v-for="tier in tierOdds" :key="tier.tierId">
           <span>{{ tier.oddsLabel }}</span>
           <span
-            >1 in {{ tier.oneIn }} · {{ tier.publishedPercent.toFixed(3) }}%</span
+            >1 in {{ tier.oneIn }} ·
+            {{ tier.publishedPercent.toFixed(3) }}%</span
           >
         </li>
       </ul>
@@ -415,16 +507,6 @@ function historyLabel(event: SimulatorState["history"][number]): string {
             .join("; ")
         }}.
       </p>
-    </section>
-
-    <section class="pack-sim__panel" aria-labelledby="history-heading">
-      <h2 id="history-heading">History</h2>
-      <p v-if="!state.history.length" class="pack-sim__hint">No actions yet.</p>
-      <ol v-else class="history">
-        <li v-for="(event, index) in state.history.slice(0, 40)" :key="index">
-          {{ historyLabel(event) }}
-        </li>
-      </ol>
     </section>
   </v-container>
 </template>
@@ -479,7 +561,7 @@ function historyLabel(event: SimulatorState["history"][number]): string {
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #8eA6c0;
+  color: #8ea6c0;
 }
 
 .stat__value {
@@ -497,10 +579,22 @@ function historyLabel(event: SimulatorState["history"][number]): string {
   background: rgba(6, 18, 34, 0.45);
 }
 
+.pack-sim__panel--tab {
+  margin-top: 0;
+  border-top: 0;
+}
+
 .pack-sim__panel h2 {
   margin: 0 0 0.55rem;
   font-size: 1.15rem;
   color: #e8f1fb;
+}
+
+.pack-sim__subheader {
+  margin: 1rem 0 0.45rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d7e6f7;
 }
 
 .pack-sim__panel-head {
@@ -534,13 +628,8 @@ function historyLabel(event: SimulatorState["history"][number]): string {
   flex-wrap: wrap;
 }
 
-.pack-sim__row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.85rem;
-  margin-bottom: 0.85rem;
+.pack-sim__tabs {
+  margin-top: 0.25rem;
 }
 
 .offer {
@@ -637,7 +726,61 @@ function historyLabel(event: SimulatorState["history"][number]): string {
   font-size: 0.82rem;
 }
 
-.inventory,
+.inventory-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.inventory-group__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.inventory-group__head h3 {
+  margin: 0;
+  font-size: 0.98rem;
+  color: #e8f1fb;
+}
+
+.inventory-group__head span,
+.inventory__forgone,
+.inventory__value {
+  color: #9bb0c8;
+  font-size: 0.85rem;
+}
+
+.inventory__forgone {
+  font-weight: 550;
+  color: #c5d6ea;
+}
+
+.inventory {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  color: #c5d6ea;
+}
+
+.inventory li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.35rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(126, 182, 255, 0.08);
+}
+
+.inventory__main {
+  color: #e8f1fb;
+}
+
 .odds,
 .history {
   margin: 0;
@@ -645,7 +788,6 @@ function historyLabel(event: SimulatorState["history"][number]): string {
   color: #c5d6ea;
 }
 
-.inventory li,
 .odds li,
 .history li {
   margin-bottom: 0.35rem;
@@ -662,12 +804,6 @@ function historyLabel(event: SimulatorState["history"][number]): string {
   gap: 1rem;
   padding: 0.25rem 0;
   border-bottom: 1px solid rgba(126, 182, 255, 0.08);
-}
-
-.inventory__tier {
-  margin-left: 0.35rem;
-  color: #8ea6c0;
-  font-size: 0.85rem;
 }
 
 .targets-status {
