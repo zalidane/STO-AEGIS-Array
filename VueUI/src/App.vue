@@ -10,7 +10,7 @@ import CharacterSwitcher from "./components/collection/CharacterSwitcher.vue";
   <v-app style="background: linear-gradient(to bottom, #07121f, #020914)">
     <AppNavigation />
 
-    <v-app-bar color="surface">
+    <v-app-bar color="surface" class="app-top-bar" flat>
       <v-app-bar-title>
         <RouterLink to="/" class="text-decoration-none text-white">
           STO-AEGIS Array
@@ -35,4 +35,8 @@ import CharacterSwitcher from "./components/collection/CharacterSwitcher.vue";
   </v-app>
 </template>
 
-<style scoped></style>
+<style scoped>
+.app-top-bar {
+  border-bottom: 1px solid rgba(63, 167, 255, 0.14);
+}
+</style>

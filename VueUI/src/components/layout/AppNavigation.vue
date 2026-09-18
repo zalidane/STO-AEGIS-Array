@@ -1,51 +1,131 @@
 <script setup lang="ts">
+import { computed, ref, watch } from "vue";
+import { RouterLink } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useCompareStore } from "@/stores/compare";
+import { APP_NAV_ITEMS } from "@/logic/navigation/navItems";
+import { getSidebarPrefsRepository } from "@/models/navigation/sidebarPrefsRepository";
 
 const compare = useCompareStore();
 const { count, path } = storeToRefs(compare);
 
-const items = [
-  { title: "Home", icon: "mdi-home", to: "/" },
-  { title: "Collection", icon: "mdi-bookmark", to: "/collection" },
-  { title: "Loadouts", icon: "mdi-view-dashboard-outline", to: "/loadouts" },
-  { title: "Ships", icon: "mdi-ferry", to: "/ships" },
-  { title: "Compare", icon: "mdi-compare-horizontal", to: "compare" },
-  { title: "Ship Types", icon: "mdi-shape", to: "/ship-types" },
-  { title: "Traits", icon: "mdi-star-outline", to: "/traits" },
-  { title: "Starship Traits", icon: "mdi-star", to: "/starship-traits" },
-  { title: "Items", icon: "mdi-cube-outline", to: "/items" },
-  { title: "Tray Skills", icon: "mdi-lightning-bolt", to: "/tray-skills" },
-  { title: "Masteries", icon: "mdi-trophy", to: "/masteries" },
-  { title: "Reputations", icon: "mdi-medal", to: "/reputations" },
-  { title: "Modifiers", icon: "mdi-delta", to: "/modifiers" },
-  {
-    title: "Pack Simulator",
-    icon: "mdi-package-variant-closed",
-    to: "/pack-simulator",
-  },
-  { title: "About", icon: "mdi-information-outline", to: "/about" },
-  { title: "Attributions", icon: "mdi-scale-balance", to: "/attributions" },
-];
+const prefsRepo = getSidebarPrefsRepository();
+const expanded = ref(prefsRepo.load().expanded);
 
-function itemTo(item: (typeof items)[number]): string {
+watch(expanded, (value) => {
+  prefsRepo.save({ expanded: value });
+});
+
+const rail = computed(() => !expanded.value);
+
+function toggleExpanded() {
+  expanded.value = !expanded.value;
+}
+
+function itemTo(item: (typeof APP_NAV_ITEMS)[number]): string {
   return item.to === "compare" ? path.value : item.to;
 }
 </script>
 
 <template>
-  <v-navigation-drawer rail expand-on-hover>
-    <v-list>
-      <v-list-subheader title="STO_AEGIS" />
+  <v-navigation-drawer
+    permanent
+    :rail="rail"
+    :expand-on-hover="rail"
+    :width="256"
+    class="app-navigation"
+  >
+    <div class="app-nav-brand">
+      <RouterLink
+        to="/"
+        class="app-nav-brand__link"
+        title="STO_AEGIS"
+        aria-label="STO_AEGIS home"
+      >
+        <img
+          class="app-nav-brand__icon"
+          src="/favicon.svg"
+          width="28"
+          height="28"
+          alt=""
+        />
+        <span class="app-nav-brand__title">STO_AEGIS</span>
+      </RouterLink>
+    </div>
 
+    <v-list nav density="comfortable" class="app-nav-list">
       <v-list-item
-        v-for="item in items"
+        v-for="item in APP_NAV_ITEMS"
         :key="item.title"
         :to="itemTo(item)"
         :prepend-icon="item.icon"
         :title="item.title"
-        :subtitle="item.to === 'compare' && count > 0 ? `${count} of 2` : undefined"
+        :subtitle="
+          item.to === 'compare' && count > 0 ? `${count} of 2` : undefined
+        "
       />
     </v-list>
+
+    <template #append>
+      <div class="app-nav-toggle">
+        <v-btn
+          :icon="expanded ? 'mdi-chevron-left' : 'mdi-chevron-right'"
+          variant="text"
+          density="comfortable"
+          :aria-label="expanded ? 'Collapse sidebar' : 'Expand sidebar'"
+          :aria-pressed="expanded"
+          @click.stop="toggleExpanded"
+        />
+      </div>
+    </template>
   </v-navigation-drawer>
 </template>
+
+<style scoped>
+.app-nav-brand {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  /* Match v-app-bar header band so sidebar + main share the same top edge. */
+  height: var(--v-toolbar-height, 64px);
+  min-height: var(--v-toolbar-height, 64px);
+  padding-inline: 14px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(63, 167, 255, 0.14);
+}
+
+.app-nav-brand__link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-nav-brand__icon {
+  flex: 0 0 auto;
+  display: block;
+  border-radius: 6px;
+}
+
+.app-nav-brand__title {
+  font-family: Orbitron, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  color: rgba(232, 242, 255, 0.96);
+}
+
+.app-nav-list {
+  padding-top: 0.25rem;
+}
+
+.app-nav-toggle {
+  display: flex;
+  justify-content: center;
+  padding: 0.35rem 0 0.55rem;
+  border-top: 1px solid rgba(63, 167, 255, 0.14);
+}
+</style>
