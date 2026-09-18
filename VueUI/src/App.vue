@@ -4,6 +4,9 @@ import { RouterLink } from "vue-router";
 import AppNavigation from "./components/layout/AppNavigation.vue";
 import AppFooter from "./components/layout/AppFooter.vue";
 import CharacterSwitcher from "./components/collection/CharacterSwitcher.vue";
+import { useSidebarNav } from "./composables/useSidebarNav";
+
+const { expanded: sidebarExpanded } = useSidebarNav();
 </script>
 
 <template>
@@ -11,7 +14,7 @@ import CharacterSwitcher from "./components/collection/CharacterSwitcher.vue";
     <AppNavigation />
 
     <v-app-bar color="surface" class="app-top-bar" flat>
-      <v-app-bar-title>
+      <v-app-bar-title v-show="!sidebarExpanded">
         <RouterLink to="/" class="text-decoration-none text-white">
           STO-AEGIS Array
         </RouterLink>

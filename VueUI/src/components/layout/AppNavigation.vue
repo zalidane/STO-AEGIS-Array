@@ -1,26 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useCompareStore } from "@/stores/compare";
+import { useSidebarNav } from "@/composables/useSidebarNav";
 import { APP_NAV_ITEMS } from "@/logic/navigation/navItems";
-import { getSidebarPrefsRepository } from "@/models/navigation/sidebarPrefsRepository";
 
 const compare = useCompareStore();
 const { count, path } = storeToRefs(compare);
-
-const prefsRepo = getSidebarPrefsRepository();
-const expanded = ref(prefsRepo.load().expanded);
-
-watch(expanded, (value) => {
-  prefsRepo.save({ expanded: value });
-});
-
-const rail = computed(() => !expanded.value);
-
-function toggleExpanded() {
-  expanded.value = !expanded.value;
-}
+const { expanded, rail, toggleExpanded } = useSidebarNav();
 
 function itemTo(item: (typeof APP_NAV_ITEMS)[number]): string {
   return item.to === "compare" ? path.value : item.to;
@@ -98,7 +85,7 @@ function itemTo(item: (typeof APP_NAV_ITEMS)[number]): string {
 .app-nav-brand__link {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  /* No flex gap: rail is 56px and icon+padding already fill it; a gap lets title glyphs peek. */
   min-width: 0;
   color: inherit;
   text-decoration: none;
@@ -111,6 +98,8 @@ function itemTo(item: (typeof APP_NAV_ITEMS)[number]): string {
 }
 
 .app-nav-brand__title {
+  /* Start past the 56px rail clip edge (14px pad + 28px icon → need ≥14px offset). */
+  margin-inline-start: 18px;
   font-family: Orbitron, sans-serif;
   font-size: 0.95rem;
   font-weight: 700;
