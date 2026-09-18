@@ -69,12 +69,13 @@ function itemTo(item: (typeof APP_NAV_ITEMS)[number]): string {
     <template #append>
       <div class="app-nav-toggle">
         <v-btn
+          class="app-nav-toggle__btn"
           :icon="expanded ? 'mdi-chevron-left' : 'mdi-chevron-right'"
           variant="text"
           density="comfortable"
           :aria-label="expanded ? 'Collapse sidebar' : 'Expand sidebar'"
           :aria-pressed="expanded"
-          @click.stop="toggleExpanded"
+          @click.stop.prevent="toggleExpanded"
         />
       </div>
     </template>
@@ -124,8 +125,14 @@ function itemTo(item: (typeof APP_NAV_ITEMS)[number]): string {
 
 .app-nav-toggle {
   display: flex;
-  justify-content: center;
-  padding: 0.35rem 0 0.55rem;
+  /* Keep the control under the rail icons so expand-on-hover does not shift the hit target. */
+  justify-content: flex-start;
+  padding: 0.35rem 0 0.55rem 4px;
   border-top: 1px solid rgba(63, 167, 255, 0.14);
+}
+
+.app-nav-toggle__btn {
+  min-width: 48px !important;
+  width: 48px;
 }
 </style>
