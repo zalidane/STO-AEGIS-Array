@@ -1,0 +1,15 @@
+query StoNews($limit: Int) {
+  stoNews(limit: $limit) {
+    title
+    sourceUrl
+    sourceKind
+    fetchedAt
+    entries {
+      id
+      title
+      link
+      publishedAt
+      summary
+    }
+  }
+}

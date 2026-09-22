@@ -22,6 +22,7 @@ export const APP_NAV_ITEMS: readonly AppNavItem[] = [
     icon: "mdi-package-variant-closed",
     to: "/pack-simulator",
   },
+  { title: "News", icon: "mdi-newspaper-variant-outline", to: "/news" },
 ] as const;
 
 /** Titles intentionally omitted from the sidebar (routes remain registered). */

@@ -27,6 +27,7 @@ import ShipTypeDetails from "@/views/ShipTypeDetails.vue";
 import Attributions from "@/views/Attributions.vue";
 import About from "@/views/About.vue";
 import PackSimulator from "@/views/PackSimulator.vue";
+import News from "@/views/News.vue";
 import HttpError from "@/views/HttpError.vue";
 
 const router = createRouter({
@@ -200,6 +201,12 @@ const router = createRouter({
       name: "pack-simulator",
       component: PackSimulator,
       meta: { breadcrumb: "Pack Simulator" },
+    },
+    {
+      path: "/news",
+      name: "news",
+      component: News,
+      meta: { breadcrumb: "News" },
     },
     {
       path: "/about",
