@@ -15,6 +15,7 @@ import { createGwObtainResolver } from "./GwObtain.js";
 import { createSwObtainResolver } from "./SwObtain.js";
 import { createShipTypeResolver } from "./ShipType.js";
 import { createBuildResolver } from "./Build.js";
+import { createStoNewsResolver } from "./StoNews.js";
 
 type ResolverMap = Record<string, Record<string, unknown>>;
 
@@ -51,6 +52,7 @@ export function createResolvers(prisma: PrismaClient) {
       createSwObtainResolver(prisma),
       createShipTypeResolver(prisma),
       createBuildResolver(prisma),
+      createStoNewsResolver(),
     ),
   });
 }
@@ -70,4 +72,5 @@ export {
   createSwObtainResolver,
   createShipTypeResolver,
   createBuildResolver,
+  createStoNewsResolver,
 };

@@ -19,6 +19,7 @@ describe("APP_NAV_ITEMS", () => {
     const titles = APP_NAV_ITEMS.map((item) => item.title);
     expect(titles).toContain("Home");
     expect(titles).toContain("Pack Simulator");
+    expect(titles).toContain("News");
     expect(titles).toContain("Compare");
     for (const removed of REMOVED_SIDEBAR_NAV_TITLES) {
       expect(titles).not.toContain(removed);

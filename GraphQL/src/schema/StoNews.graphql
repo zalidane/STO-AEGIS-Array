@@ -1,0 +1,25 @@
+type StoNewsEntry {
+  id: String!
+  title: String!
+  link: String!
+  publishedAt: DateTime
+  summary: String!
+}
+
+type StoNewsFeed {
+  title: String!
+  """Upstream feed URL that produced this payload (RSS or Arc API)."""
+  sourceUrl: String!
+  """`rss` when the official Arc RSS was used; `arc-api` when falling back."""
+  sourceKind: String!
+  fetchedAt: DateTime!
+  entries: [StoNewsEntry!]!
+}
+
+extend type Query {
+  """
+  Official Star Trek Online news. Prefers the Arc Games RSS feed; falls back
+  to Arc's JSON news API when the RSS is missing or stale. Cached server-side.
+  """
+  stoNews(limit: Int = 40): StoNewsFeed!
+}
