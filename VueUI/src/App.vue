@@ -6,7 +6,11 @@ import AppFooter from "./components/layout/AppFooter.vue";
 import CharacterSwitcher from "./components/collection/CharacterSwitcher.vue";
 import { useSidebarNav } from "./composables/useSidebarNav";
 
-const { expanded: sidebarExpanded } = useSidebarNav();
+const {
+  shellExpanded: sidebarExpanded,
+  showNavMenu,
+  openOverlayDrawer,
+} = useSidebarNav();
 </script>
 
 <template>
@@ -14,6 +18,16 @@ const { expanded: sidebarExpanded } = useSidebarNav();
     <AppNavigation />
 
     <v-app-bar color="surface" class="app-top-bar" flat>
+      <v-btn
+        v-if="showNavMenu"
+        class="app-nav-menu-btn"
+        icon="mdi-menu"
+        variant="text"
+        density="comfortable"
+        aria-label="Open navigation"
+        @click="openOverlayDrawer"
+      />
+
       <v-app-bar-title v-show="!sidebarExpanded">
         <RouterLink to="/" class="text-decoration-none text-white">
           STO-AEGIS Array
@@ -41,5 +55,9 @@ const { expanded: sidebarExpanded } = useSidebarNav();
 <style scoped>
 .app-top-bar {
   border-bottom: 1px solid rgba(63, 167, 255, 0.14);
+}
+
+.app-nav-menu-btn {
+  margin-inline-start: 4px;
 }
 </style>
