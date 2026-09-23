@@ -7,6 +7,7 @@ dist/
 **/.env
 !**/.env.example
 Extractor/output/importState.json
+Extractor/output/last-extract.json
 Extractor/output/.wiki-session.json
 **/src/generated/prisma/
 .DS_Store
