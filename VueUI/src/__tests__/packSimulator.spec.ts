@@ -25,6 +25,7 @@ import {
   takeSchematics,
   toggleTarget,
   totalInventorySchematicsValue,
+  filterPackTargetShips,
 } from "@/logic/packSimulator";
 
 function randomForReward(rewardId: string): () => number {
@@ -292,5 +293,31 @@ describe("pack simulator flow", () => {
     expect(state.unopenedPacks).toBe(0);
     expect(state.inventory).toEqual([]);
     expect(state.targetRewardIds).toEqual([target.id]);
+  });
+});
+
+describe("pack simulator target ship filter", () => {
+  it("returns all ships when the query is empty or null (clearable field)", () => {
+    const all = shipRewards();
+    expect(filterPackTargetShips("")).toHaveLength(all.length);
+    expect(filterPackTargetShips("   ")).toHaveLength(all.length);
+    expect(filterPackTargetShips(null)).toHaveLength(all.length);
+    expect(filterPackTargetShips(undefined)).toHaveLength(all.length);
+  });
+
+  it("filters by name including apostrophe-insensitive B'rel", () => {
+    const hits = filterPackTargetShips("brel");
+    expect(hits.some((ship) => /B'?rel/i.test(ship.name))).toBe(true);
+    expect(filterPackTargetShips("B’rel").map((ship) => ship.id)).toEqual(
+      filterPackTargetShips("B'rel").map((ship) => ship.id),
+    );
+  });
+
+  it("filters by tier label", () => {
+    const admiral = filterPackTargetShips("admiral");
+    expect(admiral.length).toBeGreaterThan(0);
+    expect(admiral.every((ship) => ship.tierId === "admiral" || ship.tierId === "fleetAdmiral")).toBe(
+      true,
+    );
   });
 });

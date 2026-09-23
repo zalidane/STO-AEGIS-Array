@@ -115,6 +115,119 @@ describe("filterShips", () => {
     ).toEqual([1, 2, 4, 5]);
   });
 
+  it("matches Jem'Hadar across apostrophe variants and HTML entities", () => {
+    const jemFleet: ShipListItem = {
+      id: 40,
+      name: "Fleet Jem'Hadar Vanguard Heavy Destroyer",
+      type: "Destroyer",
+      tier: 6,
+      faction: "Dominion",
+      factionLede: "Dominion",
+      displayPrefix: "Fleet Jem'Hadar",
+    };
+    const jemEncoded: ShipListItem = {
+      id: 41,
+      name: "Jem&#039;Hadar Attack Ship",
+      type: "Escort",
+      tier: 5,
+      faction: "Dominion",
+      factionLede: "Dominion",
+      displayPrefix: "Jem&#039;Hadar",
+    };
+    const roster = [...ships, jemFleet, jemEncoded];
+
+    for (const search of [
+      "Jem'Hadar",
+      "Jem’Hadar",
+      "jemhadar",
+      "Jem&#039;Hadar",
+    ]) {
+      const hits = filterShips(roster, {
+        ...createDefaultShipsListState(),
+        search,
+      });
+      expect(hits.map((ship) => ship.id).sort((a, b) => a - b)).toEqual([
+        4, 40, 41,
+      ]);
+    }
+
+    const fleetHits = filterShips(roster, {
+      ...createDefaultShipsListState(),
+      search: "jemhadar",
+    }).filter((ship) => isFleetShip(ship));
+    expect(fleetHits.map((ship) => ship.name)).toEqual([
+      "Fleet Jem'Hadar Vanguard Heavy Destroyer",
+    ]);
+  });
+
+  it("returns all four Fleet Jem'Hadar hulls for jemhadar search", () => {
+    const jemRoster: ShipListItem[] = [
+      {
+        id: 1,
+        name: "Fleet Jem'Hadar Vanguard Heavy Destroyer",
+        type: "Destroyer",
+        tier: 6,
+        faction: "Dominion",
+        factionLede: "Dominion",
+        displayPrefix: "Fleet Jem'Hadar",
+      },
+      {
+        id: 2,
+        name: "Fleet Jem'Hadar Vanguard Recon Destroyer",
+        type: "Destroyer",
+        tier: 6,
+        faction: "Dominion",
+        factionLede: "Dominion",
+        displayPrefix: "Fleet Jem'Hadar",
+      },
+      {
+        id: 3,
+        name: "Fleet Jem'Hadar Vanguard Support Carrier",
+        type: "Science Carrier",
+        tier: 6,
+        faction: "Dominion",
+        factionLede: "Dominion",
+        displayPrefix: "Fleet Jem'Hadar Vanguard",
+      },
+      {
+        id: 4,
+        name: "Fleet Jem'Hadar Vanguard Temporal Warship",
+        type: "Warship",
+        tier: 6,
+        faction: "Dominion",
+        factionLede: "Dominion",
+        displayPrefix: "Fleet Jem'Hadar",
+      },
+      {
+        id: 5,
+        name: "Jem'Hadar Vanguard Warship",
+        type: "Warship",
+        tier: 6,
+        faction: "Dominion",
+        factionLede: "Dominion",
+        displayPrefix: "Jem'Hadar",
+      },
+    ];
+
+    for (const search of ["Jem’Hadar", "jemhadar", "Jem&#039;Hadar"]) {
+      const hits = filterShips(jemRoster, {
+        ...createDefaultShipsListState(),
+        search,
+      });
+      expect(hits).toHaveLength(5);
+      expect(hits.filter((ship) => isFleetShip(ship))).toHaveLength(4);
+    }
+
+    // Destroyer-only Jem'Hadar Fleet hulls (the common "2 Fleet" subset).
+    expect(
+      filterShips(jemRoster, {
+        ...createDefaultShipsListState(),
+        search: "jemhadar",
+        types: ["Destroyer"],
+      }).filter((ship) => isFleetShip(ship)),
+    ).toHaveLength(2);
+  });
+
   it("promotes cross-faction ships when that faction filter is selected", () => {
     expect(
       filterShips(ships, {
@@ -260,6 +373,21 @@ describe("isFleetShip", () => {
       isFleetShip({ name: "Starfleet Medical Science Vessel", displayPrefix: "" }),
     ).toBe(false);
   });
+
+  it("treats compound Fleet Jem'Hadar display prefixes as Fleet", () => {
+    expect(
+      isFleetShip({
+        name: "Fleet Jem'Hadar Vanguard Support Carrier",
+        displayPrefix: "Fleet Jem'Hadar Vanguard",
+      }),
+    ).toBe(true);
+    expect(
+      isFleetShip({
+        name: "Jem'Hadar Vanguard Support Carrier",
+        displayPrefix: "Fleet Jem'Hadar",
+      }),
+    ).toBe(true);
+  });
 });
 
 describe("getBinderPage", () => {
@@ -323,5 +451,11 @@ describe("ships list query serialization", () => {
         hideFleet: true,
       }),
     ).toBe(true);
+    expect(
+      shipsListFiltersAreActive({
+        ...createDefaultShipsListState(),
+        search: null as unknown as string,
+      }),
+    ).toBe(false);
   });
 });
