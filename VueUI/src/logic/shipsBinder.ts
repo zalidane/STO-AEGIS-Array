@@ -1,3 +1,4 @@
+import { normalizeCatalogSearchText } from "@/utils/normalizeCatalogSearch";
 import { parseShipCost, shipHasCurrencyCode } from "@/utils/parsers/shipCost";
 
 export const BINDER_SIDE_SIZE = 9;
@@ -72,26 +73,28 @@ export function uniqueSortedTiers(
   return [...set].sort((a, b) => a - b);
 }
 
-function matchesSearch(ship: ShipListItem, search: string): boolean {
-  const needle = search.trim().toLowerCase();
+function matchesSearch(ship: ShipListItem, search: unknown): boolean {
+  const needle = normalizeCatalogSearchText(search);
   if (!needle) return true;
 
   const costParts = parseShipCost(ship.cost);
-  const haystack = [
-    ship.name,
-    ship.type,
-    ship.faction,
-    ship.factionLede,
-    ship.displayClass,
-    ship.displayType,
-    ship.tier != null ? `tier ${ship.tier}` : null,
-    ship.tier != null ? `t${ship.tier}` : null,
-    ...costParts.map((cost) => cost.label),
-    ...costParts.map((cost) => cost.currencyCode),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+  const haystack = normalizeCatalogSearchText(
+    [
+      ship.name,
+      ship.type,
+      ship.faction,
+      ship.factionLede,
+      ship.displayClass,
+      ship.displayType,
+      ship.displayPrefix,
+      ship.tier != null ? `tier ${ship.tier}` : null,
+      ship.tier != null ? `t${ship.tier}` : null,
+      ...costParts.map((cost) => cost.label),
+      ...costParts.map((cost) => cost.currencyCode),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
 
   return haystack.includes(needle);
 }
@@ -115,8 +118,9 @@ function matchesTier(ship: ShipListItem, tiers: readonly number[]): boolean {
 export function isFleetShip(
   ship: Pick<ShipListItem, "name" | "displayPrefix">,
 ): boolean {
-  const prefix = ship.displayPrefix?.trim().toLowerCase();
-  if (prefix === "fleet") return true;
+  const prefix = ship.displayPrefix?.trim().toLowerCase() ?? "";
+  // Exact "Fleet" or compound wiki prefixes like "Fleet Jem'Hadar".
+  if (prefix === "fleet" || prefix.startsWith("fleet ")) return true;
   return /\bfleet\b/i.test(ship.name);
 }
 
@@ -237,7 +241,7 @@ export function filterItemsByShip<T>(
 
 export function shipsListFiltersAreActive(filters: ShipsListFilters): boolean {
   return (
-    filters.search.trim().length > 0 ||
+    normalizeCatalogSearchText(filters.search).length > 0 ||
     filters.types.length > 0 ||
     filters.factions.length > 0 ||
     filters.tiers.length > 0 ||
@@ -334,7 +338,7 @@ export function serializeShipsListQuery(
   state: ShipsListState,
 ): Record<string, string> {
   const query: Record<string, string> = {};
-  const search = state.search.trim();
+  const search = typeof state.search === "string" ? state.search.trim() : "";
   if (search) query.q = search;
   if (state.types.length > 0) query.type = [...state.types].sort().join(",");
   if (state.factions.length > 0) {
