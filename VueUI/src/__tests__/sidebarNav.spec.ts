@@ -13,6 +13,13 @@ import {
   createLocalStorageSidebarPrefsRepository,
   createMemorySidebarPrefsRepository,
 } from "@/models/navigation/sidebarPrefsRepository";
+import {
+  SIDEBAR_OVERLAY_MAX_WIDTH,
+  shouldExpandOnHover,
+  shouldUseOverlayDrawer,
+  shouldUsePermanentDrawer,
+  shouldUseRail,
+} from "@/logic/navigation/sidebarInteraction";
 
 describe("APP_NAV_ITEMS", () => {
   it("keeps primary destinations and omits removed sidebar entries", () => {
@@ -72,5 +79,36 @@ describe("sidebarPrefsRepository", () => {
     expect(repo.load()).toEqual({ expanded: true });
     repo.save({ expanded: false });
     expect(repo.load()).toEqual({ expanded: false });
+  });
+});
+
+describe("sidebarInteraction", () => {
+  it("treats iPhone and iPad mini portrait widths as overlay", () => {
+    expect(SIDEBAR_OVERLAY_MAX_WIDTH).toBe(840);
+    expect(shouldUseOverlayDrawer(390)).toBe(true); // iPhone
+    expect(shouldUseOverlayDrawer(744)).toBe(true); // iPad mini portrait
+    expect(shouldUseOverlayDrawer(768)).toBe(true);
+    expect(shouldUseOverlayDrawer(1024)).toBe(false); // iPad mini landscape
+    expect(shouldUseOverlayDrawer(1280)).toBe(false);
+  });
+
+  it("disables expand-on-hover without fine hover (touch tablets)", () => {
+    expect(shouldExpandOnHover(true, true)).toBe(true);
+    expect(shouldExpandOnHover(true, false)).toBe(false);
+    expect(shouldExpandOnHover(false, true)).toBe(false);
+  });
+
+  it("keeps a permanent rail on tablet landscape unless overlay+unpinned", () => {
+    expect(shouldUsePermanentDrawer(false, false)).toBe(true);
+    expect(shouldUsePermanentDrawer(false, true)).toBe(true);
+    expect(shouldUsePermanentDrawer(true, false)).toBe(false);
+    expect(shouldUsePermanentDrawer(true, true)).toBe(true);
+  });
+
+  it("uses icon rail only outside overlay when collapsed", () => {
+    expect(shouldUseRail(false, false)).toBe(true);
+    expect(shouldUseRail(false, true)).toBe(false);
+    expect(shouldUseRail(true, false)).toBe(false);
+    expect(shouldUseRail(true, true)).toBe(false);
   });
 });

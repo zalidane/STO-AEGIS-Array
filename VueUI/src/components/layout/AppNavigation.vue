@@ -7,7 +7,14 @@ import { APP_NAV_ITEMS } from "@/logic/navigation/navItems";
 
 const compare = useCompareStore();
 const { count, path } = storeToRefs(compare);
-const { expanded, rail, toggleExpanded } = useSidebarNav();
+const {
+  expanded,
+  rail,
+  permanent,
+  expandOnHover,
+  drawerOpen,
+  toggleExpanded,
+} = useSidebarNav();
 
 function itemTo(item: (typeof APP_NAV_ITEMS)[number]): string {
   return item.to === "compare" ? path.value : item.to;
@@ -16,9 +23,11 @@ function itemTo(item: (typeof APP_NAV_ITEMS)[number]): string {
 
 <template>
   <v-navigation-drawer
-    permanent
+    v-model="drawerOpen"
+    :permanent="permanent"
+    :temporary="!permanent"
     :rail="rail"
-    :expand-on-hover="rail"
+    :expand-on-hover="expandOnHover"
     :width="256"
     class="app-navigation"
   >
