@@ -14,6 +14,7 @@ import {
   canBuyFromStore,
   canPurchase,
   createInitialState,
+  filterPackTargetShips,
   groupInventoryByTier,
   keepReward,
   openPack,
@@ -37,22 +38,21 @@ import {
 type SimTab = "configuration" | "history" | "odds";
 
 const state = ref<SimulatorState>(createInitialState());
-const rewardFilter = ref("");
+/** Vuetify clearable fields emit `null`; keep a string so filtering never throws. */
+const rewardFilter = ref<string>("");
 const errorMessage = ref<string | null>(null);
 const activeTab = ref<SimTab>("configuration");
 
 const tierOdds = publishedTierOdds();
 const ships = shipRewards();
 
-const filteredShips = computed(() => {
-  const q = rewardFilter.value.trim().toLowerCase();
-  if (!q) return ships;
-  return ships.filter(
-    (ship) =>
-      ship.name.toLowerCase().includes(q) ||
-      (TIER_BY_ID.get(ship.tierId)?.label ?? "").toLowerCase().includes(q),
-  );
-});
+const filteredShips = computed(() =>
+  filterPackTargetShips(rewardFilter.value, ships),
+);
+
+function onRewardFilterUpdate(value: unknown) {
+  rewardFilter.value = value == null ? "" : String(value);
+}
 
 const obtainedTargets = computed(() => targetsObtained(state.value));
 const targetsComplete = computed(() => allTargetsHit(state.value));
@@ -103,6 +103,10 @@ function take() {
 
 function onToggleTarget(rewardId: string) {
   state.value = toggleTarget(state.value, rewardId);
+}
+
+function onAutoTakeUpdate(value: unknown) {
+  state.value = setAutoTakeSchematics(state.value, Boolean(value));
 }
 
 function onBuyStore(rewardId: string) {
@@ -377,9 +381,7 @@ function historyLabel(event: SimulatorState["history"][number]): string {
         hide-details
         density="compact"
         label="Auto-take Schematics unless the reward is targeted"
-        @update:model-value="
-          (value) => (state = setAutoTakeSchematics(state, Boolean(value)))
-        "
+        @update:model-value="onAutoTakeUpdate"
       />
       <p class="pack-sim__hint">
         Off by default. When on, non-target opens convert to Schematics
@@ -418,13 +420,14 @@ function historyLabel(event: SimulatorState["history"][number]): string {
       </div>
 
       <v-text-field
-        v-model="rewardFilter"
+        :model-value="rewardFilter"
         class="mt-2"
         label="Filter ships"
         density="compact"
         hide-details
         clearable
         prepend-inner-icon="mdi-magnify"
+        @update:model-value="onRewardFilterUpdate"
       />
 
       <div class="reward-list">
