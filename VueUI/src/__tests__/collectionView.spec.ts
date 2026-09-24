@@ -240,7 +240,7 @@ describe("formatHullBoffSummary", () => {
     ).toBe("CMDR TAC/MW | LTCMDR ENG | LTCMDR UNI/CMD | LT TAC | ENS SCI");
   });
 
-  it("never drops the base career for hybrid seats (no CMDR-CMD)", () => {
+  it("never drops the base career for hybrid seats (no CMDR-CMD / CMDR-MW)", () => {
     expect(
       formatCollectionBoffSeat({
         rank: "Commander",
@@ -249,14 +249,24 @@ describe("formatHullBoffSummary", () => {
       }),
     ).toBe("CMDR UNI/CMD");
     expect(
+      formatCollectionBoffSeat({
+        rank: "Commander",
+        career: "Tactical",
+        specialization: "Miracle Worker",
+      }),
+    ).toBe("CMDR TAC/MW");
+    expect(
       formatHullBoffSummaryFromRaw(
-        "Commander Universal-Command,Lieutenant Tactical-Miracle Worker",
+        "Commander Tactical-Miracle Worker,Lieutenant Commander Universal-Miracle Worker,Commander Science-Command",
       ),
-    ).toBe("CMDR UNI/CMD | LT TAC/MW");
-    expect(formatCollectionBoffSeat({
-      rank: "Commander",
-      career: "Universal",
-      specialization: "Command",
-    })).not.toMatch(/CMDR-CMD/);
+    ).toBe("CMDR TAC/MW | CMDR SCI/CMD | LTCMDR UNI/MW");
+
+    const hybrid = formatHullBoffSummaryFromRaw(
+      "Commander Universal-Command,Lieutenant Tactical-Miracle Worker",
+    );
+    expect(hybrid).toBe("CMDR UNI/CMD | LT TAC/MW");
+    expect(hybrid).not.toMatch(/CMDR-CMD/);
+    expect(hybrid).not.toMatch(/CMDR-MW/);
+    expect(hybrid).not.toMatch(/LT CMDR-/);
   });
 });
