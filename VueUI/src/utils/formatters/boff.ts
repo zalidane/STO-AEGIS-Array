@@ -33,32 +33,25 @@ export function abbreviateBoff(boff: string): string {
 }
 
 /**
- * Collection-list rank token: `CMDR`, `LT CMDR`, `LT`, `ENS`.
- * Keeps a space in Lieutenant Commander so it reads like `LT CMDR-MW`.
- */
-export function collectionBoffRankAbbrev(rank: string): string {
-  const short = abbreviateBoffPart(rank);
-  if (short === "LtCmdr") return "LT CMDR";
-  return short.toUpperCase();
-}
-
-/**
- * One Collection-list seat token: `CMDR-INT`, `LT CMDR-MW`, `LT-TAC`.
- * Prefers specialization when present, otherwise career.
+ * Collection-list seat token matching Ship Details (rank + career [/spec]).
+ * Uses the same `abbreviateBoffPart` helpers as `toBoffSeatView` / chips,
+ * uppercased for the dense list: `CMDR TAC/MW`, `LTCMDR ENG`.
  */
 export function formatCollectionBoffSeat(input: {
   rank: string;
   career: string;
   specialization?: string | null;
 }): string {
-  const rank = collectionBoffRankAbbrev(input.rank);
-  const tail = abbreviateBoffPart(
-    input.specialization?.trim() || input.career,
-  ).toUpperCase();
-  return `${rank}-${tail}`;
+  const rank = abbreviateBoffPart(input.rank).toUpperCase();
+  const career = abbreviateBoffPart(input.career).toUpperCase();
+  const specialization = input.specialization?.trim()
+    ? abbreviateBoffPart(input.specialization).toUpperCase()
+    : undefined;
+  const officer = `${rank} ${career}`.trim();
+  return specialization ? `${officer}/${specialization}` : officer;
 }
 
-/** Pipe-separated Collection BOff line, e.g. `CMDR-INT | LT CMDR-MW | LT-TAC`. */
+/** Pipe-separated Collection BOff line, e.g. `CMDR TAC/MW | LTCMDR ENG`. */
 export function formatHullBoffSummary(
   seats: ReadonlyArray<{
     rank: string;

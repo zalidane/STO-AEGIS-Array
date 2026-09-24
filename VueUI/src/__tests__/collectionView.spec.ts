@@ -216,18 +216,23 @@ describe("hullConsoleCounts", () => {
 });
 
 describe("formatHullBoffSummary", () => {
-  it("formats seats as uppercase pipe-separated rank-spec tokens", () => {
+  it("formats seats as Ship Details rank + career[/spec] tokens", () => {
     expect(
       formatHullBoffSummary([
-        { rank: "Commander", career: "Universal", specialization: "Intelligence" },
+        { rank: "Commander", career: "Tactical", specialization: "Miracle Worker" },
         {
           rank: "Lieutenant Commander",
           career: "Engineering",
-          specialization: "Miracle Worker",
+          specialization: null,
+        },
+        {
+          rank: "Lieutenant Commander",
+          career: "Universal",
+          specialization: "Command",
         },
         { rank: "Lieutenant", career: "Tactical" },
         { rank: "Ensign", career: "Science" },
       ]),
-    ).toBe("CMDR-INT | LT CMDR-MW | LT-TAC | ENS-SCI");
+    ).toBe("CMDR TAC/MW | LTCMDR ENG | LTCMDR UNI/CMD | LT TAC | ENS SCI");
   });
 });
