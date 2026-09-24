@@ -17,6 +17,7 @@
     "extract": "npm run extract -w @sto-aegis/extractor",
     "extract:force": "npm run extract:force -w @sto-aegis/extractor",
     "extract:images": "npm run extract:images -w @sto-aegis/extractor",
+    "extract:home": "npm run extract:home -w @sto-aegis/extractor --",
     "import": "npm run import -w @sto-aegis/extractor",
     "import:force": "npm run import:force -w @sto-aegis/extractor",
     "import:prod": "npm run import:prod -w @sto-aegis/extractor",

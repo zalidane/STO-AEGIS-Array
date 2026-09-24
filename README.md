@@ -56,6 +56,7 @@ Set `VITE_GRAPHQL_URL` only when the API is not at `http://localhost:4000/graphq
 | Command | Description |
 |---------|-------------|
 | `npm run extract` / `extract:force` | Manual STOWiki extract → `Extractor/output/*.json` + images |
+| `npm run extract:home` | Home-only monthly check: extract if last run was > ~1 month ago |
 | `npm run extract:images` | Download wiki images only (uses existing Cargo JSON) |
 | `npm run import` / `import:force` | Import committed JSON into local DB |
 | `npm run import:prod` | Import committed JSON into production DB |
@@ -80,9 +81,13 @@ Extract/import flags (pass after `--`):
 npm run extract -- --force-refresh
 npm run extract -- --skip-images
 npm run extract -- --images-only
+npm run extract:home -- --force
+npm run extract:home -- --check-only
 npm run import -- --force-import
 npm run import:prod
 ```
+
+Schedule `npm run extract:home` weekly on a home machine (cron / Task Scheduler / systemd / launchd). The script itself enforces the ~1-month gate, refreshes stale Cargo when due, keeps images incremental, and reminds you to commit JSON then `import:prod`. Details: [Extractor/README.md](Extractor/README.md#monthly-home-extract-scheduled-check). Production must only import committed JSON — never extract on Railway.
 
 After changing `GraphQL/src/schema/**/*.graphql` or `VueUI/src/graphql/queries/*.graphql`, run `npm run codegen` so the Vue client types stay in sync.
 

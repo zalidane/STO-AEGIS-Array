@@ -8,6 +8,7 @@ import {
 } from "./extractors/extractTable.js";
 import { extractImages } from "./extractors/extractImages.js";
 import { shouldRefresh } from "./extractors/cache.js";
+import { writeLastExtractState } from "./extractors/homeExtractSchedule.js";
 import { tableSchemas } from "./extractors/schemas/schemaList.js";
 import { WikiClient } from "./wiki/client.js";
 import { loadWikiConfig, WikiConfigError } from "./wiki/config.js";
@@ -82,6 +83,7 @@ async function runExtract(options: {
   skipImages: boolean;
   imagesOnly: boolean;
 }) {
+  const cargoDir = resolve(process.cwd(), "output");
   const wiki = new WikiClient(loadWikiConfig(process.env, "output"));
   let loggedIn = false;
   const ensureLogin = async () => {
@@ -123,24 +125,29 @@ async function runExtract(options: {
       "./extractors/extractShipExperimentalWeapons.js"
     );
     await extractShipExperimentalWeapons(wiki, {
-      force: options.forceRefresh,
+      // Sidecar is incremental (new experimental hulls only).
+      // --force-refresh applies to Cargo tables; delete
+      // output/ShipExperimentalWeapons.json to rebuild the map.
+      force: false,
     });
   }
 
   if (options.skipImages) {
     console.log("Images: skipped (--skip-images)");
-    return;
+  } else {
+    const root = monorepoRoot();
+    await extractImages(wiki, {
+      cargoDir,
+      imagesDir: resolve(root, "VueUI/public/images"),
+      force: options.forceImages,
+    });
+    console.log(
+      "Image extract complete. Files land in VueUI/public/images/{items,ships,traits,starship-traits,tray-skills}/.",
+    );
   }
 
-  const root = monorepoRoot();
-  await extractImages(wiki, {
-    cargoDir: resolve(process.cwd(), "output"),
-    imagesDir: resolve(root, "VueUI/public/images"),
-    force: options.forceImages,
-  });
-  console.log(
-    "Image extract complete. Files land in VueUI/public/images/{items,ships,traits,starship-traits,tray-skills}/.",
-  );
+  // Local-only stamp for the monthly home check (gitignored).
+  await writeLastExtractState(cargoDir, new Date(), "extract");
 }
 
 async function runImport(forceImport: boolean) {
