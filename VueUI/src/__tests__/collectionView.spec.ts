@@ -17,7 +17,11 @@ import {
   hullConsoleCounts,
   hullConsoleSummaryParts,
 } from "@/logic/loadout/consoleSummary";
-import { formatHullBoffSummary } from "@/utils/formatters";
+import {
+  formatCollectionBoffSeat,
+  formatHullBoffSummary,
+  formatHullBoffSummaryFromRaw,
+} from "@/logic/collection/boffSummary";
 
 describe("groupCollectionByFaction", () => {
   const ships = [
@@ -234,5 +238,25 @@ describe("formatHullBoffSummary", () => {
         { rank: "Ensign", career: "Science" },
       ]),
     ).toBe("CMDR TAC/MW | LTCMDR ENG | LTCMDR UNI/CMD | LT TAC | ENS SCI");
+  });
+
+  it("never drops the base career for hybrid seats (no CMDR-CMD)", () => {
+    expect(
+      formatCollectionBoffSeat({
+        rank: "Commander",
+        career: "Universal",
+        specialization: "Command",
+      }),
+    ).toBe("CMDR UNI/CMD");
+    expect(
+      formatHullBoffSummaryFromRaw(
+        "Commander Universal-Command,Lieutenant Tactical-Miracle Worker",
+      ),
+    ).toBe("CMDR UNI/CMD | LT TAC/MW");
+    expect(formatCollectionBoffSeat({
+      rank: "Commander",
+      career: "Universal",
+      specialization: "Command",
+    })).not.toMatch(/CMDR-CMD/);
   });
 });

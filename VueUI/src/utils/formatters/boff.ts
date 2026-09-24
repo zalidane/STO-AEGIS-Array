@@ -31,33 +31,3 @@ export function abbreviateBoffPart(part: string): string {
 export function abbreviateBoff(boff: string): string {
   return abbreviateBoffPart(boff);
 }
-
-/**
- * Collection-list seat token matching Ship Details (rank + career [/spec]).
- * Uses the same `abbreviateBoffPart` helpers as `toBoffSeatView` / chips,
- * uppercased for the dense list: `CMDR TAC/MW`, `LTCMDR ENG`.
- */
-export function formatCollectionBoffSeat(input: {
-  rank: string;
-  career: string;
-  specialization?: string | null;
-}): string {
-  const rank = abbreviateBoffPart(input.rank).toUpperCase();
-  const career = abbreviateBoffPart(input.career).toUpperCase();
-  const specialization = input.specialization?.trim()
-    ? abbreviateBoffPart(input.specialization).toUpperCase()
-    : undefined;
-  const officer = `${rank} ${career}`.trim();
-  return specialization ? `${officer}/${specialization}` : officer;
-}
-
-/** Pipe-separated Collection BOff line, e.g. `CMDR TAC/MW | LTCMDR ENG`. */
-export function formatHullBoffSummary(
-  seats: ReadonlyArray<{
-    rank: string;
-    career: string;
-    specialization?: string | null;
-  }>,
-): string {
-  return seats.map(formatCollectionBoffSeat).join(" | ");
-}

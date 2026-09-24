@@ -1,21 +1,13 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { formatHullBoffSummary } from "@/utils/formatters";
-import { parseBoffSeats } from "@/mappers/boffColors";
+import { formatHullBoffSummaryFromRaw } from "@/logic/collection/boffSummary";
 
 const props = defineProps<{
-  /** Raw wiki `boffs` CSV, or already-split seat strings. */
+  /** Raw wiki `boffs` CSV. */
   boffs?: string | null;
 }>();
 
-const label = computed(() => {
-  const seats = parseBoffSeats(props.boffs).map((seat) => ({
-    rank: seat.rank,
-    career: seat.careerName,
-    specialization: seat.specializationName,
-  }));
-  return formatHullBoffSummary(seats);
-});
+const label = computed(() => formatHullBoffSummaryFromRaw(props.boffs));
 </script>
 
 <template>
