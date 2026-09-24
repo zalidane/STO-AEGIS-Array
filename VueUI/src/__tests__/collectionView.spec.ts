@@ -17,6 +17,7 @@ import {
   hullConsoleCounts,
   hullConsoleSummaryParts,
 } from "@/logic/loadout/consoleSummary";
+import { formatHullBoffSummary } from "@/utils/formatters";
 
 describe("groupCollectionByFaction", () => {
   const ships = [
@@ -211,5 +212,22 @@ describe("hullConsoleCounts", () => {
       tactical: 2,
       universal: 2,
     });
+  });
+});
+
+describe("formatHullBoffSummary", () => {
+  it("formats seats as uppercase pipe-separated rank-spec tokens", () => {
+    expect(
+      formatHullBoffSummary([
+        { rank: "Commander", career: "Universal", specialization: "Intelligence" },
+        {
+          rank: "Lieutenant Commander",
+          career: "Engineering",
+          specialization: "Miracle Worker",
+        },
+        { rank: "Lieutenant", career: "Tactical" },
+        { rank: "Ensign", career: "Science" },
+      ]),
+    ).toBe("CMDR-INT | LT CMDR-MW | LT-TAC | ENS-SCI");
   });
 });

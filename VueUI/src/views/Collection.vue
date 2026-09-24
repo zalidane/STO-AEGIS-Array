@@ -67,10 +67,9 @@ import WikiIcon from "@/components/shared/WikiIcon.vue";
 import CompareToggle from "@/components/compare/CompareToggle.vue";
 import CompareLaunch from "@/components/compare/CompareLaunch.vue";
 import ShipsListFiltersBar from "@/components/ships/ShipsListFiltersBar.vue";
-import BoffSeatChips from "@/components/ships/BoffSeatChips.vue";
 import HullConsoleSummary from "@/components/ships/HullConsoleSummary.vue";
+import HullBoffSummary from "@/components/ships/HullBoffSummary.vue";
 import { useAlignItemCatalog } from "@/composables/useAlignItemCatalog";
-import { parseBoffSeats, type BoffSeatView } from "@/mappers/boffColors";
 import type { HullConsoleShip } from "@/logic/loadout/consoleSummary";
 import type { FactionIdentity } from "@/logic/resolvePrimaryFaction";
 
@@ -109,7 +108,6 @@ type Row = {
   ownedByActive: boolean;
   ownerName: string;
   ship: ShipHullPreview | null;
-  boffSeats: BoffSeatView[];
 };
 
 function lookupName(
@@ -237,7 +235,6 @@ const rows = computed<Row[]>(() => {
       ownedByActive: entry.characterId === state.value.activeCharacterId,
       ownerName: owner?.name ?? "Unknown captain",
       ship: info.ship,
-      boffSeats: parseBoffSeats(info.ship?.boffs),
     };
   });
 });
@@ -542,11 +539,7 @@ const sortToggleLabel = computed(() =>
             class="collection-row__hull"
           >
             <HullConsoleSummary :ship="row.ship" />
-            <BoffSeatChips
-              v-if="row.boffSeats.length > 0"
-              dense
-              :seats="row.boffSeats"
-            />
+            <HullBoffSummary :boffs="row.ship.boffs" />
           </div>
 
           <div class="collection-row__actions" @click.stop>
