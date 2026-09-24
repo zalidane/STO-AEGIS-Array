@@ -6,10 +6,81 @@ Committed **supplements** under `output/supplements/` fill Cargo gaps (missing m
 
 **Workflow**
 
-1. **Extract (manual, local)** — fetch wiki → commit `output/*.json` (and optionally images)
+1. **Extract (manual or monthly home check, local)** — fetch wiki → commit `output/*.json` (and optionally images)
 2. **Import (automatic / deploy)** — read committed JSON (+ supplements) → production DB
 
 Production never hits STOWiki; it only imports JSON shipped in git. Run extract from a home/residential IP, not Railway.
+
+## Incremental behavior (what actually skips the wiki)
+
+| Stage | Incremental? | Behavior |
+|-------|--------------|----------|
+| **Cargo tables** | Age-gated full refresh | If `output/{Table}.json` is newer than **24 hours**, that table is skipped. When stale (or `--force-refresh`), extract re-fetches the **entire** table — not row-level deltas. |
+| **ShipExperimentalWeapons** | Yes (new hulls) | Only experimental ships missing from the sidecar JSON are scraped. Delete the sidecar to rebuild. `--force-refresh` does **not** re-scrape existing hulls. |
+| **Images** | Yes (files) | Skips files already under `VueUI/public/images/`; skips titles already recorded missing/skipped in `imageIndex.json`. Only new or previously failed titles hit the wiki. `--force-images` re-queries and re-downloads. |
+| **Official images category** | Cached list | Incremental image runs reuse `OfficialImages.json`; `--force-images` re-lists the category. |
+| **Import / `linkRelations`** | N/A (no wiki) | Runs against committed JSON only. Local `importState.json` (gitignored) hash-skips unchanged tables unless `--force-import`. |
+
+There was no gap to “fix” for images — they were already file-level incremental. Cargo cannot be row-level incremental via the public Cargo API without fetching tables; the 24h gate plus the monthly home check is the intended skip policy.
+
+## Monthly home extract (scheduled check)
+
+Use this on a **home** machine so Railway never contacts stowiki.net / Cloudflare.
+
+```bash
+# from monorepo root — no-ops if last extract was < ~1 month ago
+npm run extract:home
+
+# always run (still keeps images incremental; no --force-images)
+npm run extract:home -- --force
+
+# print decision only (does not contact the wiki)
+npm run extract:home -- --check-only
+```
+
+What runs when due: `extract --force-refresh` (full **Cargo** refresh; experimental-weapon sidecar and **images stay incremental** — no `--force-images`). `--force-refresh` is required so a fresh clone (JSON mtime = now) cannot skip the wiki via the 24h Cargo cache. After a successful extract, `Extractor/output/last-extract.json` is written (gitignored). If that file is missing, the check falls back to the newest Cargo JSON mtime.
+
+After a real run, review the diff, commit updated `Extractor/output/*.json` (and any new images you want tracked), push, then `npm run import:prod` (or rely on GraphQL `releaseCommand` after push).
+
+### Schedule examples
+
+**Linux (systemd user timer)** — `~/.config/systemd/user/sto-aegis-extract.service`:
+
+```ini
+[Unit]
+Description=STO AEGIS Array monthly wiki extract check
+
+[Service]
+Type=oneshot
+WorkingDirectory=/path/to/STO-AEGIS-Array
+ExecStart=/usr/bin/npm run extract:home
+```
+
+`~/.config/systemd/user/sto-aegis-extract.timer`:
+
+```ini
+[Unit]
+Description=Weekly check; extract only if >1 month since last run
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+Then: `systemctl --user daemon-reload && systemctl --user enable --now sto-aegis-extract.timer`
+
+**macOS (launchd)** — `~/Library/LaunchAgents/com.sto-aegis.extract.plist` with `StartCalendarInterval` (e.g. weekly) and `ProgramArguments` → `/usr/local/bin/npm`, `run`, `extract:home`, `WorkingDirectory` set to the repo. Load with `launchctl load ~/Library/LaunchAgents/com.sto-aegis.extract.plist`.
+
+**Windows (Task Scheduler)** — create a weekly task: Action = Start a program, Program = `npm`, Arguments = `run extract:home`, Start in = your clone path. Or a `.cmd` that `cd`s to the repo and runs that command.
+
+**cron (any Unix)** — weekly is enough because the script itself enforces the 1-month gate:
+
+```cron
+0 10 * * 0 cd /path/to/STO-AEGIS-Array && npm run extract:home >> ~/sto-aegis-extract.log 2>&1
+```
 
 ## STOWiki access
 
@@ -42,6 +113,11 @@ Use root `.env` for local DB + wiki credentials and `.env.production` for Railwa
 # Cargo tables + catalog images (slow and polite on purpose)
 npm run extract
 npm run extract -- --force-refresh
+
+# Monthly home check (no-op if last extract < ~1 month)
+npm run extract:home
+npm run extract:home -- --force
+npm run extract:home -- --check-only
 
 # Images only (uses existing output/*.json)
 npm run extract:images
@@ -87,6 +163,7 @@ Import hashes Cargo + supplement together, so editing only the supplement still 
 | Command / flag | Effect |
 |----------------|--------|
 | `extract` | Fetch Cargo tables + experimental-weapon sidecar, then catalog images |
+| `extract:home` | Run extract only if last local extract is older than ~1 month (or `--force`) |
 | `import` | Import JSON into PostgreSQL + `linkRelations` |
 | `--force-refresh` | Re-extract all Cargo tables from STOWiki |
 | `--force-images` | Re-query the wiki and re-download image files even if they already exist |
@@ -94,6 +171,7 @@ Import hashes Cargo + supplement together, so editing only the supplement still 
 | `--images-only` | Images only (needs `output/*.json`) |
 | `--force-import` | Re-import all JSON files (ignore hash skip) |
 | `--prod` | Load `.env.production` (used by `import:prod`) |
+| `--force` / `--check-only` | With `extract:home` only: always run / print decision without extracting |
 
 ## Tests
 
@@ -103,7 +181,7 @@ From the monorepo root:
 npm run test:extractor
 ```
 
-Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier and set-bonus supplement merge, and import name dedupe.
+Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier and set-bonus supplement merge, import name dedupe, and the monthly home-extract schedule gate.
 
 ## Images
 
@@ -126,6 +204,6 @@ Third-party licensing for extracted text and images is documented in
 
 `Extractor/output/*.json` **is tracked** so production deploys can import without extracting (including `ShipExperimentalWeapons.json` and `output/supplements/*.json`).
 
-`output/importState.json` and `output/.wiki-session.json` are **local-only** (gitignored).
+`output/importState.json`, `output/last-extract.json`, and `output/.wiki-session.json` are **local-only** (gitignored).
 
 See the monorepo [README](../README.md) for workspace layout.
