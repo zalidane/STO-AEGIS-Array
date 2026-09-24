@@ -259,7 +259,7 @@ describe("formatHullBoffSummary", () => {
       formatHullBoffSummaryFromRaw(
         "Commander Tactical-Miracle Worker,Lieutenant Commander Universal-Miracle Worker,Commander Science-Command",
       ),
-    ).toBe("CMDR TAC/MW | CMDR SCI/CMD | LTCMDR UNI/MW");
+    ).toBe("CMDR SCI/CMD | CMDR TAC/MW | LTCMDR UNI/MW");
 
     const hybrid = formatHullBoffSummaryFromRaw(
       "Commander Universal-Command,Lieutenant Tactical-Miracle Worker",
