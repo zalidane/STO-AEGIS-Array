@@ -475,20 +475,43 @@ const sortToggleLabel = computed(() =>
             <span class="collection-tabs__count">{{ tab.rows.length }}</span>
           </v-tab>
         </v-tabs>
+        <button
+          type="button"
+          class="collection-sort-toggle"
+          :aria-label="`Sort names ${sortToggleLabel}`"
+          :title="`Sort names ${sortToggleLabel}`"
+          @click.stop="toggleSortDirection"
+        >
+          <v-icon
+            size="18"
+            :icon="
+              sortDirection === 'asc'
+                ? 'mdi-sort-alphabetical-ascending'
+                : 'mdi-sort-alphabetical-descending'
+            "
+          />
+          <span>{{ sortToggleLabel }}</span>
+        </button>
       </div>
 
-      <div class="collection-toolbar">
-        <v-btn
-          size="small"
-          variant="tonal"
-          color="primary"
-          :prepend-icon="
-            sortDirection === 'asc' ? 'mdi-sort-alphabetical-ascending' : 'mdi-sort-alphabetical-descending'
-          "
-          @click="toggleSortDirection"
+      <div v-else class="collection-toolbar">
+        <button
+          type="button"
+          class="collection-sort-toggle"
+          :aria-label="`Sort names ${sortToggleLabel}`"
+          :title="`Sort names ${sortToggleLabel}`"
+          @click.stop="toggleSortDirection"
         >
-          {{ sortToggleLabel }}
-        </v-btn>
+          <v-icon
+            size="18"
+            :icon="
+              sortDirection === 'asc'
+                ? 'mdi-sort-alphabetical-ascending'
+                : 'mdi-sort-alphabetical-descending'
+            "
+          />
+          <span>{{ sortToggleLabel }}</span>
+        </button>
       </div>
 
       <div v-if="displayedRows.length === 0" class="empty-featured">
@@ -602,7 +625,15 @@ const sortToggleLabel = computed(() =>
 }
 
 .collection-faction-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   margin-bottom: 0.65rem;
+}
+
+.collection-faction-tabs__bar {
+  flex: 1;
+  min-width: 0;
 }
 
 .collection-faction-tabs__tab {
@@ -617,6 +648,29 @@ const sortToggleLabel = computed(() =>
   display: flex;
   justify-content: flex-end;
   margin-bottom: 0.65rem;
+}
+
+.collection-sort-toggle {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid rgba(125, 211, 252, 0.45);
+  background: rgba(13, 40, 64, 0.85);
+  color: #7dd3fc;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.collection-sort-toggle:hover {
+  border-color: rgba(125, 211, 252, 0.8);
+  background: rgba(20, 56, 88, 0.95);
 }
 
 .collection-list {
