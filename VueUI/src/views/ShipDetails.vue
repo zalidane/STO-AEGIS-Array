@@ -16,6 +16,7 @@ import { FALLBACK_SHIP_IMAGE, getShipImageUrl } from "@/utils/shipImage";
 import CollectToggle from "@/components/collection/CollectToggle.vue";
 import CompareToggle from "@/components/compare/CompareToggle.vue";
 import CompareLaunch from "@/components/compare/CompareLaunch.vue";
+import BoffSeatChips from "@/components/ships/BoffSeatChips.vue";
 import {
   allowsAccountUnlockFromCost,
   bindScopeFromShipCost,
@@ -363,37 +364,7 @@ watch(
             <v-divider />
 
             <div class="detail-card__body">
-              <div class="d-flex flex-wrap ga-2">
-                <v-chip
-                  v-for="seat in boffSeats"
-                  :key="seat.raw"
-                  size="small"
-                  variant="outlined"
-                  :color="seat.career"
-                  class="font-weight-bold justify-center boff-chip"
-                  :class="{ 'boff-chip--hybrid': !!seat.specialization }"
-                  :style="
-                    seat.specialization
-                      ? {
-                          '--boff-career': `rgb(var(--v-theme-${seat.career}))`,
-                          '--boff-spec': `rgb(var(--v-theme-${seat.specialization}))`,
-                        }
-                      : undefined
-                  "
-                >
-                  <span>{{ seat.careerLabel }}</span>
-                  <span
-                    v-if="seat.specializationLabel"
-                    :class="
-                      seat.specialization
-                        ? `text-${seat.specialization}`
-                        : undefined
-                    "
-                  >
-                    -{{ seat.specializationLabel }}
-                  </span>
-                </v-chip>
-              </div>
+              <BoffSeatChips :seats="boffSeats" />
 
               <div class="section-header text-medium-emphasis text-uppercase text-caption mt-4">
                 <span>{{ labels.consolesHeader }}</span>
@@ -884,16 +855,6 @@ watch(
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.3);
   flex: 0 0 auto;
-}
-
-.boff-chip {
-  min-width: 72px;
-}
-
-.boff-chip--hybrid {
-  box-shadow:
-    inset 3px 0 0 var(--boff-career),
-    inset -3px 0 0 var(--boff-spec);
 }
 
 .extra-slot-list {
