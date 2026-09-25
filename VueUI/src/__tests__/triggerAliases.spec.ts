@@ -108,6 +108,31 @@ describe("resolveTriggerAbilityAlias", () => {
     );
   });
 
+  it("resolves Broadside Beam Support / Directed Energy Flux named triggers", () => {
+    // Broadside Beam Support — FAW / Beam Overload
+    expect(resolveTriggerAbilityAlias("FAW")).toBe("Beams: Fire at Will");
+    expect(resolveTriggerAbilityAlias("Ability: Beams: Fire at Will")).toBe(
+      "Beams: Fire at Will",
+    );
+    expect(resolveTriggerAbilityAlias("Beam Overload")).toBe("Beams: Overload");
+    expect(isAbilityInFamily("Beams: Fire at Will", "firingMode")).toBe(true);
+    expect(isAbilityInFamily("Beams: Overload", "firingMode")).toBe(true);
+
+    // Directed Energy Flux — DEM is a named Engineering BOff trigger (not BO/CRF)
+    expect(resolveTriggerAbilityAlias("DEM")).toBe(
+      "Directed Energy Modulation",
+    );
+    expect(
+      resolveTriggerAbilityAlias("Directed Energy Modulation (ability)"),
+    ).toBe("Directed Energy Modulation");
+    expect(resolveTriggerAbilityAlias("Directed Energy Modulation")).toBe(
+      "Directed Energy Modulation",
+    );
+    // DEM must not collapse onto the abilities it buffs
+    expect(resolveTriggerAbilityAlias("DEM")).not.toBe("Beams: Overload");
+    expect(resolveTriggerAbilityAlias("DEM")).not.toBe("Cannons: Rapid Fire");
+  });
+
   it("returns null for blank or unrecognized labels", () => {
     expect(resolveTriggerAbilityAlias("")).toBeNull();
     expect(resolveTriggerAbilityAlias("Not A Real Ability")).toBeNull();

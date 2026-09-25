@@ -254,6 +254,10 @@ const TRIGGER_ABILITY_ALIAS_ENTRIES: ReadonlyArray<
   ["jam sensors", "Jam Targeting Sensors"],
   ["tykens rift", "Tyken's Rift"],
   ["tyken's rift", "Tyken's Rift"],
+
+  // Directed Energy Modulation (Engineering BOff) — named trigger, not a firing mode
+  ["dem", "Directed Energy Modulation"],
+  ["directed energy modulation", "Directed Energy Modulation"],
 ];
 
 /** Normalized alias → catalog display name. */
