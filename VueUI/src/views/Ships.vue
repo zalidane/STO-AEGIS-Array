@@ -173,7 +173,17 @@ function nextPage() {
           <div class="registry-header__counts">
             <div>{{ ships.length }} vessels catalogued</div>
             <div>{{ filteredShips.length }} results displayed</div>
-            <CompareLaunch />
+            <div class="registry-header__actions">
+              <v-btn
+                to="/ships/advanced"
+                size="small"
+                variant="outlined"
+                prepend-icon="mdi-magnify-scan"
+              >
+                Advanced Search
+              </v-btn>
+              <CompareLaunch />
+            </div>
           </div>
         </div>
       </header>
@@ -308,6 +318,14 @@ function nextPage() {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   line-height: 1.45;
+}
+
+.registry-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .empty-state {

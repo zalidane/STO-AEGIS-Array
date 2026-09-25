@@ -11,6 +11,11 @@ export const APP_NAV_ITEMS: readonly AppNavItem[] = [
   { title: "Collection", icon: "mdi-bookmark", to: "/collection" },
   { title: "Loadouts", icon: "mdi-view-dashboard-outline", to: "/loadouts" },
   { title: "Ships", icon: "mdi-ferry", to: "/ships" },
+  {
+    title: "Ship Search",
+    icon: "mdi-magnify-scan",
+    to: "/ships/advanced",
+  },
   { title: "Compare", icon: "mdi-compare-horizontal", to: "compare" },
   { title: "Traits", icon: "mdi-star-outline", to: "/traits" },
   { title: "Starship Traits", icon: "mdi-star", to: "/starship-traits" },

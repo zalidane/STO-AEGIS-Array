@@ -6,6 +6,7 @@ import Collection from "@/views/Collection.vue";
 import Loadouts from "@/views/Loadouts.vue";
 import SharedBuild from "@/views/SharedBuild.vue";
 import Ships from "@/views/Ships.vue";
+import AdvancedShipSearch from "@/views/AdvancedShipSearch.vue";
 import ShipDetails from "@/views/ShipDetails.vue";
 import LoadoutBuilder from "@/views/LoadoutBuilder.vue";
 import ShipCompare from "@/views/ShipCompare.vue";
@@ -67,6 +68,12 @@ const router = createRouter({
       name: "ships",
       component: Ships,
       meta: { breadcrumb: "Ships" },
+    },
+    {
+      path: "/ships/advanced",
+      name: "advanced-ship-search",
+      component: AdvancedShipSearch,
+      meta: { breadcrumb: "Advanced Search", parent: "/ships" },
     },
     {
       path: "/ships/compare",

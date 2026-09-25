@@ -28,6 +28,10 @@ describe("APP_NAV_ITEMS", () => {
     expect(titles).toContain("Pack Simulator");
     expect(titles).toContain("News");
     expect(titles).toContain("Compare");
+    expect(titles).toContain("Ship Search");
+    expect(APP_NAV_ITEMS.find((item) => item.title === "Ship Search")?.to).toBe(
+      "/ships/advanced",
+    );
     for (const removed of REMOVED_SIDEBAR_NAV_TITLES) {
       expect(titles).not.toContain(removed);
     }
