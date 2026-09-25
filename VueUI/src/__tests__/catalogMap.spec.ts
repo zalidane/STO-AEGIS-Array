@@ -42,12 +42,18 @@ describe("catalogMap", () => {
       id: 4,
       name: "Ablative Shell",
       iconName: "Special Shell",
+      short: "On activate…",
+      basic: "* Upon activating…",
+      detailed: "* Details",
     });
     expect(trait.catalogKind).toBe("starshipTrait");
     expect(trait.image).toBe("/images/starship-traits/Special_Shell_icon.png");
     expect(trait.image).not.toBe(
       "/images/starship-traits/Ablative_Shell_icon.png",
     );
+    expect(trait.short).toBe("On activate…");
+    expect(trait.basic).toBe("* Upon activating…");
+    expect(trait.detailed).toBe("* Details");
   });
 
   it("maps personal traits and tray skills", () => {
@@ -59,12 +65,17 @@ describe("catalogMap", () => {
       environment: "space",
       career: "Tactical",
       source: "Career",
+      shortDescription: "On Beam Overload",
+      description: "* Upon activating [[Beams: Overload]]…",
     });
     expect(personal).toMatchObject({
       catalogKind: "trait",
       environment: "space",
       career: "Tactical",
       who: "Career",
+      short: "On Beam Overload",
+      basic: "* Upon activating [[Beams: Overload]]…",
+      detailed: null,
     });
     expect(personal.image).toBe("/images/traits/Beam_Barrage_icon.png");
 

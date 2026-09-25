@@ -28,6 +28,9 @@ export type LoadoutStarshipTraitRow = {
   id: number;
   name: string;
   iconName?: string | null;
+  short?: string | null;
+  basic?: string | null;
+  detailed?: string | null;
 };
 
 export type LoadoutPersonalTraitRow = {
@@ -39,6 +42,10 @@ export type LoadoutPersonalTraitRow = {
   career?: string | null;
   required?: string | null;
   source?: string | null;
+  /** Mapped onto LoadoutItem.short for trigger extraction. */
+  shortDescription?: string | null;
+  /** Mapped onto LoadoutItem.basic for trigger extraction. */
+  description?: string | null;
 };
 
 export type LoadoutTraySkillRow = {
@@ -78,6 +85,9 @@ export function toLoadoutTrait(row: LoadoutStarshipTraitRow): LoadoutItem {
     image: getStarshipTraitImageUrl(row.name, row.iconName),
     equiplimit: 1,
     catalogKind: "starshipTrait",
+    short: row.short ?? null,
+    basic: row.basic ?? null,
+    detailed: row.detailed ?? null,
   };
 }
 
@@ -95,6 +105,9 @@ export function toLoadoutPersonalTrait(
     career: row.career,
     required: row.required,
     who: row.source,
+    short: row.shortDescription ?? null,
+    basic: row.description ?? null,
+    detailed: null,
   };
 }
 
