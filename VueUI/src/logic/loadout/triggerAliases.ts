@@ -241,6 +241,11 @@ const TRIGGER_ABILITY_ALIAS_ENTRIES: ReadonlyArray<
   ["torpedo: spread", "Torpedoes: Spread"],
   ["torpedo spread", "Torpedoes: Spread"],
   ["torpedoes spread", "Torpedoes: Spread"],
+  // Transport Warhead is singular in TraySkill; accept plural wiki drift
+  ["torpedoes: transport warhead", "Torpedo: Transport Warhead"],
+  ["transport warhead", "Torpedo: Transport Warhead"],
+  ["torpedo: nanite repair payload", "Torpedoes: Nanite Repair Payload"],
+  ["nanite repair payload", "Torpedoes: Nanite Repair Payload"],
   ["surgical strikes", "Energy Weapons: Surgical Strikes"],
   ["exceed rated limits", "Energy Weapons: Exceed Rated Limits"],
   ["reroute reserves to weapons", "Energy Weapons: Reroute Reserves to Weapons"],

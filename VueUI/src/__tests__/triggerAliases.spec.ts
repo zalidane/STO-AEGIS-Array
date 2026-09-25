@@ -81,6 +81,33 @@ describe("resolveTriggerAbilityAlias", () => {
     );
   });
 
+  it("includes torpedo firing modes with singular/plural catalog spelling", () => {
+    const torpedoModes = [
+      "Torpedoes: Spread",
+      "Torpedoes: High Yield",
+      "Torpedo: Transport Warhead",
+      "Torpedoes: Nanite Repair Payload",
+    ] as const;
+
+    for (const name of torpedoModes) {
+      expect(abilitiesForFamily("firingMode")).toContain(name);
+      expect(isAbilityInFamily(name, "firingMode")).toBe(true);
+      expect(resolveTriggerAbilityAlias(name)).toBe(name);
+      expect(resolveTriggerAbilityAlias(`${name} (ability)`)).toBe(name);
+    }
+
+    // Plural drift on the singular catalog name, and vice versa
+    expect(resolveTriggerAbilityAlias("Torpedoes: Transport Warhead")).toBe(
+      "Torpedo: Transport Warhead",
+    );
+    expect(resolveTriggerAbilityAlias("Torpedo: High Yield")).toBe(
+      "Torpedoes: High Yield",
+    );
+    expect(resolveTriggerAbilityAlias("Torpedo: Nanite Repair Payload")).toBe(
+      "Torpedoes: Nanite Repair Payload",
+    );
+  });
+
   it("returns null for blank or unrecognized labels", () => {
     expect(resolveTriggerAbilityAlias("")).toBeNull();
     expect(resolveTriggerAbilityAlias("Not A Real Ability")).toBeNull();
