@@ -54,6 +54,13 @@ export type LoadoutItem = {
   ranks?: Array<string | null | undefined>;
   /** Picker/seated roman rank index when a power has two versions at one officer rank. */
   abilityRank?: number;
+  /**
+   * Trait / starship-trait trigger text for #31/#33.
+   * Personal traits map `shortDescription` → short and `description` → basic.
+   */
+  short?: string | null;
+  basic?: string | null;
+  detailed?: string | null;
 };
 
 export type LoadoutEquipContext = {
