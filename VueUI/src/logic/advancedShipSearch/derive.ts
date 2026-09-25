@@ -48,6 +48,22 @@ function countOrZero(value: number | null | undefined): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
+/**
+ * Total weapons = fore + aft + 1 if an experimental weapon seat is present.
+ * Null/missing fore or aft count as 0. Null/false experimental adds 0.
+ */
+export function totalWeaponCount(input: {
+  foreWeapons?: number | null;
+  aftWeapons?: number | null;
+  experimental?: boolean | null;
+}): number {
+  return (
+    countOrZero(input.foreWeapons) +
+    countOrZero(input.aftWeapons) +
+    (input.experimental === true ? 1 : 0)
+  );
+}
+
 export function deriveAdvancedShipSearchRow(
   ship: AdvancedShipSearchSource,
   fleetKeys: ReadonlySet<string>,
@@ -63,13 +79,21 @@ export function deriveAdvancedShipSearchRow(
       cost.amount ? `${cost.amount} ${cost.label}` : cost.label,
     )
     .join(" / ");
+  const foreWeapons = countOrZero(ship.foreWeapons);
+  const aftWeapons = countOrZero(ship.aftWeapons);
+  const experimental = ship.experimental === true;
 
   return {
     id: ship.id,
     name: ship.name,
-    foreWeapons: countOrZero(ship.foreWeapons),
-    aftWeapons: countOrZero(ship.aftWeapons),
-    experimental: ship.experimental === true,
+    foreWeapons,
+    aftWeapons,
+    experimental,
+    totalWeapons: totalWeaponCount({
+      foreWeapons,
+      aftWeapons,
+      experimental,
+    }),
     fullSpecs,
     hasFullSpec: fullSpecs.length > 0,
     secondaryDeflector: ship.secondaryDeflector === true,

@@ -20,6 +20,7 @@ export {
   extractFullSpecs,
   indexAdvancedShipSearchRows,
   normalizeFullSpec,
+  totalWeaponCount,
 } from "./derive";
 export {
   advancedShipSearchFiltersAreActive,

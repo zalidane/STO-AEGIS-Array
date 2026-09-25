@@ -22,6 +22,11 @@ export type AdvancedShipSearchFilters = {
   /** Experimental weapon seat. */
   experimental: YesNoChoice[];
   /**
+   * Total weapon count: fore + aft + (experimental seat ? 1 : 0).
+   * Multi-choice OR within.
+   */
+  totalWeapons: number[];
+  /**
    * Full-spec (specialization) seats present on the hull.
    * OR within. Includes `"None"` for hulls with no specialization seating.
    */
@@ -49,6 +54,7 @@ export type AdvancedShipSearchSortKey =
   | "foreWeapons"
   | "aftWeapons"
   | "experimental"
+  | "totalWeapons"
   | "fullSpecs"
   | "secondaryDeflector"
   | "hangars"
@@ -94,6 +100,8 @@ export type AdvancedShipSearchRow = {
   foreWeapons: number;
   aftWeapons: number;
   experimental: boolean;
+  /** fore + aft + (experimental ? 1 : 0). */
+  totalWeapons: number;
   fullSpecs: FullSpecOption[];
   hasFullSpec: boolean;
   secondaryDeflector: boolean;
@@ -113,6 +121,7 @@ export function createDefaultAdvancedShipSearchFilters(): AdvancedShipSearchFilt
     foreWeapons: [],
     aftWeapons: [],
     experimental: [],
+    totalWeapons: [],
     fullSpecs: [],
     secondaryDeflector: [],
     hangars: [],

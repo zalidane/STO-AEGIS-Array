@@ -64,6 +64,7 @@ const headers = [
   { title: "Fore", key: "foreWeapons" },
   { title: "Aft", key: "aftWeapons" },
   { title: "Exp", key: "experimentalLabel" },
+  { title: "Total Weapons", key: "totalWeapons" },
   { title: "Full-spec", key: "fullSpecLabel" },
   { title: "Sec. def", key: "secondaryDeflectorLabel" },
   { title: "Hangars", key: "hangars" },

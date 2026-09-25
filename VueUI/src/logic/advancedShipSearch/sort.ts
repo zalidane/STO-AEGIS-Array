@@ -44,6 +44,8 @@ function sortValue(
       return row.aftWeapons;
     case "experimental":
       return row.experimental;
+    case "totalWeapons":
+      return row.totalWeapons;
     case "fullSpecs":
       return fullSpecSortKey(row);
     case "secondaryDeflector":

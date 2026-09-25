@@ -69,6 +69,7 @@ export function matchesAdvancedShipSearchFilters(
   if (!matchesNumberMulti(row.foreWeapons, filters.foreWeapons)) return false;
   if (!matchesNumberMulti(row.aftWeapons, filters.aftWeapons)) return false;
   if (!matchesYesNo(row.experimental, filters.experimental)) return false;
+  if (!matchesNumberMulti(row.totalWeapons, filters.totalWeapons)) return false;
   if (!matchesFullSpecs(row, filters.fullSpecs)) return false;
   if (!matchesYesNo(row.secondaryDeflector, filters.secondaryDeflector)) {
     return false;
@@ -110,6 +111,7 @@ export function advancedShipSearchFiltersAreActive(
     filters.foreWeapons.length > 0 ||
     filters.aftWeapons.length > 0 ||
     filters.experimental.length > 0 ||
+    filters.totalWeapons.length > 0 ||
     filters.fullSpecs.length > 0 ||
     filters.secondaryDeflector.length > 0 ||
     filters.hangars.length > 0 ||

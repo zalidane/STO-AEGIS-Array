@@ -10,6 +10,7 @@ import {
   shipHasFleetVersion,
   buildFleetAvailabilityIndex,
   sortAdvancedShipSearchRows,
+  totalWeaponCount,
   type AdvancedShipSearchSource,
 } from "@/logic/advancedShipSearch";
 
@@ -228,6 +229,29 @@ describe("matchesAdvancedShipSearchFilters", () => {
     expect(filterAdvancedShipSearchRows(rows, no)).toHaveLength(rows.length - 1);
   });
 
+  it("filters total weapons (fore + aft + experimental as 1)", () => {
+    // Achilles: 5 + 2 + 1 = 8
+    const eight = createDefaultAdvancedShipSearchFilters();
+    eight.totalWeapons = [8];
+    expect(
+      filterAdvancedShipSearchRows(rows, eight).map((row) => row.name),
+    ).toEqual(["Achilles Miracle Worker Heavy Destroyer"]);
+
+    // Advanced Escort T5 (no exp): 4 + 3 + 0 = 7; Fleet Advanced Escort same
+    const seven = createDefaultAdvancedShipSearchFilters();
+    seven.totalWeapons = [7];
+    expect(
+      filterAdvancedShipSearchRows(rows, seven)
+        .map((row) => row.name)
+        .sort(),
+    ).toEqual(["Advanced Escort", "Fleet Advanced Escort"].sort());
+
+    // Multi-select OR: 7 or 8
+    const either = createDefaultAdvancedShipSearchFilters();
+    either.totalWeapons = [7, 8];
+    expect(filterAdvancedShipSearchRows(rows, either)).toHaveLength(3);
+  });
+
   it("ORs full-spec seats and supports None", () => {
     const mw = createDefaultAdvancedShipSearchFilters();
     mw.fullSpecs = ["Miracle Worker"];
@@ -355,6 +379,41 @@ describe("matchesAdvancedShipSearchFilters", () => {
   });
 });
 
+describe("totalWeaponCount", () => {
+  it("adds experimental seat as one weapon when present", () => {
+    expect(
+      totalWeaponCount({ foreWeapons: 5, aftWeapons: 2, experimental: true }),
+    ).toBe(8);
+    expect(
+      totalWeaponCount({ foreWeapons: 4, aftWeapons: 3, experimental: false }),
+    ).toBe(7);
+  });
+
+  it("treats null/undefined fore, aft, and experimental as zero contribution", () => {
+    expect(
+      totalWeaponCount({
+        foreWeapons: null,
+        aftWeapons: undefined,
+        experimental: null,
+      }),
+    ).toBe(0);
+    expect(
+      totalWeaponCount({
+        foreWeapons: 3,
+        aftWeapons: null,
+        experimental: undefined,
+      }),
+    ).toBe(3);
+    expect(
+      totalWeaponCount({
+        foreWeapons: 4,
+        aftWeapons: 2,
+        experimental: false,
+      }),
+    ).toBe(6);
+  });
+});
+
 describe("derive + sort", () => {
   it("labels consoles and acquisition on derived rows", () => {
     const row = deriveAdvancedShipSearchRow(
@@ -379,6 +438,7 @@ describe("derive + sort", () => {
     expect(row.acquisitionLabel).toContain("Zen");
     expect(row.fullSpecs).toEqual(["Miracle Worker"]);
     expect(row.dualCannons).toBe(true);
+    expect(row.totalWeapons).toBe(8);
   });
 
   it("sorts by weapon counts and name tie-break", () => {
@@ -395,6 +455,41 @@ describe("derive + sort", () => {
       "Alpha",
       "Bravo",
       "Charlie",
+    ]);
+  });
+
+  it("sorts by totalWeapons including experimental", () => {
+    const rows = indexAdvancedShipSearchRows([
+      ship({
+        id: 1,
+        name: "Low",
+        foreWeapons: 3,
+        aftWeapons: 2,
+        experimental: false,
+      }),
+      ship({
+        id: 2,
+        name: "High Exp",
+        foreWeapons: 4,
+        aftWeapons: 3,
+        experimental: true,
+      }),
+      ship({
+        id: 3,
+        name: "Mid",
+        foreWeapons: 4,
+        aftWeapons: 3,
+        experimental: false,
+      }),
+    ]);
+    const sorted = sortAdvancedShipSearchRows(rows, {
+      key: "totalWeapons",
+      direction: "desc",
+    });
+    expect(sorted.map((row) => [row.name, row.totalWeapons])).toEqual([
+      ["High Exp", 8],
+      ["Mid", 7],
+      ["Low", 5],
     ]);
   });
 });

@@ -36,6 +36,9 @@ const foreOptions = computed(() =>
 const aftOptions = computed(() =>
   uniqueSortedNumbers(props.rows.map((row) => row.aftWeapons)),
 );
+const totalWeaponOptions = computed(() =>
+  uniqueSortedNumbers(props.rows.map((row) => row.totalWeapons)),
+);
 const hangarOptions = computed(() =>
   uniqueSortedNumbers(props.rows.map((row) => row.hangars)),
 );
@@ -81,6 +84,7 @@ function toggleNumber(
   key:
     | "foreWeapons"
     | "aftWeapons"
+    | "totalWeapons"
     | "hangars"
     | "engConsoles"
     | "sciConsoles"
@@ -190,6 +194,19 @@ function yesNoLabel(value: YesNoChoice): string {
             @click="toggleYesNo('experimental', choice)"
           >
             {{ yesNoLabel(choice) }}
+          </button>
+        </div>
+        <div class="adv-group__row">
+          <span class="adv-group__sub">Total</span>
+          <button
+            v-for="n in totalWeaponOptions"
+            :key="`total-${n}`"
+            type="button"
+            class="adv-chip"
+            :class="{ 'adv-chip--active': filters.totalWeapons.includes(n) }"
+            @click="toggleNumber('totalWeapons', n)"
+          >
+            {{ n }}
           </button>
         </div>
       </fieldset>
