@@ -30,7 +30,9 @@ const emit = defineEmits<{
   pick: [slot: CaptainTraitSlot];
 }>();
 
-function slotTitle(view: CaptainTraitSlotView): string {
+function slotTitle(view: CaptainTraitSlotView): string | undefined {
+  // Prefer the custom 3-line trigger popup over the native title tooltip.
+  if (view.triggerStatus && view.item) return undefined;
   if (view.slot.locked) return `${view.slot.label} · Locked`;
   if (view.item) return `${view.slot.label}: ${view.item.name}`;
   if (!props.readonly && view.ownedCount) {
@@ -137,6 +139,7 @@ function markFor(status: TraitTriggerIconStatus): "✓" | "✗" | null {
   border-radius: 14px;
   border: 1px solid rgba(125, 211, 252, 0.22);
   background: #101b2a;
+  overflow: visible;
 }
 
 .captain-traits__header {
@@ -182,6 +185,7 @@ function markFor(status: TraitTriggerIconStatus): "✓" | "✗" | null {
   display: flex;
   flex-wrap: wrap;
   gap: 0.28rem;
+  overflow: visible;
 }
 
 .trait-slot {
@@ -196,6 +200,7 @@ function markFor(status: TraitTriggerIconStatus): "✓" | "✗" | null {
   cursor: pointer;
   display: grid;
   place-items: center;
+  overflow: visible;
 }
 
 .trait-slot--filled {
@@ -305,7 +310,7 @@ function markFor(status: TraitTriggerIconStatus): "✓" | "✗" | null {
   position: absolute;
   left: 50%;
   bottom: calc(100% + 0.4rem);
-  z-index: 5;
+  z-index: 40;
   width: max-content;
   max-width: 16rem;
   padding: 0.45rem 0.55rem;
