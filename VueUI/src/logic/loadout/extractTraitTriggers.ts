@@ -31,7 +31,11 @@ export type TraitTriggerKind =
   | "namedAbility"
   | "professionCategory"
   | "functionalCategory"
+  | "weaponClass"
   | "combatState";
+
+/** Energy weapon families that traits may require slotted. */
+export type TraitTriggerWeaponClass = "beam" | "cannon";
 
 export type NamedAbilityTrigger = {
   kind: "namedAbility";
@@ -53,6 +57,16 @@ export type FunctionalCategoryTrigger = {
   display: string;
 };
 
+/**
+ * Trait requires at least one slotted weapon of these classes (OR).
+ * e.g. Beam Barrage / Broadside Beam Support → beam.
+ */
+export type WeaponClassTrigger = {
+  kind: "weaponClass";
+  classes: readonly TraitTriggerWeaponClass[];
+  display: string;
+};
+
 export type CombatStateTrigger = {
   kind: "combatState";
   display: string;
@@ -62,6 +76,7 @@ export type ExtractedTraitTrigger =
   | NamedAbilityTrigger
   | ProfessionCategoryTrigger
   | FunctionalCategoryTrigger
+  | WeaponClassTrigger
   | CombatStateTrigger;
 
 /** Starship-trait-shaped Cargo fields (personal traits may leave some empty). */
@@ -160,6 +175,56 @@ const FUNCTIONAL_ACTIVATOR_PATTERNS: ReadonlyArray<{
       /\b(?:activat(?:e|ing).{0,40}exotic|exotic\s+(?:bridge\s+officer\s+|boff\s+|damage\s+)?abilit(?:y|ies))\b/i,
   },
 ];
+
+/**
+ * Phrases that mean the trait needs a slotted beam and/or cannon weapon.
+ * Scanned on full Cargo text (not effect-split) so mid-sentence mentions count.
+ */
+const WEAPON_CLASS_PATTERNS: ReadonlyArray<{
+  weaponClass: TraitTriggerWeaponClass;
+  pattern: RegExp;
+}> = [
+  {
+    weaponClass: "beam",
+    pattern:
+      /\b(?:beam\s+weapons?|firing\s+a\s+beam(?:\s+weapon)?|beam\s+skills?|beam\s+damage|beam\s+or\s+cannon\s+weapon)/i,
+  },
+  {
+    weaponClass: "cannon",
+    pattern:
+      /\b(?:cannon\s+weapons?|per\s+cannon\s+weapon|cannon\s+weapon\s+activation|beam\s+or\s+cannon\s+weapon)/i,
+  },
+];
+
+function formatWeaponClassDisplay(
+  classes: readonly TraitTriggerWeaponClass[],
+): string {
+  if (classes.length === 0) return "";
+  if (classes.length === 1) {
+    return classes[0] === "beam" ? "Beam weapon" : "Cannon weapon";
+  }
+  return "Beam or cannon weapon";
+}
+
+/**
+ * Detect beam / cannon weapon requirements from trait Cargo text.
+ * Order: beam then cannon when both appear.
+ */
+export function findWeaponClassRequirements(
+  raw: string | null | undefined,
+): TraitTriggerWeaponClass[] {
+  if (!raw?.trim()) return [];
+  const text = cleanMarkupFragment(flattenWikiLabels(raw));
+  const found: TraitTriggerWeaponClass[] = [];
+  const seen = new Set<TraitTriggerWeaponClass>();
+  for (const { weaponClass, pattern } of WEAPON_CLASS_PATTERNS) {
+    if (!pattern.test(text)) continue;
+    if (seen.has(weaponClass)) continue;
+    seen.add(weaponClass);
+    found.push(weaponClass);
+  }
+  return found;
+}
 
 function cleanMarkupFragment(value: string): string {
   return decodeHtmlEntities(String(value))
@@ -400,6 +465,8 @@ export function extractTraitTriggers(
   const professionSeen = new Set<TraitTriggerProfession>();
   const functionals: FunctionalCategoryTrigger[] = [];
   const functionalSeen = new Set<TriggerFunctionalCategory>();
+  const weaponClasses: TraitTriggerWeaponClass[] = [];
+  const weaponClassSeen = new Set<TraitTriggerWeaponClass>();
 
   const addNamed = (rawLabel: string) => {
     if (isBareProfessionLabel(rawLabel)) return;
@@ -430,6 +497,19 @@ export function extractTraitTriggers(
       display: FUNCTIONAL_CATEGORY_LABELS[category],
     });
   };
+
+  const addWeaponClass = (weaponClass: TraitTriggerWeaponClass) => {
+    if (weaponClassSeen.has(weaponClass)) return;
+    weaponClassSeen.add(weaponClass);
+    weaponClasses.push(weaponClass);
+  };
+
+  // Weapon-class mentions often sit past effect-split verbs ("will fire…").
+  for (const field of [source.basic, source.detailed, source.short]) {
+    for (const weaponClass of findWeaponClassRequirements(field)) {
+      addWeaponClass(weaponClass);
+    }
+  }
 
   for (const { text, mode } of scans) {
     for (const ref of extractWikiLinkRefs(text)) {
@@ -491,6 +571,13 @@ export function extractTraitTriggers(
     });
   }
   triggers.push(...functionals);
+  if (weaponClasses.length > 0) {
+    triggers.push({
+      kind: "weaponClass",
+      classes: [...weaponClasses],
+      display: formatWeaponClassDisplay(weaponClasses),
+    });
+  }
 
   if (triggers.length === 0 && displayClause) {
     triggers.push({

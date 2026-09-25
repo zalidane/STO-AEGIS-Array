@@ -180,9 +180,31 @@ describe("extractTraitTriggers — readiness examples", () => {
     });
 
     expect(triggers.map((t) => ("abilityName" in t ? t.abilityName : t.kind))).toEqual(
-      ["Beams: Fire at Will", "Beams: Overload"],
+      ["Beams: Fire at Will", "Beams: Overload", "weaponClass"],
     );
-    expect(triggers.every((t) => t.kind === "namedAbility")).toBe(true);
+    expect(triggers.some((t) => t.kind === "weaponClass")).toBe(true);
+    const weapon = triggers.find((t) => t.kind === "weaponClass");
+    expect(weapon).toMatchObject({
+      kind: "weaponClass",
+      classes: ["beam"],
+      display: "Beam weapon",
+    });
+  });
+
+  it("Beam Barrage → beam weapon class from Beam skills / Beam Damage", () => {
+    const triggers = extractTraitTriggers({
+      name: "Beam Barrage",
+      short: "Gain Beam Damage when activating Beam skills",
+      basic: "Gain Beam Damage when activating Beam skills",
+      detailed: null,
+    });
+    expect(triggers).toEqual([
+      {
+        kind: "weaponClass",
+        classes: ["beam"],
+        display: "Beam weapon",
+      },
+    ]);
   });
 
   it("Directed Energy Flux → Temporal Operative or Directed Energy Modulation", () => {

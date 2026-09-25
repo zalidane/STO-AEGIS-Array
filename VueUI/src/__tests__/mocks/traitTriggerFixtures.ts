@@ -111,6 +111,27 @@ export const MOCK_HULL_SLOTS: ReadonlyArray<{
   { id: "hangar-1", kind: "hangar" },
 ];
 
+export const MOCK_WEAPONS = {
+  phaserBeamArray: {
+    id: 7001,
+    name: "Phaser Beam Array",
+    type: "ship fore weapon",
+    catalogKind: "item" as const,
+  },
+  dualCannons: {
+    id: 7002,
+    name: "Phaser Dual Cannons",
+    type: "ship fore weapon",
+    catalogKind: "item" as const,
+  },
+  quantumTorpedo: {
+    id: 7003,
+    name: "Quantum Torpedo Launcher",
+    type: "ship fore weapon",
+    catalogKind: "item" as const,
+  },
+} as const satisfies Record<string, LoadoutItem>;
+
 export function mockCatalog(
   ...items: LoadoutItem[]
 ): LoadoutItem[] {
@@ -135,6 +156,17 @@ export function mockHangarFill(
   return {
     slotId,
     itemId: pet.id,
+    catalogKind: "item",
+  };
+}
+
+export function mockWeaponFill(
+  weapon: LoadoutItem,
+  slotId = "foreWeapon-0",
+): LoadoutSlotFill {
+  return {
+    slotId,
+    itemId: weapon.id,
     catalogKind: "item",
   };
 }
@@ -164,6 +196,20 @@ export function mockSeatedHangar(
     type: pet.type,
     slotId,
     slotKind: "hangar",
+  };
+}
+
+export function mockSeatedWeapon(
+  weapon: LoadoutItem,
+  slotId = "foreWeapon-0",
+): SeatedTriggerFill {
+  return {
+    itemId: weapon.id,
+    name: weapon.name,
+    catalogKind: "item",
+    type: weapon.type,
+    slotId,
+    slotKind: "foreWeapon",
   };
 }
 
@@ -231,6 +277,12 @@ export const MOCK_TRAIT_SOURCES = {
       "* When you suffer damage below 50% Hull Strength, an emergency response is triggered. Nearby enemy combatants within 5km will have their Engines and Weapons knocked offline.",
     detailed:
       "* When taking damage at 50% or less hull strength ''(once every 60 sec)'':\n** Cleanse any current Control Debuffs",
+  },
+  beamBarrage: {
+    name: "Beam Barrage",
+    short: "Gain Beam Damage when activating Beam skills",
+    basic: "Gain Beam Damage when activating Beam skills",
+    detailed: null,
   },
   checkmate: {
     name: "Checkmate",
