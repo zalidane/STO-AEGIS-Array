@@ -2,6 +2,7 @@ import {
   type ExtractedTraitTrigger,
   type TraitTriggerKind,
   type TraitTriggerProfession,
+  type TraitTriggerWeaponClass,
   findProfessionKeywords,
 } from "@/logic/loadout/extractTraitTriggers";
 import {
@@ -28,7 +29,7 @@ import type {
 /**
  * Cross-reference extracted trait triggers against the seated loadout (#32).
  *
- * Pure logic for the Trait Triggers panel (#33). No Vue/store/GraphQL deps.
+ * Pure logic for trait-icon status marks. No Vue/store/GraphQL deps.
  */
 
 /** Catalog kinds (plus captain powers) that can satisfy a trigger. */
@@ -45,8 +46,9 @@ export type TraitTriggerMatchedItem = {
 };
 
 /**
- * Per-trigger satisfaction for #33.
- * `satisfied` is `null` for display-only combat-state triggers.
+ * Per-trigger satisfaction.
+ * Combat-state / combat-action-only triggers are treated as satisfied
+ * (no seating check). `satisfied` may still be `null` only for legacy callers.
  */
 export type TraitTriggerSatisfaction = {
   label: string;
@@ -58,7 +60,7 @@ export type TraitTriggerSatisfaction = {
 };
 
 /**
- * Normalized seated ability / hangar / captain fill used for matching.
+ * Normalized seated ability / hangar / captain / weapon fill used for matching.
  * Prefer {@link collectSeatedTriggerFills} when starting from loadout slots.
  */
 export type SeatedTriggerFill = {
@@ -79,7 +81,7 @@ export type CollectSeatedTriggerFillsInput = {
   /** Used to classify hangar fills by slot kind. */
   hullSlots?: ReadonlyArray<{ id: string; kind: HullSlotKind }>;
   /**
-   * Captain career / fleet powers (not stored as `traySkill` fills today).
+   * Captain career / racial powers (not stored as `traySkill` fills today).
    * Matched by name for `namedAbility` and `captainAbility` categories.
    */
   captainPowers?: ReadonlyArray<{
@@ -132,6 +134,38 @@ function isCaptainPowerFill(fill: SeatedTriggerFill): boolean {
   return fill.catalogKind === "captainAbility" || fill.slotKind === "captain";
 }
 
+const WEAPON_SLOT_KINDS = new Set<HullSlotKind>([
+  "foreWeapon",
+  "aftWeapon",
+  "experimental",
+]);
+
+function isWeaponFill(fill: SeatedTriggerFill): boolean {
+  if (fill.slotKind && WEAPON_SLOT_KINDS.has(fill.slotKind as HullSlotKind)) {
+    return true;
+  }
+  if (fill.catalogKind !== "item") return false;
+  return itemSlotClassesFromType(fill.type).some((kind) =>
+    WEAPON_SLOT_KINDS.has(kind),
+  );
+}
+
+/**
+ * Classify a seated energy weapon by catalog name.
+ * Beams: Beam Array, Dual Beam Bank, Omni-Directional … Beam …
+ * Cannons: Dual Cannons, Dual Heavy Cannons, Turret, … Cannon …
+ */
+export function weaponClassesFromItemName(
+  name: string | null | undefined,
+): TraitTriggerWeaponClass[] {
+  if (!name?.trim()) return [];
+  const lower = name.toLowerCase();
+  const classes: TraitTriggerWeaponClass[] = [];
+  if (/\bbeams?\b/.test(lower)) classes.push("beam");
+  if (/\b(?:cannons?|turrets?)\b/.test(lower)) classes.push("cannon");
+  return classes;
+}
+
 function toMatchedItem(fill: SeatedTriggerFill): TraitTriggerMatchedItem {
   return {
     itemId: fill.itemId,
@@ -157,8 +191,8 @@ function uniqueMatched(
 }
 
 /**
- * Gather seated BOff powers, hangar pets, and optional captain powers into
- * a flat list for {@link crossRefTraitTriggers}.
+ * Gather seated BOff powers, hangar pets, weapons, and optional captain powers
+ * into a flat list for {@link crossRefTraitTriggers}.
  */
 export function collectSeatedTriggerFills(
   input: CollectSeatedTriggerFillsInput,
@@ -260,15 +294,28 @@ function matchFunctionalCategory(
   });
 }
 
+function matchWeaponClass(
+  classes: readonly TraitTriggerWeaponClass[],
+  seated: ReadonlyArray<SeatedTriggerFill>,
+): SeatedTriggerFill[] {
+  if (classes.length === 0) return [];
+  const wanted = new Set(classes);
+  return seated.filter((fill) => {
+    if (!isWeaponFill(fill)) return false;
+    return weaponClassesFromItemName(fill.name).some((cls) => wanted.has(cls));
+  });
+}
+
 function satisfyOne(
   trigger: ExtractedTraitTrigger,
   seated: ReadonlyArray<SeatedTriggerFill>,
 ): TraitTriggerSatisfaction {
+  // Combat-state / combat-action-only: no seating check → satisfied.
   if (trigger.kind === "combatState") {
     return {
       label: trigger.display,
       kind: trigger.kind,
-      satisfied: null,
+      satisfied: true,
       matchedItems: [],
       trigger,
     };
@@ -281,6 +328,8 @@ function satisfyOne(
     matches = matchProfessionCategory(trigger.professions, seated);
   } else if (trigger.kind === "functionalCategory") {
     matches = matchFunctionalCategory(trigger.category, seated);
+  } else if (trigger.kind === "weaponClass") {
+    matches = matchWeaponClass(trigger.classes, seated);
   }
 
   const matchedItems = uniqueMatched(matches);
@@ -295,7 +344,7 @@ function satisfyOne(
 
 /**
  * Compute per-trigger slotted status against seated fills.
- * Preserves extraction order (suitable for #33 row rendering).
+ * Preserves extraction order (suitable for icon hover summaries).
  */
 export function crossRefTraitTriggers(
   triggers: ReadonlyArray<ExtractedTraitTrigger>,
@@ -315,16 +364,16 @@ export function crossRefTraitTriggersAgainstLoadout(
 }
 
 /**
- * Panel-friendly sort: unsatisfied checkable → satisfied → display-only.
+ * Sort: unsatisfied checkable → satisfied (incl. combat-state).
  * Stable within each group (preserves relative extraction order).
  */
 export function orderTraitTriggersForPanel(
   rows: ReadonlyArray<TraitTriggerSatisfaction>,
 ): TraitTriggerSatisfaction[] {
   const rank = (row: TraitTriggerSatisfaction): number => {
-    if (row.satisfied === null) return 2;
     if (row.satisfied === false) return 0;
-    return 1;
+    if (row.satisfied === true) return 1;
+    return 2;
   };
   return [...rows]
     .map((row, index) => ({ row, index }))

@@ -13,11 +13,13 @@ import {
   MOCK_HULL_SLOTS,
   MOCK_TRAIT_SOURCES,
   MOCK_TRAY_SKILLS,
+  MOCK_WEAPONS,
   mockCatalog,
   mockHangarFill,
   mockSeatedCaptain,
   mockSeatedHangar,
   mockSeatedTray,
+  mockSeatedWeapon,
   mockTrayFill,
 } from "./mocks/traitTriggerFixtures";
 
@@ -124,24 +126,25 @@ describe("crossRefTraitTriggers — readiness examples", () => {
     expect(triggers.map((t) => t.kind)).toEqual([
       "namedAbility",
       "namedAbility",
+      "weaponClass",
     ]);
 
     const withFaw = crossRefTraitTriggers(triggers, [
       mockSeatedTray(MOCK_TRAY_SKILLS.faw),
     ]);
-    expect(withFaw.map((r) => r.satisfied)).toEqual([true, false]);
+    expect(withFaw.map((r) => r.satisfied)).toEqual([true, false, false]);
     expect(withFaw[0]?.matchedItems[0]?.name).toBe("Beams: Fire at Will");
 
     const withOverload = crossRefTraitTriggers(triggers, [
       mockSeatedTray(MOCK_TRAY_SKILLS.beamOverload),
     ]);
-    expect(withOverload.map((r) => r.satisfied)).toEqual([false, true]);
+    expect(withOverload.map((r) => r.satisfied)).toEqual([false, true, false]);
 
     const withBoth = crossRefTraitTriggers(triggers, [
       mockSeatedTray(MOCK_TRAY_SKILLS.faw, "boff-0-ensign"),
       mockSeatedTray(MOCK_TRAY_SKILLS.beamOverload, "boff-0-lieutenant"),
     ]);
-    expect(withBoth.map((r) => r.satisfied)).toEqual([true, true]);
+    expect(withBoth.map((r) => r.satisfied)).toEqual([true, true, false]);
   });
 
   it("Directed Energy Flux: Temporal OR DEM (either leg)", () => {
@@ -230,7 +233,7 @@ describe("crossRefTraitTriggers — functional & combat state", () => {
     expect(without[0]?.satisfied).toBe(false);
   });
 
-  it("combatState is display-only (satisfied null, no matches)", () => {
+  it("combatState is satisfied without seating (combat-action only)", () => {
     const triggers = extractTraitTriggers(MOCK_TRAIT_SOURCES.punchIt);
     const rows = crossRefTraitTriggers(triggers, [
       mockSeatedTray(MOCK_TRAY_SKILLS.eptw),
@@ -240,11 +243,52 @@ describe("crossRefTraitTriggers — functional & combat state", () => {
       {
         label: "When below 50% Hull Strength",
         kind: "combatState",
-        satisfied: null,
+        satisfied: true,
         matchedItems: [],
         trigger: triggers[0],
       },
     ]);
+  });
+
+  it("Beam Barrage satisfied by slotted beam weapon, not cannon or empty", () => {
+    const triggers = extractTraitTriggers(MOCK_TRAIT_SOURCES.beamBarrage);
+    expect(triggers[0]?.kind).toBe("weaponClass");
+
+    const withBeam = crossRefTraitTriggers(triggers, [
+      mockSeatedWeapon(MOCK_WEAPONS.phaserBeamArray),
+    ]);
+    expect(withBeam[0]?.satisfied).toBe(true);
+    expect(withBeam[0]?.matchedItems[0]?.name).toBe("Phaser Beam Array");
+
+    const withCannon = crossRefTraitTriggers(triggers, [
+      mockSeatedWeapon(MOCK_WEAPONS.dualCannons),
+    ]);
+    expect(withCannon[0]?.satisfied).toBe(false);
+
+    const empty = crossRefTraitTriggers(triggers, []);
+    expect(empty[0]?.satisfied).toBe(false);
+  });
+
+  it("Broadside weaponClass satisfied by beam weapon alongside FAW", () => {
+    const triggers = extractTraitTriggers(
+      MOCK_TRAIT_SOURCES.broadsideBeamSupport,
+    );
+    const weapon = triggers.find((t) => t.kind === "weaponClass");
+    expect(weapon).toBeDefined();
+
+    const withBeamAndBothModes = crossRefTraitTriggers(triggers, [
+      mockSeatedTray(MOCK_TRAY_SKILLS.faw),
+      mockSeatedTray(MOCK_TRAY_SKILLS.beamOverload, "boff-0-lieutenant"),
+      mockSeatedWeapon(MOCK_WEAPONS.phaserBeamArray),
+    ]);
+    expect(withBeamAndBothModes.every((t) => t.satisfied === true)).toBe(true);
+
+    const abilitiesOnly = crossRefTraitTriggers(triggers, [
+      mockSeatedTray(MOCK_TRAY_SKILLS.faw),
+      mockSeatedTray(MOCK_TRAY_SKILLS.beamOverload, "boff-0-lieutenant"),
+    ]);
+    const weaponRow = abilitiesOnly.find((t) => t.kind === "weaponClass");
+    expect(weaponRow?.satisfied).toBe(false);
   });
 });
 
@@ -289,12 +333,12 @@ describe("collectSeatedTriggerFills / against loadout", () => {
 });
 
 describe("orderTraitTriggersForPanel", () => {
-  it("orders unsatisfied, then satisfied, then display-only", () => {
+  it("orders unsatisfied, then satisfied (incl. combat-state)", () => {
     const ordered = orderTraitTriggersForPanel([
       {
         label: "Combat",
         kind: "combatState",
-        satisfied: null,
+        satisfied: true,
         matchedItems: [],
         trigger: { kind: "combatState", display: "Combat" },
       },
@@ -323,8 +367,8 @@ describe("orderTraitTriggersForPanel", () => {
     ]);
     expect(ordered.map((r) => r.label)).toEqual([
       "Overload",
-      "FAW",
       "Combat",
+      "FAW",
     ]);
   });
 });

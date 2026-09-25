@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  aggregateTraitTriggerSatisfied,
   buildTraitTriggersPanel,
+  formatTraitTriggerStatusLine,
   personalTraitToTriggerText,
   traitTriggerSatisfactionMark,
   traitTriggerSatisfactionState,
@@ -9,8 +11,10 @@ import {
 import {
   MOCK_TRAIT_SOURCES,
   MOCK_TRAY_SKILLS,
+  MOCK_WEAPONS,
   mockCatalog,
   mockTrayFill,
+  mockWeaponFill,
 } from "./mocks/traitTriggerFixtures";
 import type { LoadoutItem } from "@/logic/loadout/types";
 
@@ -45,14 +49,22 @@ const punchItItem: LoadoutItem = {
   detailed: MOCK_TRAIT_SOURCES.punchIt.detailed,
 };
 
+const beamBarrageItem: LoadoutItem = {
+  id: 5013,
+  name: MOCK_TRAIT_SOURCES.beamBarrage.name,
+  type: "char",
+  catalogKind: "trait",
+  short: MOCK_TRAIT_SOURCES.beamBarrage.short,
+  basic: MOCK_TRAIT_SOURCES.beamBarrage.basic,
+};
+
 describe("traitTriggerSatisfactionMark / state", () => {
-  it("maps satisfied / unsatisfied / descriptive", () => {
+  it("maps satisfied / unsatisfied", () => {
     expect(traitTriggerSatisfactionMark(true)).toBe("✓");
     expect(traitTriggerSatisfactionMark(false)).toBe("✗");
     expect(traitTriggerSatisfactionMark(null)).toBeNull();
     expect(traitTriggerSatisfactionState(true)).toBe("satisfied");
     expect(traitTriggerSatisfactionState(false)).toBe("unsatisfied");
-    expect(traitTriggerSatisfactionState(null)).toBe("descriptive");
   });
 });
 
@@ -93,6 +105,28 @@ describe("buildTraitTriggersPanel", () => {
     expect(rows).toEqual([]);
   });
 
+  it("skips seated traits with no structured triggers", () => {
+    const blank: LoadoutItem = {
+      id: 999,
+      name: "Flavor Trait",
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+      short: "Just looks cool",
+      basic: "No activation phrasing here.",
+    };
+    const rows = buildTraitTriggersPanel({
+      slots: [
+        {
+          slotId: "starshipTrait-0",
+          itemId: blank.id,
+          catalogKind: "starshipTrait",
+        },
+      ],
+      catalog: mockCatalog(blank),
+    });
+    expect(rows).toEqual([]);
+  });
+
   it("EWC seated + EPtW → ✓; without EPtW → ✗", () => {
     const traitFill = {
       slotId: "starshipTrait-0",
@@ -106,19 +140,18 @@ describe("buildTraitTriggersPanel", () => {
     });
     expect(unsatisfied).toHaveLength(1);
     expect(unsatisfied[0]?.traitName).toBe("Emergency Weapon Cycle");
-    expect(unsatisfied[0]?.triggers[0]?.satisfied).toBe(false);
+    expect(unsatisfied[0]?.satisfied).toBe(false);
+    expect(unsatisfied[0]?.statusLine).toContain("Unsatisfied");
     expect(
-      traitTriggerSatisfactionMark(unsatisfied[0]!.triggers[0]!.satisfied),
+      traitTriggerSatisfactionMark(unsatisfied[0]!.satisfied),
     ).toBe("✗");
 
     const satisfied = buildTraitTriggersPanel({
       slots: [traitFill, mockTrayFill(MOCK_TRAY_SKILLS.eptw)],
       catalog: mockCatalog(ewcItem, MOCK_TRAY_SKILLS.eptw),
     });
-    expect(satisfied[0]?.triggers[0]?.satisfied).toBe(true);
-    expect(satisfied[0]?.triggers[0]?.matchedItems[0]?.name).toBe(
-      "Emergency Power to Weapons",
-    );
+    expect(satisfied[0]?.satisfied).toBe(true);
+    expect(satisfied[0]?.statusLine).toContain("Emergency Power to Weapons");
   });
 
   it("Spore-Infused Anomalies satisfied by Science BOff power", () => {
@@ -134,10 +167,10 @@ describe("buildTraitTriggersPanel", () => {
       catalog: mockCatalog(sporeItem, MOCK_TRAY_SKILLS.gravityWell),
     });
     expect(rows[0]?.triggers[0]?.kind).toBe("professionCategory");
-    expect(rows[0]?.triggers[0]?.satisfied).toBe(true);
+    expect(rows[0]?.satisfied).toBe(true);
   });
 
-  it("combat-state trait shows descriptive-only (satisfied null)", () => {
+  it("combat-state trait is satisfied without seating", () => {
     const rows = buildTraitTriggersPanel({
       slots: [
         {
@@ -148,13 +181,34 @@ describe("buildTraitTriggersPanel", () => {
       ],
       catalog: mockCatalog(punchItItem),
     });
-    expect(rows[0]?.triggers.some((t) => t.satisfied === null)).toBe(true);
-    const combat = rows[0]?.triggers.find((t) => t.kind === "combatState");
-    expect(combat).toBeDefined();
-    expect(traitTriggerSatisfactionMark(combat!.satisfied)).toBeNull();
-    expect(traitTriggerSatisfactionState(combat!.satisfied)).toBe(
-      "descriptive",
-    );
+    expect(rows[0]?.satisfied).toBe(true);
+    expect(rows[0]?.triggers.every((t) => t.satisfied === true)).toBe(true);
+    expect(traitTriggerSatisfactionMark(rows[0]!.satisfied)).toBe("✓");
+    expect(rows[0]?.statusLine).toContain("When below 50% Hull Strength");
+  });
+
+  it("Beam Barrage ✓ with beam weapon, ✗ without", () => {
+    const traitFill = {
+      slotId: "personalSpace-0",
+      itemId: beamBarrageItem.id,
+      catalogKind: "trait" as const,
+    };
+
+    const missing = buildTraitTriggersPanel({
+      slots: [traitFill],
+      catalog: mockCatalog(beamBarrageItem),
+      hullSlots: [{ id: "foreWeapon-0", kind: "foreWeapon" }],
+    });
+    expect(missing[0]?.satisfied).toBe(false);
+    expect(missing[0]?.statusLine).toContain("Beam weapon");
+
+    const withBeam = buildTraitTriggersPanel({
+      slots: [traitFill, mockWeaponFill(MOCK_WEAPONS.phaserBeamArray)],
+      catalog: mockCatalog(beamBarrageItem, MOCK_WEAPONS.phaserBeamArray),
+      hullSlots: [{ id: "foreWeapon-0", kind: "foreWeapon" }],
+    });
+    expect(withBeam[0]?.satisfied).toBe(true);
+    expect(withBeam[0]?.statusLine).toContain("Phaser Beam Array");
   });
 
   it("includes personal traits seated on captain boards", () => {
@@ -180,6 +234,38 @@ describe("buildTraitTriggersPanel", () => {
     });
     expect(rows).toHaveLength(1);
     expect(rows[0]?.catalogKind).toBe("trait");
-    expect(rows[0]?.triggers[0]?.satisfied).toBe(true);
+    expect(rows[0]?.satisfied).toBe(true);
+  });
+});
+
+describe("formatTraitTriggerStatusLine / aggregate", () => {
+  it("aggregates unsatisfied labels and match names", () => {
+    expect(
+      formatTraitTriggerStatusLine([
+        {
+          label: "Beam weapon",
+          kind: "weaponClass",
+          satisfied: false,
+          matchedItems: [],
+          trigger: {
+            kind: "weaponClass",
+            classes: ["beam"],
+            display: "Beam weapon",
+          },
+        },
+      ]),
+    ).toBe("Unsatisfied: needs Beam weapon");
+
+    expect(
+      aggregateTraitTriggerSatisfied([
+        {
+          label: "Combat",
+          kind: "combatState",
+          satisfied: true,
+          matchedItems: [],
+          trigger: { kind: "combatState", display: "Combat" },
+        },
+      ]),
+    ).toBe(true);
   });
 });

@@ -16,21 +16,31 @@ import type {
 } from "@/logic/loadout/types";
 
 /**
- * Assemble Trait Triggers panel rows for the loadout builder (#33).
- * Pure logic — presentation lives in TraitTriggersPanel.vue.
+ * Assemble per-trait trigger status for loadout trait icons.
+ * Pure logic — presentation lives on CaptainTraitsPanel icons.
  */
 
 export type TraitTriggerPanelCatalogKind = "trait" | "starshipTrait";
 
-/** One seated trait with ordered, satisfied trigger clauses. */
-export type TraitTriggerPanelRow = {
+/** Hover / icon status for one seated personal or starship trait. */
+export type TraitTriggerIconStatus = {
   traitId: number;
   traitName: string;
   catalogKind: TraitTriggerPanelCatalogKind;
   image?: string | null;
   slotId: string;
+  /** Trait short description (line 2 of the hover popup). */
+  shortDescription: string;
+  /** Ordered trigger clauses used to compute aggregate status. */
   triggers: TraitTriggerSatisfaction[];
+  /** Aggregate: every trigger clause is satisfied. */
+  satisfied: boolean;
+  /** Line 3 of the hover popup — satisfied by / unsatisfied needs. */
+  statusLine: string;
 };
+
+/** @deprecated Prefer {@link TraitTriggerIconStatus}; kept for test migration. */
+export type TraitTriggerPanelRow = TraitTriggerIconStatus;
 
 export type BuildTraitTriggersPanelInput = {
   slots: ReadonlyArray<LoadoutSlotFill>;
@@ -84,7 +94,7 @@ export function personalTraitToTriggerText(row: {
   };
 }
 
-/** ✓ / ✗ for resolvable triggers; `null` for combat-state / descriptive-only. */
+/** ✓ / ✗ for resolvable triggers; `null` only when satisfaction is unknown. */
 export function traitTriggerSatisfactionMark(
   satisfied: boolean | null,
 ): "✓" | "✗" | null {
@@ -92,7 +102,7 @@ export function traitTriggerSatisfactionMark(
   return satisfied ? "✓" : "✗";
 }
 
-/** CSS-friendly state token for panel styling. */
+/** CSS-friendly state token for icon / tooltip styling. */
 export function traitTriggerSatisfactionState(
   satisfied: boolean | null,
 ): "satisfied" | "unsatisfied" | "descriptive" {
@@ -100,13 +110,63 @@ export function traitTriggerSatisfactionState(
   return satisfied ? "satisfied" : "unsatisfied";
 }
 
+function uniqueNames(names: ReadonlyArray<string>): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const name of names) {
+    if (seen.has(name)) continue;
+    seen.add(name);
+    out.push(name);
+  }
+  return out;
+}
+
 /**
- * Build panel rows for every seated personal / starship trait.
- * Empty when no traits are seated. Updates when callers recompute on seat changes.
+ * Aggregate hover line 3 from ordered trigger clauses.
+ */
+export function formatTraitTriggerStatusLine(
+  triggers: ReadonlyArray<TraitTriggerSatisfaction>,
+): string {
+  if (triggers.length === 0) return "";
+
+  const unsatisfied = triggers.filter((t) => t.satisfied === false);
+  if (unsatisfied.length > 0) {
+    return `Unsatisfied: needs ${unsatisfied.map((t) => t.label).join(", ")}`;
+  }
+
+  const matchNames = uniqueNames(
+    triggers.flatMap((t) => t.matchedItems.map((item) => item.name)),
+  );
+  if (matchNames.length > 0) {
+    return `Satisfied by: ${matchNames.join(", ")}`;
+  }
+
+  const combat = triggers.find((t) => t.kind === "combatState");
+  if (combat) {
+    return `Satisfied: ${combat.label}`;
+  }
+
+  return "Satisfied";
+}
+
+/**
+ * Trait is satisfied when every extracted trigger clause is satisfied.
+ * Empty trigger lists are not shown on icons (caller skips them).
+ */
+export function aggregateTraitTriggerSatisfied(
+  triggers: ReadonlyArray<TraitTriggerSatisfaction>,
+): boolean {
+  if (triggers.length === 0) return false;
+  return triggers.every((t) => t.satisfied === true);
+}
+
+/**
+ * Build icon-status rows for every seated personal / starship trait that has
+ * at least one structured trigger. Empty when none apply.
  */
 export function buildTraitTriggersPanel(
   input: BuildTraitTriggersPanelInput,
-): TraitTriggerPanelRow[] {
+): TraitTriggerIconStatus[] {
   const byKey = new Map(
     input.catalog.map((item) => [
       catalogKey(item.catalogKind ?? "item", item.id),
@@ -121,7 +181,7 @@ export function buildTraitTriggersPanel(
     captainPowers: input.captainPowers,
   };
 
-  const rows: TraitTriggerPanelRow[] = [];
+  const rows: TraitTriggerIconStatus[] = [];
 
   for (const slotFill of input.slots) {
     const kind = fillCatalogKind(slotFill);
@@ -137,15 +197,32 @@ export function buildTraitTriggersPanel(
       ),
     );
 
+    if (triggers.length === 0) continue;
+
+    const satisfied = aggregateTraitTriggerSatisfied(triggers);
     rows.push({
       traitId: item.id,
       traitName: item.name,
       catalogKind: kind,
       image: item.image,
       slotId: slotFill.slotId,
+      shortDescription: (item.short ?? item.basic ?? "").trim(),
       triggers,
+      satisfied,
+      statusLine: formatTraitTriggerStatusLine(triggers),
     });
   }
 
   return rows;
+}
+
+/** Map of seat id → icon status for CaptainTraitsPanel. */
+export function traitTriggerStatusBySlotId(
+  rows: ReadonlyArray<TraitTriggerIconStatus>,
+): Record<string, TraitTriggerIconStatus> {
+  const out: Record<string, TraitTriggerIconStatus> = {};
+  for (const row of rows) {
+    out[row.slotId] = row;
+  }
+  return out;
 }
