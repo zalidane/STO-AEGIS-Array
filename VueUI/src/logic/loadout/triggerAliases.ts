@@ -98,26 +98,35 @@ export const ANOMALY_ABILITIES = [
   "Deploy Gravitic Induction Platform",
 ] as const satisfies readonly TriggerCatalogAbilityName[];
 
-/** Control-oriented BOff powers (holds, roots, pulls, placates, disables). */
+/**
+ * Control BOff powers from Unconventional Systems (space trait):
+ * https://stowiki.net/wiki/Unconventional_Systems_(space_trait)
+ * Keep this list aligned with that page's "Abilities Affected" table.
+ */
 export const CONTROL_ABILITIES = [
+  // Science
+  "Jam Targeting Sensors",
+  "Tractor Beam",
+  "Scramble Sensors",
+  "Tractor Beam Repulsors",
   "Gravity Well",
   "Photonic Shockwave",
-  "Tractor Beam",
-  "Tractor Beam Repulsors",
-  "Tyken's Rift",
-  "Viral Matrix",
-  "Scramble Sensors",
-  "Jam Targeting Sensors",
-  "Ionic Turbulence",
-  "Chronometric Inversion Field",
-  "Subspace Boom",
-  "Lock Trajectory",
-  "Shared Fate",
-  "Heisenberg Amplifier",
-  "Paradox Bomb",
-  "Site-to-Site Ensnare",
+  // Engineering
+  "Emit Unstable Warp Bubble",
+  "Eject Warp Plasma",
+  // Intelligence
   "Viral Impulse Burst",
-  "Suppression Barrage",
+  "Electromagnetic Pulse Probe",
+  "Ionic Turbulence",
+  // Temporal
+  "Heisenberg Amplifier",
+  "Chronometric Inversion Field",
+  "Timeline Collapse",
+  // Pilot
+  "Clean Getaway",
+  // Miracle Worker
+  "Null Pointer Flood",
+  "Deploy Gravitic Induction Platform",
 ] as const satisfies readonly TriggerCatalogAbilityName[];
 
 /** Exotic-damage BOff powers (typically EPG-scaling science / temporal). */

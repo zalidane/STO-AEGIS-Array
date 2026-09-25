@@ -125,12 +125,43 @@ describe("functional categories", () => {
     }
   });
 
-  it("lists curated control abilities", () => {
+  it("matches Unconventional Systems Control abilities from the wiki", () => {
     const control = abilitiesForFunctionalCategory("control");
     expect(control).toEqual([...CONTROL_ABILITIES]);
-    expect(control).toContain("Gravity Well");
-    expect(control).toContain("Photonic Shockwave");
-    expect(control).toContain("Jam Targeting Sensors");
+
+    // Full set from https://stowiki.net/wiki/Unconventional_Systems_(space_trait)
+    const unconventionalSystemsControl = [
+      "Jam Targeting Sensors",
+      "Tractor Beam",
+      "Scramble Sensors",
+      "Tractor Beam Repulsors",
+      "Gravity Well",
+      "Photonic Shockwave",
+      "Emit Unstable Warp Bubble",
+      "Eject Warp Plasma",
+      "Viral Impulse Burst",
+      "Electromagnetic Pulse Probe",
+      "Ionic Turbulence",
+      "Heisenberg Amplifier",
+      "Chronometric Inversion Field",
+      "Timeline Collapse",
+      "Clean Getaway",
+      "Null Pointer Flood",
+      "Deploy Gravitic Induction Platform",
+    ] as const;
+
+    expect(control).toEqual([...unconventionalSystemsControl]);
+    for (const name of unconventionalSystemsControl) {
+      expect(isAbilityInFunctionalCategory(name, "control")).toBe(true);
+    }
+
+    // Not on the Unconventional Systems Control table
+    expect(isAbilityInFunctionalCategory("Tyken's Rift", "control")).toBe(
+      false,
+    );
+    expect(isAbilityInFunctionalCategory("Viral Matrix", "control")).toBe(
+      false,
+    );
   });
 
   it("resolves HTML-encoded Tyken's Rift into the anomaly category", () => {
