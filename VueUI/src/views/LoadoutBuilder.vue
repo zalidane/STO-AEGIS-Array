@@ -7,7 +7,6 @@ import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
 import CaptainTraitsPanel from "@/components/loadout/CaptainTraitsPanel.vue";
 import BoffStationsPanel from "@/components/loadout/BoffStationsPanel.vue";
-import TraitTriggersPanel from "@/components/loadout/TraitTriggersPanel.vue";
 import ShareBuildDialog from "@/components/loadout/ShareBuildDialog.vue";
 import ExportBuildDialog from "@/components/loadout/ExportBuildDialog.vue";
 import SlotSuffixModifiers from "@/components/loadout/SlotSuffixModifiers.vue";
@@ -96,7 +95,10 @@ import {
 } from "@/logic/loadout/boffPowers";
 import { getBoffSeatColors, toBoffSeatView } from "@/mappers/boffColors";
 import { abbreviateBoffPart } from "@/utils/formatters";
-import { buildTraitTriggersPanel } from "@/logic/loadout/buildTraitTriggersPanel";
+import {
+  buildTraitTriggersPanel,
+  traitTriggerStatusBySlotId,
+} from "@/logic/loadout/buildTraitTriggersPanel";
 import { CAPTAIN_ABILITIES } from "@/logic/loadout/triggerAliases";
 
 const route = useRoute();
@@ -408,6 +410,27 @@ function ownedFittingItems(kind: HullSlot["kind"]): LoadoutItem[] {
   });
 }
 
+/** Standard captain space powers — always available once a captain exists. */
+const captainPowersForTriggers = computed(() =>
+  CAPTAIN_ABILITIES.map((name, index) => ({
+    id: -(index + 1),
+    name,
+  })),
+);
+
+const traitTriggerStatusMap = computed(() => {
+  const loadout = activeLoadout.value;
+  if (!loadout) return {};
+  return traitTriggerStatusBySlotId(
+    buildTraitTriggersPanel({
+      slots: loadout.slots,
+      catalog: catalogItems.value,
+      hullSlots: hullSlots.value,
+      captainPowers: captainPowersForTriggers.value,
+    }),
+  );
+});
+
 function captainTraitSections(): Array<{
   group: CaptainTraitGroup;
   label: string;
@@ -415,8 +438,10 @@ function captainTraitSections(): Array<{
     slot: CaptainTraitSlot;
     item: { name: string; image?: string | null } | null;
     ownedCount?: number;
+    triggerStatus?: (typeof traitTriggerStatusMap.value)[string] | null;
   }>;
 }> {
+  const statusBySlot = traitTriggerStatusMap.value;
   return groupCaptainTraitSlots(captainSlots.value).map((section) => ({
     group: section.group,
     label:
@@ -440,30 +465,12 @@ function captainTraitSections(): Array<{
           ),
         },
       }).length,
+      triggerStatus: statusBySlot[slot.id] ?? null,
     })),
   }));
 }
 
 const captainTraitBoard = computed(() => captainTraitSections());
-
-/** Standard captain space powers — always available once a captain exists. */
-const captainPowersForTriggers = computed(() =>
-  CAPTAIN_ABILITIES.map((name, index) => ({
-    id: -(index + 1),
-    name,
-  })),
-);
-
-const traitTriggerRows = computed(() => {
-  const loadout = activeLoadout.value;
-  if (!loadout) return [];
-  return buildTraitTriggersPanel({
-    slots: loadout.slots,
-    catalog: catalogItems.value,
-    hullSlots: hullSlots.value,
-    captainPowers: captainPowersForTriggers.value,
-  });
-});
 
 const captainSubtitle = computed(() => {
   const captain = activeCharacter.value;
@@ -805,10 +812,6 @@ watch(activeLoadout, (loadout) => {
               :stations="boffStationBoard()"
               @pick="openBoffPicker"
               @set-career="(station, career) => onBoffCareer(station.index, career)"
-            />
-            <TraitTriggersPanel
-              class="trait-triggers-board"
-              :rows="traitTriggerRows"
             />
             <CombatLogPanel
               :captain-name="activeCharacter.name"
@@ -1339,8 +1342,7 @@ watch(activeLoadout, (loadout) => {
 }
 
 .captain-traits-board,
-.boff-stations-board,
-.trait-triggers-board {
+.boff-stations-board {
   min-width: 0;
 }
 
