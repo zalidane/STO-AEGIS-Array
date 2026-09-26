@@ -73,10 +73,12 @@ const factionOptions = computed(() =>
   uniqueSortedStrings(props.sources.map((ship) => ship.factionLede)),
 );
 
-const fullSpecChoices = computed(() => [
-  ...FULL_SPEC_OPTIONS,
-  "None" as const,
-]);
+const fullSpecSelectItems = computed(() =>
+  ([...FULL_SPEC_OPTIONS, "None"] as const).map((spec) => ({
+    title: spec,
+    value: spec,
+  })),
+);
 
 function patch(next: Partial<AdvancedShipSearchFilters>) {
   filters.value = { ...filters.value, ...next };
@@ -104,8 +106,16 @@ function toggleYesNo(
   patch({ [key]: toggleInclusiveValue(filters.value[key], value) });
 }
 
-function toggleFullSpec(value: FullSpecOption | "None") {
-  patch({ fullSpecs: toggleInclusiveValue(filters.value.fullSpecs, value) });
+function onFullSpecUpdate(value: unknown) {
+  const allowed = new Set<string>([...FULL_SPEC_OPTIONS, "None"]);
+  patch({
+    fullSpecs: Array.isArray(value)
+      ? value.filter(
+          (spec): spec is FullSpecOption | "None" =>
+            typeof spec === "string" && allowed.has(spec),
+        )
+      : [],
+  });
 }
 
 function onAcquisitionUpdate(value: unknown) {
@@ -186,10 +196,10 @@ function toggleFiltersExpanded() {
       </div>
 
       <!--
-        Plain wrapping flex of max-content cards (no Vuetify row/col, no fieldset).
-        Fieldsets have UA min-inline-size quirks that leave wide empty cards.
+        Single row: Weapons | Consoles | Hull options & faction | Full-spec + Acquisition.
+        No second row; narrow viewports may scroll horizontally.
       -->
-      <div class="adv-filters__grid">
+      <div class="adv-filters__grid" data-layout="one-row">
         <section class="adv-group adv-group--weapons" aria-labelledby="adv-weapons-title">
           <h3 id="adv-weapons-title" class="adv-group__title">Weapon layout</h3>
           <div class="adv-group__stack">
@@ -309,22 +319,6 @@ function toggleFiltersExpanded() {
           </div>
         </section>
 
-        <section class="adv-group adv-group--fullspec" aria-labelledby="adv-fullspec-title">
-          <h3 id="adv-fullspec-title" class="adv-group__title">Full-spec seat</h3>
-          <div class="adv-group__row adv-group__row--wrap">
-            <button
-              v-for="spec in fullSpecChoices"
-              :key="spec"
-              type="button"
-              class="adv-chip"
-              :class="{ 'adv-chip--active': filters.fullSpecs.includes(spec) }"
-              @click="toggleFullSpec(spec)"
-            >
-              {{ spec }}
-            </button>
-          </div>
-        </section>
-
         <section class="adv-group adv-group--meta" aria-labelledby="adv-meta-title">
           <h3 id="adv-meta-title" class="adv-group__title">
             Hull options &amp; faction
@@ -421,25 +415,44 @@ function toggleFiltersExpanded() {
         </section>
 
         <section
-          class="adv-group adv-group--acquisition"
-          aria-labelledby="adv-acquisition-title"
+          class="adv-group adv-group--selects"
+          aria-labelledby="adv-selects-title"
         >
-          <h3 id="adv-acquisition-title" class="adv-group__title">Acquisition</h3>
-          <v-select
-            class="adv-acquisition-select"
-            :model-value="filters.acquisition"
-            :items="acquisitionSelectItems"
-            label="Acquisition methods"
-            placeholder="Any acquisition"
-            multiple
-            chips
-            closable-chips
-            clearable
-            density="compact"
-            variant="outlined"
-            hide-details
-            @update:model-value="onAcquisitionUpdate"
-          />
+          <h3 id="adv-selects-title" class="adv-group__title">
+            Full-spec &amp; Acquisition
+          </h3>
+          <div class="adv-selects">
+            <v-select
+              class="adv-fullspec-select"
+              :model-value="filters.fullSpecs"
+              :items="fullSpecSelectItems"
+              label="Full-spec seat"
+              placeholder="Any full-spec"
+              multiple
+              chips
+              closable-chips
+              clearable
+              density="compact"
+              variant="outlined"
+              hide-details
+              @update:model-value="onFullSpecUpdate"
+            />
+            <v-select
+              class="adv-acquisition-select"
+              :model-value="filters.acquisition"
+              :items="acquisitionSelectItems"
+              label="Acquisition methods"
+              placeholder="Any acquisition"
+              multiple
+              chips
+              closable-chips
+              clearable
+              density="compact"
+              variant="outlined"
+              hide-details
+              @update:model-value="onAcquisitionUpdate"
+            />
+          </div>
         </section>
       </div>
     </div>
@@ -518,10 +531,11 @@ function toggleFiltersExpanded() {
 
 .adv-filters__grid {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  align-content: flex-start;
+  flex-wrap: nowrap;
+  align-items: stretch;
   gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 
 /* Packed cards — width is only as wide as content. */
@@ -535,8 +549,9 @@ function toggleFiltersExpanded() {
   background: rgba(10, 18, 30, 0.55);
   flex: 0 0 auto;
   width: max-content;
-  max-width: 100%;
+  max-width: none;
   height: auto;
+  align-self: stretch;
 }
 
 .adv-group__title {
@@ -635,11 +650,25 @@ function toggleFiltersExpanded() {
   text-transform: uppercase;
 }
 
-.adv-acquisition-select {
+.adv-group--selects {
+  min-width: 16rem;
+  max-width: 20rem;
+}
+
+.adv-selects {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   width: 16rem;
   max-width: 100%;
 }
 
+.adv-fullspec-select,
+.adv-acquisition-select {
+  width: 100%;
+}
+
+.adv-fullspec-select :deep(.v-field),
 .adv-acquisition-select :deep(.v-field) {
   font-size: 0.82rem;
 }
