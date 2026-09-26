@@ -32,3 +32,19 @@ export {
   DEFAULT_ADVANCED_SHIP_SEARCH_SORT,
   sortAdvancedShipSearchRows,
 } from "./sort";
+export {
+  buildAcquisitionSelectItems,
+  classifyAcquisitionPrimary,
+  collectAcquisitionCodes,
+  type AcquisitionPrimaryKind,
+  type AcquisitionSelectItem,
+  type AcquisitionSelectListItem,
+} from "./acquisitionOptions";
+export {
+  ADVANCED_SHIP_SEARCH_FILTER_PREFS_KEY,
+  DEFAULT_ADVANCED_SHIP_SEARCH_FILTER_PREFS,
+  loadAdvancedShipSearchFilterPrefs,
+  sanitizeAdvancedShipSearchFilterPrefs,
+  saveAdvancedShipSearchFilterPrefs,
+  type AdvancedShipSearchFilterPrefs,
+} from "./filterPrefs";

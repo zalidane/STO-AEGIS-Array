@@ -3,6 +3,8 @@ import {
   ABOUT_LEDE,
   ABOUT_SECTIONS,
   aboutPageTitle,
+  DISCORD_LABEL,
+  DISCORD_URL,
   GITHUB_BUG_REPORT_URL,
   GITHUB_URL,
   SITE_URL,
@@ -13,14 +15,23 @@ import {
 import { DISCLAIMER } from "@/logic/attribution";
 
 describe("about page copy", () => {
-  it("describes the tool, local storage, and optional Ko-fi hosting support", () => {
+  it("describes the tool, local storage, Discord community, and optional Ko-fi hosting support", () => {
     expect(aboutPageTitle()).toBe("About");
     expect(ABOUT_LEDE).toMatch(/loadout builder/i);
     expect(KOFI_URL).toBe("https://ko-fi.com/zalidane");
     expect(KOFI_LABEL).toBe("ko-fi.com/zalidane");
+    expect(DISCORD_URL).toBe("https://discord.gg/2jTgb9HnY");
+    expect(DISCORD_LABEL).toBe("Join Discord");
 
     const ids = ABOUT_SECTIONS.map((section) => section.id);
-    expect(ids).toEqual(["what", "data", "support", "bugs", "credits"]);
+    expect(ids).toEqual([
+      "what",
+      "data",
+      "community",
+      "support",
+      "bugs",
+      "credits",
+    ]);
 
     const what = ABOUT_SECTIONS.find((section) => section.id === "what");
     expect(what?.paragraphs.some((p) => p === DISCLAIMER)).toBe(true);
@@ -30,6 +41,11 @@ describe("about page copy", () => {
     expect(data?.paragraphs.join(" ")).toMatch(/locally/i);
     expect(data?.paragraphs.join(" ")).toMatch(/JSON backup/i);
     expect(data?.links.map((link) => link.href)).toEqual(["/collection"]);
+
+    const community = ABOUT_SECTIONS.find(
+      (section) => section.id === "community",
+    );
+    expect(community?.paragraphs.join(" ")).toMatch(/Discord/i);
 
     const support = ABOUT_SECTIONS.find((section) => section.id === "support");
     expect(support?.paragraphs.join(" ")).toMatch(/optional/i);
@@ -41,6 +57,7 @@ describe("about page copy", () => {
     );
     expect(SITE_URL).toBe("https://vueui-production.up.railway.app");
     expect(isInternalHref(GITHUB_BUG_REPORT_URL)).toBe(false);
+    expect(isInternalHref(DISCORD_URL)).toBe(false);
 
     const credits = ABOUT_SECTIONS.find((section) => section.id === "credits");
     expect(credits?.links.map((link) => link.href)).toEqual([

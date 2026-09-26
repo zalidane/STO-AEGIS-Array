@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import { createRouter, createMemoryHistory } from "vue-router";
 
 import AppFooter from "../components/layout/AppFooter.vue";
+import { DISCORD_URL } from "@/logic/about";
 import { FOOTER_SUMMARY } from "@/logic/attribution";
 
 describe("AppFooter", () => {
@@ -24,8 +25,13 @@ describe("AppFooter", () => {
 
     expect(wrapper.text()).toContain(FOOTER_SUMMARY);
     expect(wrapper.text()).toContain("About");
+    expect(wrapper.text()).toContain("Discord");
     expect(wrapper.text()).toContain("Full attributions");
     expect(wrapper.find('a[href="/about"]').exists()).toBe(true);
+    const discord = wrapper.find(`a[href="${DISCORD_URL}"]`);
+    expect(discord.exists()).toBe(true);
+    expect(discord.attributes("target")).toBe("_blank");
+    expect(discord.attributes("rel")).toBe("noopener noreferrer");
     expect(wrapper.find('a[href="https://stowiki.net/"]').exists()).toBe(true);
     expect(
       wrapper

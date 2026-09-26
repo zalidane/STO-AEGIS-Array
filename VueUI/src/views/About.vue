@@ -5,6 +5,8 @@ import {
   ABOUT_LEDE,
   ABOUT_SECTIONS,
   aboutPageTitle,
+  DISCORD_LABEL,
+  DISCORD_URL,
   GITHUB_BUG_REPORT_LABEL,
   GITHUB_BUG_REPORT_URL,
   isInternalHref,
@@ -41,7 +43,17 @@ const title = aboutPageTitle();
       >
         {{ paragraph }}
       </p>
-      <p v-if="section.id === 'support'" class="about-section__action">
+      <p v-if="section.id === 'community'" class="about-section__action">
+        <a
+          class="about-kofi"
+          :href="DISCORD_URL"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {{ DISCORD_LABEL }}
+        </a>
+      </p>
+      <p v-else-if="section.id === 'support'" class="about-section__action">
         <a
           class="about-kofi"
           :href="KOFI_URL"
