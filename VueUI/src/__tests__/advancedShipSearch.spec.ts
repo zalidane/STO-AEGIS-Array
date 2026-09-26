@@ -1,16 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildAcquisitionSelectItems,
+  classifyAcquisitionPrimary,
   createDefaultAdvancedShipSearchFilters,
   deriveAdvancedShipSearchRow,
   extractFullSpecs,
   filterAdvancedShipSearchRows,
   indexAdvancedShipSearchRows,
+  loadAdvancedShipSearchFilterPrefs,
   matchesAdvancedShipSearchFilters,
   normalizeFullSpec,
   shipHasFleetVersion,
   buildFleetAvailabilityIndex,
+  saveAdvancedShipSearchFilterPrefs,
   sortAdvancedShipSearchRows,
   totalWeaponCount,
+  ADVANCED_SHIP_SEARCH_FILTER_PREFS_KEY,
   type AdvancedShipSearchSource,
 } from "@/logic/advancedShipSearch";
 
@@ -411,6 +416,83 @@ describe("totalWeaponCount", () => {
         experimental: false,
       }),
     ).toBe(6);
+  });
+});
+
+describe("acquisition option grouping", () => {
+  it("classifies primary acquisition methods", () => {
+    expect(classifyAcquisitionPrimary("LC")).toBe("lobi");
+    expect(classifyAcquisitionPrimary("Zen")).toBe("zen");
+    expect(classifyAcquisitionPrimary("LB")).toBe("lockBox");
+    expect(classifyAcquisitionPrimary("PPP5")).toBe("phoenix");
+    expect(classifyAcquisitionPrimary("APP")).toBe("prizePack");
+    expect(classifyAcquisitionPrimary("60thIconPack")).toBe("prizePack");
+    expect(classifyAcquisitionPrimary("FC")).toBeNull();
+    expect(classifyAcquisitionPrimary("SRFED5")).toBeNull();
+  });
+
+  it("orders primary methods then divider then secondary A→Z", () => {
+    const items = buildAcquisitionSelectItems([
+      "FC",
+      "APP",
+      "Zen",
+      "SRFED5",
+      "PPP5",
+      "LB",
+      "60thIconPack",
+      "LC",
+      "Dil",
+    ]);
+
+    const values = items.map((item) =>
+      "type" in item && item.type === "divider" ? "—" : item.value,
+    );
+
+    expect(values).toEqual([
+      "LC",
+      "Zen",
+      "LB",
+      "PPP5",
+      "60thIconPack",
+      "APP",
+      "—",
+      "FC",
+      "Dil",
+      "SRFED5",
+    ]);
+  });
+
+  it("alpha-sorts prize packs among themselves in the primary block", () => {
+    const items = buildAcquisitionSelectItems([
+      "60thIconPack",
+      "APP",
+      "Zen",
+    ]);
+    const values = items
+      .filter(
+        (item): item is { title: string; value: string } => !("type" in item),
+      )
+      .map((item) => item.value);
+    expect(values).toEqual(["Zen", "60thIconPack", "APP"]);
+  });
+});
+
+describe("filter panel prefs", () => {
+  it("defaults expanded and persists collapse preference", () => {
+    const memory = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => memory.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        memory.set(key, value);
+      },
+    };
+
+    expect(loadAdvancedShipSearchFilterPrefs(storage).expanded).toBe(true);
+    saveAdvancedShipSearchFilterPrefs({ expanded: false }, storage);
+    expect(memory.get(ADVANCED_SHIP_SEARCH_FILTER_PREFS_KEY)).toContain(
+      '"expanded":false',
+    );
+    expect(loadAdvancedShipSearchFilterPrefs(storage).expanded).toBe(false);
   });
 });
 
