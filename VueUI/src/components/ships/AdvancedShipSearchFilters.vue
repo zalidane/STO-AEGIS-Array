@@ -18,6 +18,7 @@ import {
   toggleInclusiveValue,
   uniqueSortedStrings,
 } from "@/logic/shipsBinder";
+
 const filters = defineModel<AdvancedShipSearchFilters>({ required: true });
 
 const props = defineProps<{
@@ -184,129 +185,133 @@ function toggleFiltersExpanded() {
         </label>
       </div>
 
+      <!--
+        Plain wrapping flex of max-content cards (no Vuetify row/col, no fieldset).
+        Fieldsets have UA min-inline-size quirks that leave wide empty cards.
+      -->
       <div class="adv-filters__grid">
-        <fieldset class="adv-group adv-group--weapons">
-          <legend>Weapon layout</legend>
+        <section class="adv-group adv-group--weapons" aria-labelledby="adv-weapons-title">
+          <h3 id="adv-weapons-title" class="adv-group__title">Weapon layout</h3>
           <div class="adv-group__stack">
-          <div class="adv-group__row adv-group__row--first">
-            <span class="adv-group__sub">Fore</span>
-            <button
-              v-for="n in foreOptions"
-              :key="`fore-${n}`"
-              type="button"
-              class="adv-chip"
-              :class="{ 'adv-chip--active': filters.foreWeapons.includes(n) }"
-              @click="toggleNumber('foreWeapons', n)"
-            >
-              {{ n }}
-            </button>
+            <div class="adv-group__row">
+              <span class="adv-group__sub">Fore</span>
+              <button
+                v-for="n in foreOptions"
+                :key="`fore-${n}`"
+                type="button"
+                class="adv-chip"
+                :class="{ 'adv-chip--active': filters.foreWeapons.includes(n) }"
+                @click="toggleNumber('foreWeapons', n)"
+              >
+                {{ n }}
+              </button>
+            </div>
+            <div class="adv-group__row">
+              <span class="adv-group__sub">Aft</span>
+              <button
+                v-for="n in aftOptions"
+                :key="`aft-${n}`"
+                type="button"
+                class="adv-chip"
+                :class="{ 'adv-chip--active': filters.aftWeapons.includes(n) }"
+                @click="toggleNumber('aftWeapons', n)"
+              >
+                {{ n }}
+              </button>
+            </div>
+            <div class="adv-group__row">
+              <span class="adv-group__sub">Experimental</span>
+              <button
+                v-for="choice in ['yes', 'no'] as YesNoChoice[]"
+                :key="`exp-${choice}`"
+                type="button"
+                class="adv-chip"
+                :class="{
+                  'adv-chip--active': filters.experimental.includes(choice),
+                }"
+                @click="toggleYesNo('experimental', choice)"
+              >
+                {{ yesNoLabel(choice) }}
+              </button>
+            </div>
+            <hr class="adv-group__divider" />
+            <div class="adv-group__row">
+              <span class="adv-group__sub">Total</span>
+              <button
+                v-for="n in totalWeaponOptions"
+                :key="`total-${n}`"
+                type="button"
+                class="adv-chip"
+                :class="{ 'adv-chip--active': filters.totalWeapons.includes(n) }"
+                @click="toggleNumber('totalWeapons', n)"
+              >
+                {{ n }}
+              </button>
+            </div>
           </div>
-          <div class="adv-group__row">
-            <span class="adv-group__sub">Aft</span>
-            <button
-              v-for="n in aftOptions"
-              :key="`aft-${n}`"
-              type="button"
-              class="adv-chip"
-              :class="{ 'adv-chip--active': filters.aftWeapons.includes(n) }"
-              @click="toggleNumber('aftWeapons', n)"
-            >
-              {{ n }}
-            </button>
-          </div>
-          <div class="adv-group__row">
-            <span class="adv-group__sub">Experimental</span>
-            <button
-              v-for="choice in ['yes', 'no'] as YesNoChoice[]"
-              :key="`exp-${choice}`"
-              type="button"
-              class="adv-chip"
-              :class="{
-                'adv-chip--active': filters.experimental.includes(choice),
-              }"
-              @click="toggleYesNo('experimental', choice)"
-            >
-              {{ yesNoLabel(choice) }}
-            </button>
-          </div>
-          <div class="adv-group__divider" role="separator" aria-hidden="true" />
-          <div class="adv-group__row">
-            <span class="adv-group__sub">Total</span>
-            <button
-              v-for="n in totalWeaponOptions"
-              :key="`total-${n}`"
-              type="button"
-              class="adv-chip"
-              :class="{ 'adv-chip--active': filters.totalWeapons.includes(n) }"
-              @click="toggleNumber('totalWeapons', n)"
-            >
-              {{ n }}
-            </button>
-          </div>
-          </div>
-        </fieldset>
+        </section>
 
-        <fieldset class="adv-group adv-group--consoles">
-          <legend>Console layout</legend>
+        <section class="adv-group adv-group--consoles" aria-labelledby="adv-consoles-title">
+          <h3 id="adv-consoles-title" class="adv-group__title">Console layout</h3>
           <div class="adv-group__stack">
-          <div class="adv-group__row adv-group__row--first">
-            <span class="adv-group__sub adv-group__sub--narrow">ENG</span>
-            <button
-              v-for="n in engOptions"
-              :key="`eng-${n}`"
-              type="button"
-              class="adv-chip"
-              :class="{ 'adv-chip--active': filters.engConsoles.includes(n) }"
-              @click="toggleNumber('engConsoles', n)"
-            >
-              {{ n }}
-            </button>
+            <div class="adv-group__row">
+              <span class="adv-group__sub adv-group__sub--narrow">ENG</span>
+              <button
+                v-for="n in engOptions"
+                :key="`eng-${n}`"
+                type="button"
+                class="adv-chip"
+                :class="{ 'adv-chip--active': filters.engConsoles.includes(n) }"
+                @click="toggleNumber('engConsoles', n)"
+              >
+                {{ n }}
+              </button>
+            </div>
+            <div class="adv-group__row">
+              <span class="adv-group__sub adv-group__sub--narrow">SCI</span>
+              <button
+                v-for="n in sciOptions"
+                :key="`sci-${n}`"
+                type="button"
+                class="adv-chip"
+                :class="{ 'adv-chip--active': filters.sciConsoles.includes(n) }"
+                @click="toggleNumber('sciConsoles', n)"
+              >
+                {{ n }}
+              </button>
+            </div>
+            <div class="adv-group__row">
+              <span class="adv-group__sub adv-group__sub--narrow">TAC</span>
+              <button
+                v-for="n in tacOptions"
+                :key="`tac-${n}`"
+                type="button"
+                class="adv-chip"
+                :class="{ 'adv-chip--active': filters.tacConsoles.includes(n) }"
+                @click="toggleNumber('tacConsoles', n)"
+              >
+                {{ n }}
+              </button>
+            </div>
+            <div class="adv-group__row">
+              <span class="adv-group__sub adv-group__sub--narrow">UNI</span>
+              <button
+                v-for="n in uniOptions"
+                :key="`uni-${n}`"
+                type="button"
+                class="adv-chip"
+                :class="{ 'adv-chip--active': filters.uniConsoles.includes(n) }"
+                @click="toggleNumber('uniConsoles', n)"
+              >
+                {{ n }}
+              </button>
+            </div>
           </div>
-          <div class="adv-group__row">
-            <span class="adv-group__sub adv-group__sub--narrow">SCI</span>
-            <button
-              v-for="n in sciOptions"
-              :key="`sci-${n}`"
-              type="button"
-              class="adv-chip"
-              :class="{ 'adv-chip--active': filters.sciConsoles.includes(n) }"
-              @click="toggleNumber('sciConsoles', n)"
-            >
-              {{ n }}
-            </button>
-          </div>
-          <div class="adv-group__row">
-            <span class="adv-group__sub adv-group__sub--narrow">TAC</span>
-            <button
-              v-for="n in tacOptions"
-              :key="`tac-${n}`"
-              type="button"
-              class="adv-chip"
-              :class="{ 'adv-chip--active': filters.tacConsoles.includes(n) }"
-              @click="toggleNumber('tacConsoles', n)"
-            >
-              {{ n }}
-            </button>
-          </div>
-          <div class="adv-group__row">
-            <span class="adv-group__sub adv-group__sub--narrow">UNI</span>
-            <button
-              v-for="n in uniOptions"
-              :key="`uni-${n}`"
-              type="button"
-              class="adv-chip"
-              :class="{ 'adv-chip--active': filters.uniConsoles.includes(n) }"
-              @click="toggleNumber('uniConsoles', n)"
-            >
-              {{ n }}
-            </button>
-          </div>
-          </div>
-        </fieldset>
+        </section>
 
-        <fieldset class="adv-group adv-group--fullspec">
-          <legend>Full-spec seat</legend>
-          <div class="adv-group__row adv-group__row--wrap adv-group__row--first">
+        <section class="adv-group adv-group--fullspec" aria-labelledby="adv-fullspec-title">
+          <h3 id="adv-fullspec-title" class="adv-group__title">Full-spec seat</h3>
+          <div class="adv-group__row adv-group__row--wrap">
             <button
               v-for="spec in fullSpecChoices"
               :key="spec"
@@ -318,10 +323,12 @@ function toggleFiltersExpanded() {
               {{ spec }}
             </button>
           </div>
-        </fieldset>
+        </section>
 
-        <fieldset class="adv-group adv-group--meta">
-          <legend>Hull options &amp; faction</legend>
+        <section class="adv-group adv-group--meta" aria-labelledby="adv-meta-title">
+          <h3 id="adv-meta-title" class="adv-group__title">
+            Hull options &amp; faction
+          </h3>
           <div class="adv-meta">
             <div class="adv-meta__row">
               <div class="adv-meta__block">
@@ -411,10 +418,13 @@ function toggleFiltersExpanded() {
               </div>
             </div>
           </div>
-        </fieldset>
+        </section>
 
-        <fieldset class="adv-group adv-group--acquisition">
-          <legend>Acquisition</legend>
+        <section
+          class="adv-group adv-group--acquisition"
+          aria-labelledby="adv-acquisition-title"
+        >
+          <h3 id="adv-acquisition-title" class="adv-group__title">Acquisition</h3>
           <v-select
             class="adv-acquisition-select"
             :model-value="filters.acquisition"
@@ -430,7 +440,7 @@ function toggleFiltersExpanded() {
             hide-details
             @update:model-value="onAcquisitionUpdate"
           />
-        </fieldset>
+        </section>
       </div>
     </div>
   </section>
@@ -514,55 +524,38 @@ function toggleFiltersExpanded() {
   gap: 10px;
 }
 
-/* Compact cards: shrink-wrap content; never grow into empty flex cells. */
+/* Packed cards — width is only as wide as content. */
 .adv-group {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start; /* critical: avoid stretch widening fit-content fieldsets */
+  display: block;
   box-sizing: border-box;
   margin: 0;
-  padding: 4px 8px 6px;
+  padding: 8px 10px 10px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(125, 211, 252, 0.28);
   background: rgba(10, 18, 30, 0.55);
   flex: 0 0 auto;
-  align-self: flex-start;
   width: max-content;
   max-width: 100%;
-  height: max-content;
-  min-inline-size: 0;
+  height: auto;
 }
 
-.adv-group--weapons,
-.adv-group--consoles,
-.adv-group--fullspec,
-.adv-group--meta,
-.adv-group--acquisition {
-  flex: 0 0 auto;
-  width: max-content;
-}
-
-.adv-group--acquisition {
-  min-width: min(100%, 14rem);
-  max-width: min(100%, 20rem);
-  /* Select should use the card's content width. */
-  align-items: stretch;
-}
-
-.adv-group legend {
-  padding: 0 4px;
+.adv-group__title {
+  margin: 0 0 6px;
   color: #7dd3fc;
   font-size: 0.72rem;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  line-height: 1.2;
 }
 
+/* Single max-content column so hr spans the chip rows, not 0px. */
 .adv-group__stack {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-  width: fit-content;
+  display: grid;
+  grid-template-columns: max-content;
+  justify-items: start;
+  row-gap: 4px;
+  width: max-content;
 }
 
 .adv-group__row {
@@ -570,21 +563,15 @@ function toggleFiltersExpanded() {
   align-items: center;
   gap: 4px;
   flex-wrap: nowrap;
-  margin-top: 0;
-  width: fit-content;
-}
-
-.adv-group__row--first {
-  margin-top: 0;
+  width: max-content;
 }
 
 .adv-group__row--tight {
-  margin-top: 2px;
   flex-wrap: wrap;
+  margin-top: 2px;
 }
 
 .adv-group__row--wrap {
-  align-items: flex-start;
   flex-wrap: wrap;
   max-width: 100%;
 }
@@ -604,18 +591,20 @@ function toggleFiltersExpanded() {
 }
 
 .adv-group__divider {
-  margin: 1px 0;
-  border-top: 1px solid rgba(125, 211, 252, 0.28);
+  display: block;
   width: 100%;
-  box-sizing: border-box;
+  height: 0;
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid rgba(125, 211, 252, 0.55);
+  background: transparent;
 }
 
 .adv-meta {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
-  margin-top: 0;
+  gap: 8px;
   width: max-content;
   max-width: 100%;
 }
@@ -624,13 +613,12 @@ function toggleFiltersExpanded() {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 6px 14px;
+  gap: 8px 14px;
   width: max-content;
   max-width: 100%;
 }
 
 .adv-meta__block {
-  min-width: 0;
   width: max-content;
 }
 
@@ -648,7 +636,6 @@ function toggleFiltersExpanded() {
 }
 
 .adv-acquisition-select {
-  margin-top: 2px;
   width: 16rem;
   max-width: 100%;
 }
