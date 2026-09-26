@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
+import { DISCORD_URL } from "@/logic/about";
 import {
   CC_BY_NC_SA_30_URL,
   FOOTER_SUMMARY,
@@ -12,6 +13,10 @@ import {
     <p class="app-footer__summary">{{ FOOTER_SUMMARY }}</p>
     <p class="app-footer__links">
       <RouterLink to="/about">About</RouterLink>
+      <span class="app-footer__sep" aria-hidden="true">·</span>
+      <a :href="DISCORD_URL" target="_blank" rel="noopener noreferrer"
+        >Discord</a
+      >
       <span class="app-footer__sep" aria-hidden="true">·</span>
       <a :href="STOWIKI_HOME_URL" target="_blank" rel="noopener noreferrer"
         >STOWiki</a
