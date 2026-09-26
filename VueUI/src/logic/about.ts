@@ -2,6 +2,8 @@ import { DISCLAIMER } from "@/logic/attribution";
 
 export const KOFI_URL = "https://ko-fi.com/zalidane";
 export const KOFI_LABEL = "ko-fi.com/zalidane";
+export const DISCORD_URL = "https://discord.gg/2jTgb9HnY";
+export const DISCORD_LABEL = "Join Discord";
 export const GITHUB_URL = "https://github.com/zalidane/STO-AEGIS-Array";
 export const GITHUB_BUG_REPORT_URL = `${GITHUB_URL}/issues/new?template=bug.yml`;
 export const GITHUB_BUG_REPORT_LABEL = "Report a bug";
@@ -46,6 +48,14 @@ export const ABOUT_SECTIONS: AboutSection[] = [
       "Clearing this site’s data, switching browsers, or using a private window starts you with an empty armory unless you restore a backup. Shared build links store a snapshot of a loadout on the server so others can open them.",
     ],
     links: [{ label: "Collection", href: "/collection" }],
+  },
+  {
+    id: "community",
+    title: "Community",
+    paragraphs: [
+      "Join the STO AEGIS Array Discord for questions, feedback, and build talk about this tool.",
+    ],
+    links: [],
   },
   {
     id: "support",
