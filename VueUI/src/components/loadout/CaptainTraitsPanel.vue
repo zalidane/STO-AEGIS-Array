@@ -8,9 +8,9 @@ import {
 
 export type CaptainTraitSlotView = {
   slot: CaptainTraitSlot;
-  item: { name: string; image?: string | null } | null;
+  item: { name: string; image?: string | null; short?: string | null } | null;
   ownedCount?: number;
-  /** Present when this seat has structured activation triggers. */
+  /** Present for every filled trait seat (including no-trigger traits). */
   triggerStatus?: TraitTriggerIconStatus | null;
 };
 
@@ -30,9 +30,20 @@ const emit = defineEmits<{
   pick: [slot: CaptainTraitSlot];
 }>();
 
+/** Native title only for empty / locked seats — filled traits use the 3-line popup. */
 function slotTitle(view: CaptainTraitSlotView): string | undefined {
-  // Prefer the custom 3-line trigger popup over the native title tooltip.
-  if (view.triggerStatus && view.item) return undefined;
+  if (view.item) return undefined;
+  if (view.slot.locked) return `${view.slot.label} · Locked`;
+  if (!props.readonly && view.ownedCount) {
+    return `Empty ${view.slot.label} · ${view.ownedCount} owned`;
+  }
+  return `Empty ${view.slot.label}`;
+}
+
+function ariaLabel(view: CaptainTraitSlotView): string {
+  if (view.triggerStatus) {
+    return `${view.triggerStatus.traitName}. ${view.triggerStatus.statusLine}`;
+  }
   if (view.slot.locked) return `${view.slot.label} · Locked`;
   if (view.item) return `${view.slot.label}: ${view.item.name}`;
   if (!props.readonly && view.ownedCount) {
@@ -47,7 +58,29 @@ function onPick(slot: CaptainTraitSlot) {
 }
 
 function markFor(status: TraitTriggerIconStatus): "✓" | "✗" | null {
+  if (!status.hasCheckableTriggers) return null;
   return traitTriggerSatisfactionMark(status.satisfied);
+}
+
+function popupLines(view: CaptainTraitSlotView): {
+  name: string;
+  short: string;
+  status: string;
+} | null {
+  if (!view.item) return null;
+  if (view.triggerStatus) {
+    return {
+      name: view.triggerStatus.traitName,
+      short: view.triggerStatus.shortDescription || "—",
+      status: view.triggerStatus.statusLine,
+    };
+  }
+  // Fallback if status map missed a fill (should be rare).
+  return {
+    name: view.item.name,
+    short: view.item.short?.trim() || "—",
+    status: "No activation trigger to check",
+  };
 }
 </script>
 
@@ -76,13 +109,15 @@ function markFor(status: TraitTriggerIconStatus): "✓" | "✗" | null {
             'trait-slot--locked': view.slot.locked,
             'trait-slot--readonly': readonly,
             'trait-slot--trigger-ok':
-              view.triggerStatus && view.triggerStatus.satisfied,
+              view.triggerStatus?.hasCheckableTriggers &&
+              view.triggerStatus.satisfied === true,
             'trait-slot--trigger-miss':
-              view.triggerStatus && !view.triggerStatus.satisfied,
+              view.triggerStatus?.hasCheckableTriggers &&
+              view.triggerStatus.satisfied === false,
           }"
           :disabled="readonly || view.slot.locked"
           :title="slotTitle(view)"
-          :aria-label="slotTitle(view)"
+          :aria-label="ariaLabel(view)"
           @click="onPick(view.slot)"
         >
           <WikiIcon
@@ -113,18 +148,18 @@ function markFor(status: TraitTriggerIconStatus): "✓" | "✗" | null {
           </span>
 
           <span
-            v-if="view.triggerStatus && view.item"
+            v-if="popupLines(view)"
             class="trait-slot__trigger-popup"
             role="tooltip"
           >
             <span class="trait-slot__trigger-popup-line">{{
-              view.triggerStatus.traitName
+              popupLines(view)!.name
             }}</span>
             <span class="trait-slot__trigger-popup-line">{{
-              view.triggerStatus.shortDescription || "—"
+              popupLines(view)!.short
             }}</span>
             <span class="trait-slot__trigger-popup-line">{{
-              view.triggerStatus.statusLine
+              popupLines(view)!.status
             }}</span>
           </span>
         </button>
@@ -162,6 +197,7 @@ function markFor(status: TraitTriggerIconStatus): "✓" | "✗" | null {
 
 .trait-band {
   margin-bottom: 0.85rem;
+  overflow: visible;
 }
 
 .trait-band:last-child {

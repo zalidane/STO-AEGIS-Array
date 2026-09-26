@@ -284,6 +284,21 @@ export const MOCK_TRAIT_SOURCES = {
     basic: "Gain Beam Damage when activating Beam skills",
     detailed: null,
   },
+  unconventionalSystems: {
+    name: "Unconventional Systems",
+    // Cargo often leaves these blank — extraction fills via name override.
+    short: null,
+    basic: null,
+    detailed: null,
+  },
+  boimlerEffect: {
+    name: "The Boimler Effect",
+    short:
+      "Chance for Bridge Officer Abilities to reset all Bridge Officer Abilities",
+    basic:
+      "Provides a chance for using Bridge Officer Abilities to recharge all other Bridge Officer Ability recharge times up to their respective Shared Cooldown Categories.",
+    detailed: null,
+  },
   checkmate: {
     name: "Checkmate",
     short:
