@@ -5,6 +5,7 @@ import {
   type TraitTriggerSatisfaction,
 } from "@/logic/loadout/crossRefTraitTriggers";
 import {
+  applyTraitTriggerTextOverrides,
   extractTraitTriggers,
   type TraitTriggerTextSource,
 } from "@/logic/loadout/extractTraitTriggers";
@@ -33,9 +34,14 @@ export type TraitTriggerIconStatus = {
   shortDescription: string;
   /** Ordered trigger clauses used to compute aggregate status. */
   triggers: TraitTriggerSatisfaction[];
-  /** Aggregate: every trigger clause is satisfied. */
-  satisfied: boolean;
-  /** Line 3 of the hover popup — satisfied by / unsatisfied needs. */
+  /**
+   * Aggregate satisfaction when {@link hasCheckableTriggers} is true.
+   * `null` when there is nothing to check (no structured triggers).
+   */
+  satisfied: boolean | null;
+  /** True when at least one structured trigger clause was extracted. */
+  hasCheckableTriggers: boolean;
+  /** Line 3 of the hover popup — satisfied by / unsatisfied needs / no trigger. */
   statusLine: string;
 };
 
@@ -48,6 +54,9 @@ export type BuildTraitTriggersPanelInput = {
   hullSlots?: CollectSeatedTriggerFillsInput["hullSlots"];
   captainPowers?: CollectSeatedTriggerFillsInput["captainPowers"];
 };
+
+export const NO_ACTIVATION_TRIGGER_STATUS =
+  "No activation trigger to check" as const;
 
 function isTraitCatalogKind(
   kind: LoadoutCatalogKind,
@@ -94,7 +103,7 @@ export function personalTraitToTriggerText(row: {
   };
 }
 
-/** ✓ / ✗ for resolvable triggers; `null` only when satisfaction is unknown. */
+/** ✓ / ✗ for resolvable triggers; `null` when satisfaction is unknown / N/A. */
 export function traitTriggerSatisfactionMark(
   satisfied: boolean | null,
 ): "✓" | "✗" | null {
@@ -123,11 +132,12 @@ function uniqueNames(names: ReadonlyArray<string>): string[] {
 
 /**
  * Aggregate hover line 3 from ordered trigger clauses.
+ * Empty trigger lists → explicit "no check" copy for universal tooltips.
  */
 export function formatTraitTriggerStatusLine(
   triggers: ReadonlyArray<TraitTriggerSatisfaction>,
 ): string {
-  if (triggers.length === 0) return "";
+  if (triggers.length === 0) return NO_ACTIVATION_TRIGGER_STATUS;
 
   const unsatisfied = triggers.filter((t) => t.satisfied === false);
   if (unsatisfied.length > 0) {
@@ -151,18 +161,18 @@ export function formatTraitTriggerStatusLine(
 
 /**
  * Trait is satisfied when every extracted trigger clause is satisfied.
- * Empty trigger lists are not shown on icons (caller skips them).
+ * Returns `null` when there are no structured triggers to check.
  */
 export function aggregateTraitTriggerSatisfied(
   triggers: ReadonlyArray<TraitTriggerSatisfaction>,
-): boolean {
-  if (triggers.length === 0) return false;
+): boolean | null {
+  if (triggers.length === 0) return null;
   return triggers.every((t) => t.satisfied === true);
 }
 
 /**
- * Build icon-status rows for every seated personal / starship trait that has
- * at least one structured trigger. Empty when none apply.
+ * Build icon-status rows for every seated personal / starship trait.
+ * Includes no-trigger traits (status line explains; no ✓/✗ badge).
  */
 export function buildTraitTriggersPanel(
   input: BuildTraitTriggersPanelInput,
@@ -190,14 +200,15 @@ export function buildTraitTriggersPanel(
     const item = byKey.get(catalogKey(kind, slotFill.itemId));
     if (!item) continue;
 
+    const textSource = applyTraitTriggerTextOverrides(
+      traitTextSourceFromItem(item),
+    );
     const triggers = orderTraitTriggersForPanel(
       crossRefTraitTriggersAgainstLoadout(
-        extractTraitTriggers(traitTextSourceFromItem(item)),
+        extractTraitTriggers(textSource),
         loadoutInput,
       ),
     );
-
-    if (triggers.length === 0) continue;
 
     const satisfied = aggregateTraitTriggerSatisfied(triggers);
     rows.push({
@@ -206,9 +217,16 @@ export function buildTraitTriggersPanel(
       catalogKind: kind,
       image: item.image,
       slotId: slotFill.slotId,
-      shortDescription: (item.short ?? item.basic ?? "").trim(),
+      shortDescription: (
+        textSource?.short ??
+        textSource?.basic ??
+        item.short ??
+        item.basic ??
+        ""
+      ).trim(),
       triggers,
       satisfied,
+      hasCheckableTriggers: triggers.length > 0,
       statusLine: formatTraitTriggerStatusLine(triggers),
     });
   }

@@ -231,4 +231,8 @@ describe("functional categories", () => {
   it("keeps hangarPets as an empty list for seated-fill matching later", () => {
     expect(abilitiesForFunctionalCategory("hangarPets")).toEqual([]);
   });
+
+  it("keeps bridgeOfficerAbility as an empty list for any-tray matching", () => {
+    expect(abilitiesForFunctionalCategory("bridgeOfficerAbility")).toEqual([]);
+  });
 });

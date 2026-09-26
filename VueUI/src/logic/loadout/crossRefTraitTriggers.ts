@@ -272,6 +272,11 @@ function matchFunctionalCategory(
     return seated.filter(isHangarFill);
   }
 
+  // Any seated Bridge Officer tray skill (The Boimler Effect, etc.).
+  if (category === "bridgeOfficerAbility") {
+    return seated.filter(isTraySkillFill);
+  }
+
   const catalogNames = abilitiesForFunctionalCategory(category);
   const nameSet = new Set(catalogNames.map((name) => abilityKey(name)));
 
