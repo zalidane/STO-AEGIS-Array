@@ -207,6 +207,40 @@ describe("extractTraitTriggers — readiness examples", () => {
     ]);
   });
 
+  it("Unconventional Systems (blank Cargo) → control via name override", () => {
+    const triggers = extractTraitTriggers({
+      name: "Unconventional Systems",
+      short: null,
+      basic: null,
+      detailed: null,
+    });
+    expect(triggers).toEqual([
+      {
+        kind: "functionalCategory",
+        category: "control",
+        display: "Control",
+      },
+    ]);
+  });
+
+  it("The Boimler Effect → any Bridge Officer ability category", () => {
+    const triggers = extractTraitTriggers({
+      name: "The Boimler Effect",
+      short:
+        "Chance for Bridge Officer Abilities to reset all Bridge Officer Abilities",
+      basic:
+        "Provides a chance for using Bridge Officer Abilities to recharge all other Bridge Officer Ability recharge times up to their respective Shared Cooldown Categories.",
+      detailed: null,
+    });
+    expect(triggers).toEqual([
+      {
+        kind: "functionalCategory",
+        category: "bridgeOfficerAbility",
+        display: "Bridge Officer ability",
+      },
+    ]);
+  });
+
   it("Directed Energy Flux → Temporal Operative or Directed Energy Modulation", () => {
     const triggers = extractTraitTriggers({
       name: "Directed Energy Flux",

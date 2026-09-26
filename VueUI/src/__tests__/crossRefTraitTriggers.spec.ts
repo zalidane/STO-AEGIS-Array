@@ -290,6 +290,49 @@ describe("crossRefTraitTriggers — functional & combat state", () => {
     const weaponRow = abilitiesOnly.find((t) => t.kind === "weaponClass");
     expect(weaponRow?.satisfied).toBe(false);
   });
+
+  it("Unconventional Systems satisfied by seated Control BOff power", () => {
+    const triggers = extractTraitTriggers(
+      MOCK_TRAIT_SOURCES.unconventionalSystems,
+    );
+    expect(triggers).toEqual([
+      {
+        kind: "functionalCategory",
+        category: "control",
+        display: "Control",
+      },
+    ]);
+
+    const withControl = crossRefTraitTriggers(triggers, [
+      mockSeatedTray(MOCK_TRAY_SKILLS.jamSensors),
+    ]);
+    expect(withControl[0]?.satisfied).toBe(true);
+    expect(withControl[0]?.matchedItems[0]?.name).toBe(
+      "Jam Targeting Sensors",
+    );
+
+    const withNonControl = crossRefTraitTriggers(triggers, [
+      mockSeatedTray(MOCK_TRAY_SKILLS.tacticalTeam),
+    ]);
+    expect(withNonControl[0]?.satisfied).toBe(false);
+  });
+
+  it("The Boimler Effect satisfied by any seated BOff power", () => {
+    const triggers = extractTraitTriggers(MOCK_TRAIT_SOURCES.boimlerEffect);
+    expect(triggers[0]).toMatchObject({
+      kind: "functionalCategory",
+      category: "bridgeOfficerAbility",
+    });
+
+    const withAny = crossRefTraitTriggers(triggers, [
+      mockSeatedTray(MOCK_TRAY_SKILLS.tacticalTeam),
+    ]);
+    expect(withAny[0]?.satisfied).toBe(true);
+    expect(withAny[0]?.matchedItems[0]?.name).toBe("Tactical Team");
+
+    const empty = crossRefTraitTriggers(triggers, []);
+    expect(empty[0]?.satisfied).toBe(false);
+  });
 });
 
 describe("collectSeatedTriggerFills / against loadout", () => {

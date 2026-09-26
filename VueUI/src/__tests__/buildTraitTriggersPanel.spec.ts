@@ -105,7 +105,7 @@ describe("buildTraitTriggersPanel", () => {
     expect(rows).toEqual([]);
   });
 
-  it("skips seated traits with no structured triggers", () => {
+  it("includes seated traits with no structured triggers (no badge, explicit line 3)", () => {
     const blank: LoadoutItem = {
       id: 999,
       name: "Flavor Trait",
@@ -124,7 +124,11 @@ describe("buildTraitTriggersPanel", () => {
       ],
       catalog: mockCatalog(blank),
     });
-    expect(rows).toEqual([]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.hasCheckableTriggers).toBe(false);
+    expect(rows[0]?.satisfied).toBeNull();
+    expect(rows[0]?.statusLine).toBe("No activation trigger to check");
+    expect(traitTriggerSatisfactionMark(rows[0]!.satisfied)).toBeNull();
   });
 
   it("EWC seated + EPtW → ✓; without EPtW → ✗", () => {
@@ -236,6 +240,50 @@ describe("buildTraitTriggersPanel", () => {
     expect(rows[0]?.catalogKind).toBe("trait");
     expect(rows[0]?.satisfied).toBe(true);
   });
+
+  it("Unconventional Systems ✓ with Control BOff; The Boimler Effect ✓ with any BOff", () => {
+    const us: LoadoutItem = {
+      id: 910,
+      name: "Unconventional Systems",
+      type: "char",
+      catalogKind: "trait",
+      short: null,
+      basic: null,
+    };
+    const boimler: LoadoutItem = {
+      id: 911,
+      name: "The Boimler Effect",
+      type: "char",
+      catalogKind: "trait",
+      short: MOCK_TRAIT_SOURCES.boimlerEffect.short,
+      basic: MOCK_TRAIT_SOURCES.boimlerEffect.basic,
+    };
+
+    const rows = buildTraitTriggersPanel({
+      slots: [
+        {
+          slotId: "personalSpace-0",
+          itemId: us.id,
+          catalogKind: "trait",
+        },
+        {
+          slotId: "personalSpace-1",
+          itemId: boimler.id,
+          catalogKind: "trait",
+        },
+        mockTrayFill(MOCK_TRAY_SKILLS.jamSensors),
+      ],
+      catalog: mockCatalog(us, boimler, MOCK_TRAY_SKILLS.jamSensors),
+    });
+
+    const usRow = rows.find((r) => r.traitName === "Unconventional Systems");
+    const boimlerRow = rows.find((r) => r.traitName === "The Boimler Effect");
+    expect(usRow?.satisfied).toBe(true);
+    expect(usRow?.statusLine).toContain("Jam Targeting Sensors");
+    expect(usRow?.shortDescription.length).toBeGreaterThan(0);
+    expect(boimlerRow?.satisfied).toBe(true);
+    expect(boimlerRow?.statusLine).toContain("Jam Targeting Sensors");
+  });
 });
 
 describe("formatTraitTriggerStatusLine / aggregate", () => {
@@ -256,6 +304,10 @@ describe("formatTraitTriggerStatusLine / aggregate", () => {
       ]),
     ).toBe("Unsatisfied: needs Beam weapon");
 
+    expect(formatTraitTriggerStatusLine([])).toBe(
+      "No activation trigger to check",
+    );
+
     expect(
       aggregateTraitTriggerSatisfied([
         {
@@ -267,5 +319,7 @@ describe("formatTraitTriggerStatusLine / aggregate", () => {
         },
       ]),
     ).toBe(true);
+
+    expect(aggregateTraitTriggerSatisfied([])).toBeNull();
   });
 });

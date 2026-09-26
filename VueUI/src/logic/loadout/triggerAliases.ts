@@ -19,13 +19,15 @@ export type TriggerAbilityFamily =
 /**
  * Tier-3 conceptual categories that Cargo cannot derive.
  * `hangarPets` is matched by seated hangar fills in #32 (no tray-skill list).
+ * `bridgeOfficerAbility` is matched by any seated tray-skill fill (#32).
  */
 export type TriggerFunctionalCategory =
   | "anomaly"
   | "control"
   | "exotic"
   | "hangarPets"
-  | "captainAbility";
+  | "captainAbility"
+  | "bridgeOfficerAbility";
 
 /** Catalog tray-skill / captain-ability display names (wiki spelling). */
 export type TriggerCatalogAbilityName = string;
@@ -184,6 +186,12 @@ export const CAPTAIN_ABILITIES = [
  */
 export const HANGAR_PET_ABILITIES = [] as const satisfies readonly TriggerCatalogAbilityName[];
 
+/**
+ * Generic "any Bridge Officer ability" triggers (e.g. The Boimler Effect).
+ * Satisfied by any seated tray-skill fill in #32 — empty curated list.
+ */
+export const BRIDGE_OFFICER_ABILITIES = [] as const satisfies readonly TriggerCatalogAbilityName[];
+
 /** Family id → catalog ability names. */
 export const TRIGGER_ABILITY_FAMILIES: Readonly<
   Record<TriggerAbilityFamily, readonly TriggerCatalogAbilityName[]>
@@ -203,6 +211,7 @@ export const TRIGGER_FUNCTIONAL_CATEGORIES: Readonly<
   exotic: EXOTIC_ABILITIES,
   hangarPets: HANGAR_PET_ABILITIES,
   captainAbility: CAPTAIN_ABILITIES,
+  bridgeOfficerAbility: BRIDGE_OFFICER_ABILITIES,
 };
 
 /**

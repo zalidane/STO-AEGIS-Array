@@ -138,12 +138,16 @@ const FUNCTIONAL_CATEGORY_LABELS: Readonly<
   exotic: "Exotic",
   hangarPets: "Hangar pets",
   captainAbility: "Captain ability",
+  bridgeOfficerAbility: "Bridge Officer ability",
 };
 
 /**
  * Functional categories only when the category itself is the activator
  * ("control Bridge Officer ability"), not an effect noun ("exotic damage",
  * "your anomalies").
+ *
+ * `bridgeOfficerAbility` is last so profession-qualified / control / anomaly /
+ * exotic phrasing wins when present.
  */
 const FUNCTIONAL_ACTIVATOR_PATTERNS: ReadonlyArray<{
   category: TriggerFunctionalCategory;
@@ -174,7 +178,53 @@ const FUNCTIONAL_ACTIVATOR_PATTERNS: ReadonlyArray<{
     pattern:
       /\b(?:activat(?:e|ing).{0,40}exotic|exotic\s+(?:bridge\s+officer\s+|boff\s+|damage\s+)?abilit(?:y|ies))\b/i,
   },
+  {
+    // The Boimler Effect: "using / chance for Bridge Officer Abilities"
+    // Avoid matching "Science Bridge Officer ability" (profession path).
+    category: "bridgeOfficerAbility",
+    pattern:
+      /\b(?:using|chance for|when you (?:use|activat(?:e|ing)))\s+bridge\s+officer\s+abilit(?:y|ies)\b/i,
+  },
 ];
+
+/**
+ * Cargo gaps: wiki-backed activation text when Traits.json leaves fields blank.
+ * Applied only to empty short/basic/detailed — never overrides real Cargo.
+ */
+export const TRAIT_TRIGGER_TEXT_OVERRIDES: Readonly<
+  Record<string, TraitTriggerTextSource>
+> = {
+  "Unconventional Systems": {
+    name: "Unconventional Systems",
+    short:
+      "Control Bridge Officer Abilities reduce Universal Console recharge.",
+    basic:
+      "* Activating a control Bridge Officer ability will reduce the recharge time of all Universal Consoles currently recharging.",
+    detailed: null,
+  },
+};
+
+/**
+ * Merge curated wiki text into blank Cargo fields for known traits.
+ */
+export function applyTraitTriggerTextOverrides(
+  source: TraitTriggerTextSource | null | undefined,
+): TraitTriggerTextSource | null {
+  if (!source) return null;
+  const name = source.name?.trim();
+  if (!name) return source;
+  const override = TRAIT_TRIGGER_TEXT_OVERRIDES[name];
+  if (!override) return source;
+  const blank = (value: string | null | undefined) => !value?.trim();
+  return {
+    name: source.name,
+    short: blank(source.short) ? (override.short ?? null) : source.short,
+    basic: blank(source.basic) ? (override.basic ?? null) : source.basic,
+    detailed: blank(source.detailed)
+      ? (override.detailed ?? null)
+      : source.detailed,
+  };
+}
 
 /**
  * Phrases that mean the trait needs a slotted beam and/or cannon weapon.
@@ -432,17 +482,18 @@ type ScanMode = "full" | "namedOnly";
 export function extractTraitTriggers(
   source: TraitTriggerTextSource | null | undefined,
 ): ExtractedTraitTrigger[] {
-  if (!source) return [];
+  const resolved = applyTraitTriggerTextOverrides(source);
+  if (!resolved) return [];
 
-  const displayClause = extractLeadingTriggerClause(source);
+  const displayClause = extractLeadingTriggerClause(resolved);
   const scans: Array<{ text: string; mode: ScanMode }> = [];
 
-  const activationBasic = takeActivationSegment(source.basic);
+  const activationBasic = takeActivationSegment(resolved.basic);
   if (activationBasic.trim()) {
     scans.push({ text: activationBasic, mode: "full" });
   }
 
-  const activationDetailed = takeActivationSegment(source.detailed);
+  const activationDetailed = takeActivationSegment(resolved.detailed);
   if (activationDetailed.trim()) {
     scans.push({
       text: activationDetailed,
@@ -450,7 +501,7 @@ export function extractTraitTriggers(
     });
   }
 
-  const shortText = source.short?.trim() ?? "";
+  const shortText = resolved.short?.trim() ?? "";
   if (shortText) {
     // Effect-summary shorts ("-Recharge on Science…") must not add professions.
     scans.push({
@@ -505,7 +556,7 @@ export function extractTraitTriggers(
   };
 
   // Weapon-class mentions often sit past effect-split verbs ("will fire…").
-  for (const field of [source.basic, source.detailed, source.short]) {
+  for (const field of [resolved.basic, resolved.detailed, resolved.short]) {
     for (const weaponClass of findWeaponClassRequirements(field)) {
       addWeaponClass(weaponClass);
     }
