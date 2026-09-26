@@ -187,7 +187,8 @@ function toggleFiltersExpanded() {
       <div class="adv-filters__grid">
         <fieldset class="adv-group adv-group--weapons">
           <legend>Weapon layout</legend>
-          <div class="adv-group__row">
+          <div class="adv-group__stack">
+          <div class="adv-group__row adv-group__row--first">
             <span class="adv-group__sub">Fore</span>
             <button
               v-for="n in foreOptions"
@@ -242,11 +243,13 @@ function toggleFiltersExpanded() {
               {{ n }}
             </button>
           </div>
+          </div>
         </fieldset>
 
         <fieldset class="adv-group adv-group--consoles">
           <legend>Console layout</legend>
-          <div class="adv-group__row">
+          <div class="adv-group__stack">
+          <div class="adv-group__row adv-group__row--first">
             <span class="adv-group__sub adv-group__sub--narrow">ENG</span>
             <button
               v-for="n in engOptions"
@@ -298,11 +301,12 @@ function toggleFiltersExpanded() {
               {{ n }}
             </button>
           </div>
+          </div>
         </fieldset>
 
-        <fieldset class="adv-group">
+        <fieldset class="adv-group adv-group--fullspec">
           <legend>Full-spec seat</legend>
-          <div class="adv-group__row adv-group__row--wrap">
+          <div class="adv-group__row adv-group__row--wrap adv-group__row--first">
             <button
               v-for="spec in fullSpecChoices"
               :key="spec"
@@ -319,70 +323,74 @@ function toggleFiltersExpanded() {
         <fieldset class="adv-group adv-group--meta">
           <legend>Hull options &amp; faction</legend>
           <div class="adv-meta">
-            <div class="adv-meta__block">
-              <span class="adv-meta__label">Secondary deflector</span>
-              <div class="adv-group__row adv-group__row--tight">
-                <button
-                  v-for="choice in ['yes', 'no'] as YesNoChoice[]"
-                  :key="`sec-${choice}`"
-                  type="button"
-                  class="adv-chip"
-                  :class="{
-                    'adv-chip--active': filters.secondaryDeflector.includes(choice),
-                  }"
-                  @click="toggleYesNo('secondaryDeflector', choice)"
-                >
-                  {{ yesNoLabel(choice) }}
-                </button>
+            <div class="adv-meta__row">
+              <div class="adv-meta__block">
+                <span class="adv-meta__label">Secondary deflector</span>
+                <div class="adv-group__row adv-group__row--tight">
+                  <button
+                    v-for="choice in ['yes', 'no'] as YesNoChoice[]"
+                    :key="`sec-${choice}`"
+                    type="button"
+                    class="adv-chip"
+                    :class="{
+                      'adv-chip--active':
+                        filters.secondaryDeflector.includes(choice),
+                    }"
+                    @click="toggleYesNo('secondaryDeflector', choice)"
+                  >
+                    {{ yesNoLabel(choice) }}
+                  </button>
+                </div>
               </div>
-            </div>
-            <div class="adv-meta__block">
-              <span class="adv-meta__label">Hangar bay</span>
-              <div class="adv-group__row adv-group__row--tight">
-                <button
-                  v-for="n in hangarOptions"
-                  :key="`hang-${n}`"
-                  type="button"
-                  class="adv-chip"
-                  :class="{ 'adv-chip--active': filters.hangars.includes(n) }"
-                  @click="toggleNumber('hangars', n)"
-                >
-                  {{ n }}
-                </button>
+              <div class="adv-meta__block">
+                <span class="adv-meta__label">Hangar bay</span>
+                <div class="adv-group__row adv-group__row--tight">
+                  <button
+                    v-for="n in hangarOptions"
+                    :key="`hang-${n}`"
+                    type="button"
+                    class="adv-chip"
+                    :class="{ 'adv-chip--active': filters.hangars.includes(n) }"
+                    @click="toggleNumber('hangars', n)"
+                  >
+                    {{ n }}
+                  </button>
+                </div>
               </div>
-            </div>
-            <div class="adv-meta__block">
-              <span class="adv-meta__label">Dual cannons</span>
-              <div class="adv-group__row adv-group__row--tight">
-                <button
-                  v-for="choice in ['yes', 'no'] as YesNoChoice[]"
-                  :key="`dc-${choice}`"
-                  type="button"
-                  class="adv-chip"
-                  :class="{
-                    'adv-chip--active': filters.dualCannons.includes(choice),
-                  }"
-                  @click="toggleYesNo('dualCannons', choice)"
-                >
-                  {{ yesNoLabel(choice) }}
-                </button>
+              <div class="adv-meta__block">
+                <span class="adv-meta__label">Dual cannons</span>
+                <div class="adv-group__row adv-group__row--tight">
+                  <button
+                    v-for="choice in ['yes', 'no'] as YesNoChoice[]"
+                    :key="`dc-${choice}`"
+                    type="button"
+                    class="adv-chip"
+                    :class="{
+                      'adv-chip--active': filters.dualCannons.includes(choice),
+                    }"
+                    @click="toggleYesNo('dualCannons', choice)"
+                  >
+                    {{ yesNoLabel(choice) }}
+                  </button>
+                </div>
               </div>
-            </div>
-            <div class="adv-meta__block">
-              <span class="adv-meta__label">Fleet version available</span>
-              <div class="adv-group__row adv-group__row--tight">
-                <button
-                  v-for="choice in ['yes', 'no'] as YesNoChoice[]"
-                  :key="`fleet-${choice}`"
-                  type="button"
-                  class="adv-chip"
-                  :class="{
-                    'adv-chip--active': filters.fleetAvailable.includes(choice),
-                  }"
-                  @click="toggleYesNo('fleetAvailable', choice)"
-                >
-                  {{ yesNoLabel(choice) }}
-                </button>
+              <div class="adv-meta__block">
+                <span class="adv-meta__label">Fleet version available</span>
+                <div class="adv-group__row adv-group__row--tight">
+                  <button
+                    v-for="choice in ['yes', 'no'] as YesNoChoice[]"
+                    :key="`fleet-${choice}`"
+                    type="button"
+                    class="adv-chip"
+                    :class="{
+                      'adv-chip--active':
+                        filters.fleetAvailable.includes(choice),
+                    }"
+                    @click="toggleYesNo('fleetAvailable', choice)"
+                  >
+                    {{ yesNoLabel(choice) }}
+                  </button>
+                </div>
               </div>
             </div>
             <div class="adv-meta__block adv-meta__block--faction">
@@ -502,41 +510,43 @@ function toggleFiltersExpanded() {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 12px;
+  align-content: flex-start;
+  gap: 10px;
 }
 
+/* Compact cards: shrink-wrap content; never grow into empty flex cells. */
 .adv-group {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start; /* critical: avoid stretch widening fit-content fieldsets */
+  box-sizing: border-box;
   margin: 0;
-  padding: 10px 12px 12px;
-  border-radius: 12px;
+  padding: 4px 8px 6px;
+  border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(10, 18, 30, 0.55);
-  min-width: 0;
+  flex: 0 0 auto;
+  align-self: flex-start;
   width: max-content;
   max-width: 100%;
+  height: max-content;
+  min-inline-size: 0;
 }
 
-.adv-group--weapons {
-  flex: 1 1 280px;
-  width: auto;
-  min-width: min(100%, 280px);
-}
-
-.adv-group--consoles {
+.adv-group--weapons,
+.adv-group--consoles,
+.adv-group--fullspec,
+.adv-group--meta,
+.adv-group--acquisition {
   flex: 0 0 auto;
   width: max-content;
 }
 
-.adv-group--meta {
-  flex: 1 1 360px;
-  width: auto;
-  min-width: min(100%, 320px);
-}
-
 .adv-group--acquisition {
-  flex: 1 1 280px;
-  width: auto;
-  min-width: min(100%, 260px);
+  min-width: min(100%, 14rem);
+  max-width: min(100%, 20rem);
+  /* Select should use the card's content width. */
+  align-items: stretch;
 }
 
 .adv-group legend {
@@ -547,65 +557,100 @@ function toggleFiltersExpanded() {
   text-transform: uppercase;
 }
 
+.adv-group__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: fit-content;
+}
+
 .adv-group__row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 8px;
+  gap: 4px;
+  flex-wrap: nowrap;
+  margin-top: 0;
+  width: fit-content;
+}
+
+.adv-group__row--first {
+  margin-top: 0;
 }
 
 .adv-group__row--tight {
-  margin-top: 4px;
+  margin-top: 2px;
+  flex-wrap: wrap;
 }
 
 .adv-group__row--wrap {
   align-items: flex-start;
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 
 .adv-group__sub {
-  min-width: 5.5rem;
+  flex: 0 0 auto;
+  min-width: 5.75rem;
   color: rgba(255, 255, 255, 0.55);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .adv-group__sub--narrow {
-  min-width: 2.6rem;
+  min-width: 2.1rem;
+  width: 2.1rem;
 }
 
 .adv-group__divider {
-  margin: 10px 0 2px;
+  margin: 1px 0;
   border-top: 1px solid rgba(125, 211, 252, 0.28);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .adv-meta {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 0;
+  width: max-content;
+  max-width: 100%;
+}
+
+.adv-meta__row {
+  display: flex;
   flex-wrap: wrap;
-  gap: 12px 18px;
-  margin-top: 4px;
+  align-items: flex-start;
+  gap: 6px 14px;
+  width: max-content;
+  max-width: 100%;
 }
 
 .adv-meta__block {
   min-width: 0;
+  width: max-content;
 }
 
 .adv-meta__block--faction {
-  flex: 1 1 100%;
+  width: max-content;
+  max-width: 100%;
 }
 
 .adv-meta__label {
   display: block;
   color: rgba(255, 255, 255, 0.55);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .adv-acquisition-select {
-  margin-top: 8px;
-  min-width: 14rem;
+  margin-top: 2px;
+  width: 16rem;
+  max-width: 100%;
 }
 
 .adv-acquisition-select :deep(.v-field) {
