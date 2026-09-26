@@ -3,6 +3,11 @@ import { createYoga, createSchema } from "graphql-yoga";
 import { createPrismaClient } from "@sto-aegis/database";
 import { loadTypeDefs } from "./schema/index.js";
 import { createResolvers } from "./resolvers/index.js";
+import { logger } from "./logic/logger.js";
+import {
+  createOperationNamePlugin,
+  withRequestLogging,
+} from "./logic/requestLogging.js";
 
 const { prisma } = createPrismaClient();
 
@@ -14,11 +19,21 @@ const schema = createSchema({
 const yoga = createYoga({
   schema,
   graphqlEndpoint: "/graphql",
+  plugins: [createOperationNamePlugin()],
 });
 
-const server = createServer(yoga);
+const server = createServer(
+  withRequestLogging((req, res) => {
+    void yoga(req, res);
+  }),
+);
 const port = Number(process.env.PORT ?? 4000);
 
 server.listen(port, "0.0.0.0", () => {
-  console.log(`GraphQL is running on http://0.0.0.0:${port}/graphql`);
+  logger.info({
+    msg: "server_listen",
+    host: "0.0.0.0",
+    port,
+    path: "/graphql",
+  });
 });

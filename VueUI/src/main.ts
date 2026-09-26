@@ -8,6 +8,7 @@ import "@mdi/font/css/materialdesignicons.css";
 import App from "./App.vue";
 import router from "./router";
 import { apolloClient } from "./apollo";
+import { getLastCorrelationId } from "./logic/ops/correlationId";
 
 const app = createApp(App);
 
@@ -17,7 +18,12 @@ app.use(router);
 app.use(vuetify);
 
 app.config.errorHandler = (err) => {
-  console.error(err);
+  const correlationId = getLastCorrelationId();
+  if (correlationId) {
+    console.error({ correlation_id: correlationId, err });
+  } else {
+    console.error(err);
+  }
   if (router.currentRoute.value.name === "server-error") return;
   void router.replace({ name: "server-error" });
 };
