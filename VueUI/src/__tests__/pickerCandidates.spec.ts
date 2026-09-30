@@ -38,6 +38,15 @@ const uni: LoadoutItem = {
   catalogKind: "item",
 };
 
+const fleetCoordination: LoadoutItem = {
+  id: 14,
+  name: "Console - Universal - Fleet Coordination Module",
+  type: "universal console",
+  catalogKind: "item",
+  who: "Carrier (T6), Fleet Carrier (T6)",
+  equiplimit: 1,
+};
+
 const tacticalConsole: LoadoutItem = {
   id: 11,
   name: "Console - Tactical - Vulnerability Locator",
@@ -128,6 +137,22 @@ const universePet: LoadoutItem = {
 const obeliskShip = {
   name: "Obelisk Carrier",
   type: "Engineering Carrier",
+  tier: 5,
+};
+
+const jupiterShip = {
+  name: "Jupiter Carrier",
+  type: "Science Carrier",
+  displayType: "Carrier",
+  displayClass: "Jupiter",
+  tier: 6,
+};
+
+const defiantShip = {
+  name: "Defiant Tactical Escort Retrofit",
+  type: "Escort",
+  displayType: "Tactical Escort Retrofit",
+  displayClass: "Defiant",
   tier: 5,
 };
 
@@ -304,5 +329,58 @@ describe("pickerCandidates", () => {
         },
       }).map((item) => item.id),
     ).toEqual([30, 31]);
+  });
+
+  it("hides ship-locked consoles unless the active hull matches who", () => {
+    expect(
+      fittingItems({
+        kind: "universalConsole",
+        catalog: [uni, fleetCoordination, tacticalConsole],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        ship: defiantShip,
+      }).map((item) => item.id),
+    ).toEqual([10, 11]);
+    expect(
+      fittingItems({
+        kind: "tacticalConsole",
+        catalog: [uni, fleetCoordination, tacticalConsole],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        ship: jupiterShip,
+      }).map((item) => item.id),
+    ).toEqual([10, 14, 11]);
+    expect(
+      pickerCandidatesFor({
+        query: "fleet coordination",
+        hullSlot: universalConsole0,
+        catalog: [uni, fleetCoordination],
+        stations: [],
+        hullSlots: [universalConsole0],
+        hullFills: [],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        identity: {},
+        ship: defiantShip,
+      }).map((item) => item.id),
+    ).toEqual([]);
+    expect(
+      pickerCandidatesFor({
+        query: "fleet coordination",
+        hullSlot: universalConsole0,
+        catalog: [uni, fleetCoordination],
+        stations: [],
+        hullSlots: [universalConsole0],
+        hullFills: [],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        identity: {},
+        ship: jupiterShip,
+      }).map((item) => item.id),
+    ).toEqual([14]);
   });
 });
