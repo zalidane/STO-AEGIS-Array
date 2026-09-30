@@ -93,6 +93,21 @@ export function dropHangarRankPrefix(name: string): string | undefined {
     : undefined;
 }
 
+/**
+ * Fleet gear often reuses the base weapon’s wiki icon when the
+ * `Advanced Fleet …` / `Elite Fleet …` file title is missing on the wiki.
+ * Longer prefixes first. Keep in sync with VueUI `dropFleetItemPrefix`.
+ */
+const FLEET_ITEM_PREFIX =
+  /^(?:Elite Fleet Colony Security|Advanced Fleet|Elite Fleet)\s+/i;
+
+export function dropFleetItemPrefix(name: string): string | undefined {
+  const stripped = name.replace(FLEET_ITEM_PREFIX, "").replace(/\s+/g, " ").trim();
+  return stripped && stripped.toLowerCase() !== name.toLowerCase()
+    ? stripped
+    : undefined;
+}
+
 /** Exact cargo name, then without mods, then without Mk — first wiki hit wins. */
 export function itemIconNameCandidates(name: string): string[] {
   const decoded = decodeHtmlEntities(name).replace(INVISIBLE_CHARS, "").trim();
@@ -100,7 +115,15 @@ export function itemIconNameCandidates(name: string): string[] {
   const withoutMark = withoutMods.replace(ITEM_MARK_SUFFIX, "").trim();
   const hangarBase =
     dropHangarRankPrefix(withoutMark) ?? dropHangarRankPrefix(decoded);
-  return uniqueNames([decoded, withoutMods, withoutMark, hangarBase ?? ""]);
+  const fleetBase =
+    dropFleetItemPrefix(withoutMark) ?? dropFleetItemPrefix(decoded);
+  return uniqueNames([
+    decoded,
+    withoutMods,
+    withoutMark,
+    hangarBase ?? "",
+    fleetBase ?? "",
+  ]);
 }
 
 /**

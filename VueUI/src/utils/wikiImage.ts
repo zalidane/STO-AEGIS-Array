@@ -66,6 +66,20 @@ export function dropHangarRankPrefix(name: string): string | undefined {
     : undefined;
 }
 
+/**
+ * Fleet gear often reuses the base weapon icon when the Fleet-prefixed wiki
+ * file is missing. Keep in sync with Extractor `dropFleetItemPrefix`.
+ */
+const FLEET_ITEM_PREFIX =
+  /^(?:Elite Fleet Colony Security|Advanced Fleet|Elite Fleet)\s+/i;
+
+export function dropFleetItemPrefix(name: string): string | undefined {
+  const stripped = name.replace(FLEET_ITEM_PREFIX, "").replace(/\s+/g, " ").trim();
+  return stripped && stripped.toLowerCase() !== name.toLowerCase()
+    ? stripped
+    : undefined;
+}
+
 /** Wiki item icons omit Mk XII and [Acc]/[Dmg] suffixes from Cargo names. */
 export function itemIconLookupName(name: string): string {
   const decoded = normalizedFileStem(name);
@@ -73,7 +87,9 @@ export function itemIconLookupName(name: string): string {
   const withoutMark = withoutMods.replace(ITEM_MARK_SUFFIX, "").trim();
   const hangarBase =
     dropHangarRankPrefix(withoutMark) ?? dropHangarRankPrefix(decoded);
-  return hangarBase || withoutMark || withoutMods || decoded;
+  const fleetBase =
+    dropFleetItemPrefix(withoutMark) ?? dropFleetItemPrefix(decoded);
+  return hangarBase || fleetBase || withoutMark || withoutMods || decoded;
 }
 
 /** encodeURIComponent leaves `'` unescaped; percent-encode it so img src cannot truncate. */

@@ -163,4 +163,16 @@ describe("wikiImage", () => {
       ),
     ).toBe("/images/items/Hangar_-_Advanced_Baltim_Raider_icon.png");
   });
+
+  it("falls back Advanced Fleet items to the base weapon icon (#77)", () => {
+    expect(
+      itemIconLookupName("Advanced Fleet Antiproton Blast Assault"),
+    ).toBe("Antiproton Blast Assault");
+    expect(getItemImageUrl(null, "Advanced Fleet Antiproton Blast Assault")).toBe(
+      "/images/items/Antiproton_Blast_Assault_icon.png",
+    );
+    expect(getItemImageUrl(null, '&amp;#34;Avalanche&amp;#34;')).toBe(
+      "/images/items/Avalanche_icon.png",
+    );
+  });
 });
