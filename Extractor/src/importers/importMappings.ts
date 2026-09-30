@@ -17,12 +17,18 @@ import {
   type ModifierSupplementRow,
 } from "./mergeModifiers.js";
 import {
+  mergeReputation,
+  type ReputationCargoRow,
+  type ReputationSupplementRow,
+} from "./mergeReputation.js";
+import {
   mergeSetBonus,
   type SetBonusCargoRow,
   type SetBonusSupplementRow,
 } from "./mergeSetBonus.js";
 
 export const MODIFIERS_SUPPLEMENT_PATH = "output/supplements/Modifiers.json";
+export const REPUTATION_SUPPLEMENT_PATH = "output/supplements/Reputation.json";
 export const SET_BONUS_SUPPLEMENT_PATH = "output/supplements/SetBonus.json";
 
 function mergeModifiersSupplement(
@@ -35,6 +41,19 @@ function mergeModifiersSupplement(
   return mergeModifiers(
     cargo as ModifierCargoRow[],
     supplement as ModifierSupplementRow[],
+  ) as Record<string, unknown>[];
+}
+
+function mergeReputationSupplement(
+  cargo: Record<string, unknown>[],
+  supplement: unknown,
+): Record<string, unknown>[] {
+  if (!Array.isArray(supplement)) {
+    throw new Error("Reputation supplement must be a JSON array");
+  }
+  return mergeReputation(
+    cargo as ReputationCargoRow[],
+    supplement as ReputationSupplementRow[],
   ) as Record<string, unknown>[];
 }
 
@@ -82,6 +101,8 @@ export const importMappings = {
     model: "reputation",
     uniqueFields: ["name"],
     mapper: mapReputation,
+    supplementFile: REPUTATION_SUPPLEMENT_PATH,
+    mergeSupplement: mergeReputationSupplement,
   },
   SetBonus: {
     model: "setBonus",
