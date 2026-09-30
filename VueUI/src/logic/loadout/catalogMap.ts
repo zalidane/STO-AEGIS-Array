@@ -6,6 +6,7 @@ import {
   type BoffPowerSource,
 } from "@/logic/loadout/boffPowers";
 import type { CaptainTraitSource } from "@/logic/loadout/captainTraits";
+import { resolvePersonalTraitCareer } from "@/logic/loadout/personalTraitCareer";
 import type { LoadoutCatalogKind, LoadoutItem } from "@/logic/loadout/types";
 import {
   getItemImageUrl,
@@ -102,7 +103,7 @@ export function toLoadoutPersonalTrait(
     equiplimit: 1,
     catalogKind: "trait",
     environment: row.environment,
-    career: row.career,
+    career: resolvePersonalTraitCareer(row.name, row.career),
     required: row.required,
     who: row.source,
     short: row.shortDescription ?? null,
@@ -146,7 +147,7 @@ export function asCaptainTrait(item: LoadoutItem): CaptainTraitSource {
     name: item.name,
     type: item.type,
     environment: item.environment ?? null,
-    career: item.career,
+    career: resolvePersonalTraitCareer(item.name, item.career),
     required: item.required,
     catalogKind:
       item.catalogKind === "starshipTrait" ? "starshipTrait" : "trait",

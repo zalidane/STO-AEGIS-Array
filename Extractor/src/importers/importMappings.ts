@@ -21,9 +21,15 @@ import {
   type SetBonusCargoRow,
   type SetBonusSupplementRow,
 } from "./mergeSetBonus.js";
+import {
+  mergeTraits,
+  type TraitCargoRow,
+  type TraitSupplementRow,
+} from "./mergeTraits.js";
 
 export const MODIFIERS_SUPPLEMENT_PATH = "output/supplements/Modifiers.json";
 export const SET_BONUS_SUPPLEMENT_PATH = "output/supplements/SetBonus.json";
+export const TRAITS_SUPPLEMENT_PATH = "output/supplements/Traits.json";
 
 function mergeModifiersSupplement(
   cargo: Record<string, unknown>[],
@@ -48,6 +54,19 @@ function mergeSetBonusSupplement(
   return mergeSetBonus(
     cargo as SetBonusCargoRow[],
     supplement as SetBonusSupplementRow[],
+  ) as Record<string, unknown>[];
+}
+
+function mergeTraitsSupplement(
+  cargo: Record<string, unknown>[],
+  supplement: unknown,
+): Record<string, unknown>[] {
+  if (!Array.isArray(supplement)) {
+    throw new Error("Traits supplement must be a JSON array");
+  }
+  return mergeTraits(
+    cargo as TraitCargoRow[],
+    supplement as TraitSupplementRow[],
   ) as Record<string, unknown>[];
 }
 
@@ -109,6 +128,8 @@ export const importMappings = {
     model: "trait",
     uniqueFields: ["name", "type", "environment"],
     mapper: mapTrait,
+    supplementFile: TRAITS_SUPPLEMENT_PATH,
+    mergeSupplement: mergeTraitsSupplement,
   },
   TraySkill: {
     model: "traySkill",

@@ -2,7 +2,7 @@
 
 Extracts Star Trek Online game data from [STOWiki](https://stowiki.net) Cargo tables into `output/*.json`, then imports those files into PostgreSQL via `@sto-aegis/database`. Image files are downloaded into `VueUI/public/images/`. After Cargo extract, experimental-weapon names are scraped from hull wikitext into `output/ShipExperimentalWeapons.json` (not a Cargo table).
 
-Committed **supplements** under `output/supplements/` fill Cargo gaps (missing modifier tokens, incomplete `available` lists, incomplete set-bonus membership, and later other tables). Import merges each supplement with its Cargo file before writing Prisma models. Cargo remains primary: supplements insert missing rows and may widen `type` / `available` / `Members`, but do not overwrite non-empty wiki `stats` or `Passives`.
+Committed **supplements** under `output/supplements/` fill Cargo gaps (missing modifier tokens, incomplete `available` lists, incomplete set-bonus membership, missing personal-trait `career` flags, and later other tables). Import merges each supplement with its Cargo file before writing Prisma models. Cargo remains primary: supplements insert missing rows and may widen `type` / `available` / `Members` or fill empty `career`, but do not overwrite non-empty wiki `stats` or `Passives`.
 
 **Workflow**
 
@@ -148,6 +148,7 @@ Import order is Infobox → Ships → StarshipTraits → Mastery → Modifiers �
 |------|-------------|---------|
 | `output/supplements/Modifiers.json` | Modifiers | Missing tokens (e.g. `[HullCap]`, `[ShCap]`); widen or clear `available` (e.g. `[HullHeal]`); widen `[Proc]` Type with `Ship Fore Weapon` |
 | `output/supplements/SetBonus.json` | SetBonus | Missing set pages (Nausicaan Weaponry Augmentation, Counter-Command Ordnance) plus `Members` globs so the loadout card can match weapons + career consoles (#13) |
+| `output/supplements/Traits.json` | Traits | Fill empty profession `career` (`tac` / `eng` / `sci`) on lockbox personal traits Cargo left blank (#69) |
 
 Modifier supplement rows are Cargo-shaped. Optional `_merge` metadata (stripped before DB write):
 
@@ -181,7 +182,7 @@ From the monorepo root:
 npm run test:extractor
 ```
 
-Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier and set-bonus supplement merge, import name dedupe, and the monthly home-extract schedule gate.
+Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier / set-bonus / traits supplement merge, import name dedupe, and the monthly home-extract schedule gate.
 
 ## Images
 

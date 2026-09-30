@@ -71,13 +71,22 @@ describe("catalogMap", () => {
     expect(personal).toMatchObject({
       catalogKind: "trait",
       environment: "space",
-      career: "Tactical",
+      career: "tac",
       who: "Career",
       short: "On Beam Overload",
       basic: "* Upon activating [[Beams: Overload]]…",
       detailed: null,
     });
     expect(personal.image).toBe("/images/traits/Beam_Barrage_icon.png");
+
+    const lockbox = toLoadoutPersonalTrait({
+      id: 9,
+      name: "A Good Day to Die",
+      type: "char",
+      environment: "space",
+      career: null,
+    });
+    expect(lockbox.career).toBe("tac");
 
     const power = toLoadoutTraySkill({
       id: 7,
