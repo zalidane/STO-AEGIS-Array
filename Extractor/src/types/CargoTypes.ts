@@ -166,13 +166,13 @@ export interface RawModifier {
 }
 
 export interface RawReputation {
-  color1: string;
-  color2: string;
-  icon: string;
-  link: string;
+  color1: string | null;
+  color2: string | null;
+  icon: string | null;
+  link: string | null;
   name: string;
-  description: string;
-  released: string;
+  description: string | null;
+  released: string | null;
   environment: string | null;
   boff: string | null;
   secondary: string | null;
