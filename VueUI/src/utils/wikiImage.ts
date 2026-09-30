@@ -13,11 +13,19 @@ function normalizedFileStem(raw: string): string {
   return withoutPrefix.replace(/_/g, " ").replace(/\s+/g, " ").trim();
 }
 
-/** ASCII/Unicode apostrophes and ampersands — strip so hosted Linux/WAF/URL paths do not 404. */
-const WIKI_APOSTROPHES = /['\u2018\u2019\u02BC&]/g;
+/**
+ * Characters that break public image paths or static hosting.
+ * Keep in sync with Extractor `WIKI_UNSAFE_FILENAME_CHARS` (#75).
+ */
+const WIKI_UNSAFE_FILENAME_CHARS =
+  /['\u2018\u2019\u02BC&:/!,\"\u201C\u201D]/g;
 
 export function wikiLocalFilename(fileField: string): string {
-  return normalizedFileStem(fileField).replace(/ /g, "_").replace(WIKI_APOSTROPHES, "");
+  return normalizedFileStem(fileField)
+    .replace(WIKI_UNSAFE_FILENAME_CHARS, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/ /g, "_");
 }
 
 export function wikiIconFilename(nameOrFile: string): string {

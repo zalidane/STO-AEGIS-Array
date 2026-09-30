@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getItemImageUrl,
+  getStarshipTraitImageUrl,
   getTraitImageUrl,
   getTraySkillImageUrl,
   getWikiImageUrl,
@@ -112,6 +113,27 @@ describe("wikiImage", () => {
     );
     expect(getTraitImageUrl("Fresh From R&amp;R", null)).toBe(
       "/images/traits/Fresh_From_RR_icon.png",
+    );
+    expect(getTraitImageUrl("Active: Temporal Surge", null)).toBe(
+      "/images/traits/Active_Temporal_Surge_icon.png",
+    );
+    expect(getTraitImageUrl("Majority / Minority", null)).toBe(
+      "/images/traits/Majority_Minority_icon.png",
+    );
+    expect(getTraitImageUrl("Mine, All Mine!", null)).toBe(
+      "/images/traits/Mine_All_Mine_icon.png",
+    );
+    expect(getStarshipTraitImageUrl("Active: Temporal Surge", null)).toBe(
+      "/images/starship-traits/Active_Temporal_Surge_icon.png",
+    );
+    expect(getStarshipTraitImageUrl("Majority / Minority", null)).toBe(
+      "/images/starship-traits/Majority_Minority_icon.png",
+    );
+    expect(getStarshipTraitImageUrl("Mine, All Mine!", null)).toBe(
+      "/images/starship-traits/Mine_All_Mine_icon.png",
+    );
+    expect(getItemImageUrl(null, '"Avalanche"')).toBe(
+      "/images/items/Avalanche_icon.png",
     );
     expect(
       getTraySkillImageUrl("Beams: Fire at Will"),

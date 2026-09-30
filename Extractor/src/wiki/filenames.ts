@@ -103,24 +103,38 @@ export function itemIconNameCandidates(name: string): string[] {
   return uniqueNames([decoded, withoutMods, withoutMark, hangarBase ?? ""]);
 }
 
-/** ASCII/Unicode apostrophes and ampersands. Strip so public paths stay POSIX/WAF/URL-safe. */
-export const WIKI_APOSTROPHES = /['\u2018\u2019\u02BC&]/g;
+/**
+ * Characters that break public image paths or static hosting.
+ * Strip so Extractor writes and VueUI lookups stay POSIX/WAF/URL-safe.
+ * Includes apostrophes/ampersands (legacy) plus `:`, `/`, `!`, `,`, and quotes (#75/#77).
+ */
+export const WIKI_UNSAFE_FILENAME_CHARS =
+  /['\u2018\u2019\u02BC&:/!,\"\u201C\u201D]/g;
 
-export function stripWikiApostrophes(name: string): string {
-  return name.replace(WIKI_APOSTROPHES, "");
+/** @deprecated Use WIKI_UNSAFE_FILENAME_CHARS */
+export const WIKI_APOSTROPHES = WIKI_UNSAFE_FILENAME_CHARS;
+
+export function stripWikiUnsafeFilenameChars(name: string): string {
+  return name.replace(WIKI_UNSAFE_FILENAME_CHARS, "");
 }
 
-/** Case-insensitive key that also ignores apostrophes and ampersands still present on disk. */
+/** @deprecated Use stripWikiUnsafeFilenameChars */
+export function stripWikiApostrophes(name: string): string {
+  return stripWikiUnsafeFilenameChars(name);
+}
+
+/** Case-insensitive key that also ignores unsafe chars still present on disk. */
 export function imageFileMatchKey(filename: string): string {
-  return stripWikiApostrophes(filename).toLowerCase();
+  return stripWikiUnsafeFilenameChars(filename).toLowerCase();
 }
 
 export function localFilename(fileTitle: string): string {
-  return stripWikiApostrophes(
-    normalizeWikiFileTitle(fileTitle)
-      .replace(/^File:/i, "")
-      .replaceAll(" ", "_"),
-  );
+  const stem = stripWikiUnsafeFilenameChars(
+    normalizeWikiFileTitle(fileTitle).replace(/^File:/i, ""),
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+  return stem.replaceAll(" ", "_");
 }
 
 export function matchKey(fileTitle: string): string {

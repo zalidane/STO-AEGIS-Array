@@ -131,6 +131,25 @@ describe("normalizeWikiFileTitle", () => {
       "obeliskcarrier.jpg",
     );
   });
+
+  it("strips path-breaking punctuation from public filenames (#75)", () => {
+    assert.equal(
+      localFilename("File:Active: Temporal Surge icon.png"),
+      "Active_Temporal_Surge_icon.png",
+    );
+    assert.equal(
+      localFilename("File:Majority / Minority icon.png"),
+      "Majority_Minority_icon.png",
+    );
+    assert.equal(
+      localFilename("File:Mine, All Mine! icon.png"),
+      "Mine_All_Mine_icon.png",
+    );
+    assert.equal(
+      localFilename('File:"Avalanche" icon.png'),
+      "Avalanche_icon.png",
+    );
+  });
 });
 
 describe("catalogImageTargets", () => {
