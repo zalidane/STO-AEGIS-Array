@@ -1,7 +1,7 @@
 import { decodeHtmlEntities } from "@/utils/decodeHtmlEntities";
 import { itemSlotClassesFromType } from "./slotClass";
 
-/** Hull fields used to match wiki hangar-pet `who` restrictions. */
+/** Hull fields used to match wiki hangar-pet / ship-locked console `who`. */
 export type HangarShip = {
   name: string;
   wikiName?: string | null;
@@ -11,6 +11,9 @@ export type HangarShip = {
   shipTypeName?: string | null;
   tier?: number | null;
 };
+
+/** Item classes whose Infobox `who` restricts which hull may equip them. */
+const WHO_RESTRICTED_SLOT_CLASSES = new Set(["hangar", "universalConsole"]);
 
 const TIER_MARK = /\s*[\(\[]\s*t(?:5-u|5u|5|6)\s*[\)\]]/gi;
 
@@ -78,13 +81,19 @@ function stripTier(token: string): { text: string; tier: number | null } {
   return { text, tier };
 }
 
-/** Split wiki `who` on commas and `or`. */
-export function parseHangarWhoTokens(who: string): string[] {
-  return decodeHtmlEntities(who)
+/** Strip wiki “Equippable on/by” wrappers used on ship-locked consoles. */
+export function normalizeWhoRestriction(who: string | null | undefined): string {
+  return decodeHtmlEntities(who ?? "")
     .replace(/\s+/g, " ")
     .trim()
-    .split(/\s*,\s*|\s+or\s+/i)
-    .map((part) => part.replace(/^or\s+/i, "").trim())
+    .replace(/^Equippable\s+(?:on|by)\s*:?\s*/i, "");
+}
+
+/** Split wiki `who` on commas, `or`, and `and`. */
+export function parseHangarWhoTokens(who: string): string[] {
+  return normalizeWhoRestriction(who)
+    .split(/\s*,\s*|\s+or\s+|\s+and\s+/i)
+    .map((part) => part.replace(/^(?:or|and)\s+/i, "").trim())
     .filter(Boolean);
 }
 
@@ -215,21 +224,15 @@ export function hangarShipFromCatalog(
   };
 }
 
-/**
- * Empty `who` means any hangar ship. Restricted pets match if any wiki
- * clause fits this hull’s name, type, or family (Any Full Carrier, etc.).
- * Unique-console `who` is ignored — hangar items only.
- */
-export function hangarPetFitsShip(
-  item: { type?: string | null; who?: string | null },
+function whoAllowsShip(
+  who: string | null | undefined,
   ship: HangarShip | null | undefined,
 ): boolean {
-  if (!itemSlotClassesFromType(item.type).includes("hangar")) return true;
-  const who = item.who?.trim();
-  if (!who) return true;
+  const normalized = normalizeWhoRestriction(who);
+  if (!normalized) return true;
   if (!ship) return false;
 
-  const tokens = parseHangarWhoTokens(who);
+  const tokens = parseHangarWhoTokens(normalized);
   if (tokens.length === 0) return true;
 
   let familyHint = "";
@@ -240,4 +243,34 @@ export function hangarPetFitsShip(
     if (tokenAllowsShip(text, tier, familyHint, ship)) return true;
   }
   return false;
+}
+
+/**
+ * Empty `who` means unrestricted. Restricted hangar pets and universal
+ * consoles match if any wiki clause fits this hull’s name, type, or
+ * family (Carrier (T6), Any Full Carrier, named hulls, etc.).
+ */
+export function itemWhoFitsShip(
+  item: { type?: string | null; who?: string | null },
+  ship: HangarShip | null | undefined,
+): boolean {
+  const classes = itemSlotClassesFromType(item.type);
+  if (!classes.some((slotClass) => WHO_RESTRICTED_SLOT_CLASSES.has(slotClass))) {
+    return true;
+  }
+  return whoAllowsShip(item.who, ship);
+}
+
+/**
+ * Empty `who` means any hangar ship. Restricted pets match if any wiki
+ * clause fits this hull’s name, type, or family (Any Full Carrier, etc.).
+ * Unique-console `who` is ignored — hangar items only; use
+ * {@link itemWhoFitsShip} for console restrictions.
+ */
+export function hangarPetFitsShip(
+  item: { type?: string | null; who?: string | null },
+  ship: HangarShip | null | undefined,
+): boolean {
+  if (!itemSlotClassesFromType(item.type).includes("hangar")) return true;
+  return whoAllowsShip(item.who, ship);
 }
