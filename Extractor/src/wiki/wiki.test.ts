@@ -131,6 +131,39 @@ describe("normalizeWikiFileTitle", () => {
       "obeliskcarrier.jpg",
     );
   });
+
+  it("strips path-breaking punctuation from public filenames (#75)", () => {
+    assert.equal(
+      localFilename("File:Active: Temporal Surge icon.png"),
+      "Active_Temporal_Surge_icon.png",
+    );
+    assert.equal(
+      localFilename("File:Majority / Minority icon.png"),
+      "Majority_Minority_icon.png",
+    );
+    assert.equal(
+      localFilename("File:Mine, All Mine! icon.png"),
+      "Mine_All_Mine_icon.png",
+    );
+    assert.equal(
+      localFilename('File:"Avalanche" icon.png'),
+      "Avalanche_icon.png",
+    );
+  });
+
+  it("falls back Advanced/Elite Fleet names to the base weapon icon (#77)", () => {
+    assert.deepEqual(
+      itemIconNameCandidates("Advanced Fleet Antiproton Blast Assault"),
+      [
+        "Advanced Fleet Antiproton Blast Assault",
+        "Antiproton Blast Assault",
+      ],
+    );
+    assert.deepEqual(
+      itemIconNameCandidates("Elite Fleet Phaser Blast Assault"),
+      ["Elite Fleet Phaser Blast Assault", "Phaser Blast Assault"],
+    );
+  });
 });
 
 describe("catalogImageTargets", () => {
@@ -250,6 +283,40 @@ describe("applyImageIndexToInfoboxes", () => {
     );
     assert.equal(stamped[0]?.image, "Hangar_-_Aeon_Timeships_icon.png");
     assert.equal(stamped[1]?.image, "Hangar_-_Advanced_Baltim_Raider_icon.png");
+  });
+
+  it("stamps Advanced Fleet items from the base weapon icon when Fleet file is missing (#77)", () => {
+    const stamped = applyImageIndexToInfoboxes(
+      [
+        { name: "Advanced Fleet Antiproton Blast Assault" },
+        { name: "Advanced Fleet Phaser Blast Assault" },
+      ],
+      [
+        {
+          kind: "items",
+          wikiTitle: "File:Advanced Fleet Antiproton Blast Assault icon.png",
+          localFilename: "Advanced_Fleet_Antiproton_Blast_Assault_icon.png",
+          status: "missing",
+        },
+        {
+          kind: "items",
+          wikiTitle: "File:Antiproton Blast Assault icon.png",
+          localFilename: "Antiproton_Blast_Assault_icon.png",
+          status: "exists",
+        },
+        {
+          kind: "items",
+          wikiTitle: "File:Advanced Fleet Phaser Blast Assault icon.png",
+          localFilename: "Advanced_Fleet_Phaser_Blast_Assault_icon.png",
+          status: "downloaded",
+        },
+      ],
+    );
+    assert.equal(stamped[0]?.image, "Antiproton_Blast_Assault_icon.png");
+    assert.equal(
+      stamped[1]?.image,
+      "Advanced_Fleet_Phaser_Blast_Assault_icon.png",
+    );
   });
 });
 
