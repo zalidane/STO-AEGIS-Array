@@ -27,8 +27,8 @@ export type AdvancedShipSearchFilters = {
    */
   totalWeapons: number[];
   /**
-   * Full-spec (specialization) seats present on the hull.
-   * OR within. Includes `"None"` for hulls with no specialization seating.
+   * CMDR-seat full-spec (specialization) only — not lower hybrid seats.
+   * OR within. Includes `"None"` for hulls with no CMDR specialization.
    */
   fullSpecs: Array<FullSpecOption | "None">;
   secondaryDeflector: YesNoChoice[];

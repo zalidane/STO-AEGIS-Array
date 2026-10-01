@@ -3,7 +3,11 @@ import {
   hullConsoleCounts,
 } from "@/logic/loadout/consoleSummary";
 import { isFleetShip } from "@/logic/shipsBinder";
-import { parseBoffSeat } from "@/utils/parsers/boffSeat";
+import {
+  BOFF_RANK_ORDER,
+  boffRankIndex,
+  parseBoffSeat,
+} from "@/utils/parsers/boffSeat";
 import { parseShipCost } from "@/utils/parsers/shipCost";
 import { resolvePrimaryFaction } from "@/logic/resolvePrimaryFaction";
 import {
@@ -16,6 +20,8 @@ import type {
   FullSpecOption,
 } from "./types";
 import { FULL_SPEC_OPTIONS } from "./types";
+
+const COMMANDER_RANK_INDEX = BOFF_RANK_ORDER.indexOf("commander");
 
 /** Map wiki specialization strings onto filter labels. */
 export function normalizeFullSpec(
@@ -31,6 +37,11 @@ export function normalizeFullSpec(
   return null;
 }
 
+/**
+ * Full-spec for Advanced Search = specialization on the CMDR (Commander) seat
+ * only. Lower seats (LtCmdr / Lt / Ensign) with a hybrid specialization do not
+ * count — e.g. Thrai's Lieutenant Engineering-Command must not match Command.
+ */
 export function extractFullSpecs(
   boffs: string | null | undefined,
 ): FullSpecOption[] {
@@ -38,6 +49,7 @@ export function extractFullSpecs(
   const found = new Set<FullSpecOption>();
   for (const part of boffs.split(",")) {
     const seat = parseBoffSeat(part.trim());
+    if (boffRankIndex(seat.rank) !== COMMANDER_RANK_INDEX) continue;
     const spec = normalizeFullSpec(seat.specialization);
     if (spec) found.add(spec);
   }
