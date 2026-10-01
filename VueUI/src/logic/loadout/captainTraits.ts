@@ -4,6 +4,7 @@ import {
   type CaptainCareer,
 } from "@/logic/captain/identity";
 import { EXTRA_PERSONAL_TRAIT_UNLOCK } from "@/logic/captain/upgrade";
+import { normalizeTraitCareerCode } from "@/logic/loadout/personalTraitCareer";
 
 export type CaptainTraitGroup =
   | "personalSpace"
@@ -245,7 +246,7 @@ export function traitAllowsCareer(
   traitCareer: string | null | undefined,
   captainCareer: CaptainCareer | null | undefined,
 ): boolean {
-  const code = normalize(traitCareer);
+  const code = normalizeTraitCareerCode(traitCareer);
   if (!code) return true;
   const expected = careerTraitCode(captainCareer);
   if (!expected) return true;

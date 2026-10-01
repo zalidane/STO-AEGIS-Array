@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { buildCaptainTraitSlots } from "@/logic/loadout/captainTraits";
 import { buildBoffStations } from "@/logic/loadout/boffPowers";
-import { toLoadoutTraySkill } from "@/logic/loadout/catalogMap";
+import {
+  toLoadoutPersonalTrait,
+  toLoadoutTraySkill,
+} from "@/logic/loadout/catalogMap";
 import {
   fittingBoffPowers,
   fittingCaptainTraits,
@@ -222,6 +225,52 @@ describe("pickerCandidates", () => {
         identity: { career: "tactical", raceLabel: "Human" },
       }).map((item) => item.id),
     ).toEqual([21]);
+  });
+
+  it("hides career-locked personal traits for the wrong captain (#69)", () => {
+    const slot = defined(
+      buildCaptainTraitSlots({ faction: "fed", race: "human" }).find(
+        (row) => row.group === "personalSpace",
+      ),
+    );
+    const mapped = toLoadoutPersonalTrait({
+      id: 69,
+      name: "A Good Day to Die",
+      type: "char",
+      environment: "space",
+      career: null,
+    });
+    expect(mapped.career).toBe("tac");
+    expect(
+      fittingCaptainTraits({
+        slot,
+        catalog: [mapped, barrage],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        identity: { career: "engineering", raceLabel: "Human" },
+      }).map((item) => item.name),
+    ).toEqual(["Beam Barrage"]);
+    expect(
+      fittingCaptainTraits({
+        slot,
+        catalog: [mapped, barrage],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        identity: { career: "science", raceLabel: "Human" },
+      }).map((item) => item.name),
+    ).toEqual(["Beam Barrage"]);
+    expect(
+      fittingCaptainTraits({
+        slot,
+        catalog: [mapped, barrage],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        identity: { career: "tactical", raceLabel: "Human" },
+      }).map((item) => item.name),
+    ).toEqual(["A Good Day to Die", "Beam Barrage"]);
   });
 
   it("ranks hull picker candidates by the previous same-kind fill", () => {
