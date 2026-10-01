@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getItemImageUrl,
+  getStarshipTraitImageUrl,
   getTraitImageUrl,
   getTraySkillImageUrl,
   getWikiImageUrl,
@@ -113,6 +114,27 @@ describe("wikiImage", () => {
     expect(getTraitImageUrl("Fresh From R&amp;R", null)).toBe(
       "/images/traits/Fresh_From_RR_icon.png",
     );
+    expect(getTraitImageUrl("Active: Temporal Surge", null)).toBe(
+      "/images/traits/Active_Temporal_Surge_icon.png",
+    );
+    expect(getTraitImageUrl("Majority / Minority", null)).toBe(
+      "/images/traits/Majority_Minority_icon.png",
+    );
+    expect(getTraitImageUrl("Mine, All Mine!", null)).toBe(
+      "/images/traits/Mine_All_Mine_icon.png",
+    );
+    expect(getStarshipTraitImageUrl("Active: Temporal Surge", null)).toBe(
+      "/images/starship-traits/Active_Temporal_Surge_icon.png",
+    );
+    expect(getStarshipTraitImageUrl("Majority / Minority", null)).toBe(
+      "/images/starship-traits/Majority_Minority_icon.png",
+    );
+    expect(getStarshipTraitImageUrl("Mine, All Mine!", null)).toBe(
+      "/images/starship-traits/Mine_All_Mine_icon.png",
+    );
+    expect(getItemImageUrl(null, '"Avalanche"')).toBe(
+      "/images/items/Avalanche_icon.png",
+    );
     expect(
       getTraySkillImageUrl("Beams: Fire at Will"),
     ).toBe("/images/tray-skills/Beams_Fire_at_Will_icon_(Federation).png");
@@ -140,5 +162,17 @@ describe("wikiImage", () => {
         "Hangar - Advanced Baltim Raider",
       ),
     ).toBe("/images/items/Hangar_-_Advanced_Baltim_Raider_icon.png");
+  });
+
+  it("falls back Advanced Fleet items to the base weapon icon (#77)", () => {
+    expect(
+      itemIconLookupName("Advanced Fleet Antiproton Blast Assault"),
+    ).toBe("Antiproton Blast Assault");
+    expect(getItemImageUrl(null, "Advanced Fleet Antiproton Blast Assault")).toBe(
+      "/images/items/Antiproton_Blast_Assault_icon.png",
+    );
+    expect(getItemImageUrl(null, '&amp;#34;Avalanche&amp;#34;')).toBe(
+      "/images/items/Avalanche_icon.png",
+    );
   });
 });
