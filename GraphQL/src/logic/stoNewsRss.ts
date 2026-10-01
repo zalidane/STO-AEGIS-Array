@@ -4,12 +4,18 @@ import { decodeHtmlEntities } from "./decodeHtmlEntities.js";
 export const STO_NEWS_RSS_URL =
   "https://www.arcgames.com/en/games/star-trek-online/news/rss";
 
-/** Absolute origin used to resolve relative RSS link paths. */
+/**
+ * Origin used only to resolve relative RSS link *paths* before rewriting to
+ * the public playstartrekonline.com article site (Arc article URLs 404).
+ */
 export const STO_NEWS_SITE_ORIGIN = "https://www.arcgames.com";
 
-/** Article pages on the current Arc microsite. */
+/** Public article pages captains should open (playstartrekonline.com). */
+export const STO_NEWS_PUBLIC_ORIGIN = "https://www.playstartrekonline.com";
+
+/** Article pages on the live STO news microsite. */
 export const STO_NEWS_ARTICLE_BASE =
-  "https://www.arcgames.com/en/news/article";
+  "https://www.playstartrekonline.com/en/news/article";
 
 export type StoNewsEntry = {
   id: string;
@@ -54,14 +60,58 @@ export function htmlToSnippet(
   return `${clipped.replace(/[.,;:!?\-–—\s]+$/u, "")}…`;
 }
 
+/**
+ * Build the canonical public article URL captains should open.
+ * Arc Games article hosts now 404; playstartrekonline.com is authoritative.
+ */
+export function publicStoNewsArticleUrl(articleId: string): string {
+  const id = articleId.trim();
+  if (!id) return `${STO_NEWS_PUBLIC_ORIGIN}/en/news`;
+  return `${STO_NEWS_ARTICLE_BASE}/${encodeURIComponent(id)}`;
+}
+
+/** Extract a numeric STO news article id from common Arc / STO URL shapes. */
+export function extractStoNewsArticleId(href: string): string | null {
+  const trimmed = href.trim();
+  if (!trimmed) return null;
+  const patterns = [
+    /\/news\/article\/(\d+)\b/i,
+    /\/news\/detail\/(\d+)(?:-|$|\/)/i,
+    /\/(\d{6,})(?:\/|$)/,
+  ];
+  for (const pattern of patterns) {
+    const match = pattern.exec(trimmed);
+    if (match?.[1]) return match[1];
+  }
+  return null;
+}
+
+/**
+ * Resolve a feed link to an absolute public playstartrekonline.com URL.
+ * Prefers `/en/news/article/{id}` when an id is present; otherwise swaps the
+ * Arc host for the public STO origin while keeping the path.
+ */
 export function absolutizeStoNewsUrl(
   href: string,
   baseOrigin: string = STO_NEWS_SITE_ORIGIN,
 ): string {
   const trimmed = href.trim();
-  if (!trimmed) return baseOrigin;
+  if (!trimmed) return `${STO_NEWS_PUBLIC_ORIGIN}/en/news`;
   try {
-    return new URL(trimmed, baseOrigin).toString();
+    const absolute = new URL(trimmed, baseOrigin).toString();
+    const articleId = extractStoNewsArticleId(absolute);
+    if (articleId) return publicStoNewsArticleUrl(articleId);
+
+    const url = new URL(absolute);
+    if (
+      url.hostname === "www.arcgames.com" ||
+      url.hostname === "arcgames.com"
+    ) {
+      url.protocol = "https:";
+      url.hostname = "www.playstartrekonline.com";
+      return url.toString();
+    }
+    return absolute;
   } catch {
     return trimmed;
   }
@@ -194,7 +244,9 @@ export function mapArcApiNewsItem(raw: unknown): StoNewsEntry | null {
   return {
     id: id || title,
     title: title || "Untitled",
-    link: `${STO_NEWS_ARTICLE_BASE}/${id || encodeURIComponent(title)}`,
+    link: id
+      ? publicStoNewsArticleUrl(id)
+      : publicStoNewsArticleUrl(title),
     publishedAt,
     summary: htmlToSnippet(summaryRaw, DEFAULT_SNIPPET_LENGTH),
   };

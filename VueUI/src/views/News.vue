@@ -8,9 +8,11 @@ import {
   type StoNewsQuery,
 } from "@/graphql/generated/graphql";
 import {
+  NEWS_OFFICIAL_INDEX_LABEL,
   NEWS_OFFICIAL_INDEX_URL,
   NEWS_PAGE_LEDE,
   NEWS_PAGE_TITLE,
+  NEWS_READ_MORE_LABEL,
   NEWS_SOURCE_NOTE,
   formatNewsPublishedAt,
   newsSourceKindLabel,
@@ -43,7 +45,7 @@ const sourceLabel = computed(() =>
           target="_blank"
           rel="noopener noreferrer"
         >
-          Official STO news on Arc Games
+          {{ NEWS_OFFICIAL_INDEX_LABEL }}
         </a>
       </p>
     </header>
@@ -99,7 +101,7 @@ const sourceLabel = computed(() =>
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Read on Arc Games
+                {{ NEWS_READ_MORE_LABEL }}
               </a>
             </p>
           </li>
