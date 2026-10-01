@@ -6,14 +6,18 @@ export const NEWS_PAGE_LEDE =
   "Headlines from the official Star Trek Online news feed, listed here for captains who want a quick scan without leaving the catalog.";
 
 export const NEWS_SOURCE_NOTE =
-  "Titles and summaries come from Arc Games / Cryptic official STO news. This page is an unofficial mirror for convenience — not affiliated with or endorsed by Paramount, Cryptic, DECA, or Arc Games.";
+  "Titles and summaries come from the official Star Trek Online news feed. This page is an unofficial mirror for convenience — not affiliated with or endorsed by Paramount, Cryptic, DECA, or Arc Games.";
 
 export const NEWS_OFFICIAL_INDEX_URL =
-  "https://www.arcgames.com/en/games/star-trek-online/news";
+  "https://www.playstartrekonline.com/en/news";
+
+export const NEWS_OFFICIAL_INDEX_LABEL = "Official Star Trek Online news";
+
+export const NEWS_READ_MORE_LABEL = "Read on Star Trek Online news page";
 
 export function newsSourceKindLabel(kind: string | null | undefined): string {
   if (kind === "rss") return "Official STO news RSS";
-  if (kind === "arc-api") return "Official Arc Games news API";
+  if (kind === "arc-api") return "Official STO news API";
   return "Official STO news";
 }
 
