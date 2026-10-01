@@ -6,8 +6,8 @@ import { storeToRefs } from "pinia";
 import { ShipsDocument } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import { useCollectionStore } from "@/stores/collection";
-import { buildHullSlots } from "@/logic/loadout/hullSlots";
 import { loadoutsForCharacter } from "@/logic/loadout/state";
+import { loadoutSeatRatio } from "@/logic/loadout/seatRatio";
 import { formatCombatDps, peakFightDps } from "@/logic/combatlog";
 import { getShipImageUrl } from "@/utils/shipImage";
 
@@ -27,12 +27,16 @@ const shipsById = computed(() => {
 const rows = computed(() =>
   loadouts.value.map((loadout) => {
     const ship = shipsById.value.get(loadout.shipId);
-    const total = ship ? buildHullSlots(ship).length : 0;
+    const { filled, total } = loadoutSeatRatio({
+      loadout,
+      ship,
+      captain: activeCharacter.value,
+    });
     return {
       loadout,
       shipName: ship?.name ?? `Ship #${loadout.shipId}`,
       image: getShipImageUrl(ship?.image),
-      filled: loadout.slots.length,
+      filled,
       total,
       peakDps: peakFightDps(loadout.combatParse),
       fightCount: loadout.combatParse?.fights.length ?? 0,
