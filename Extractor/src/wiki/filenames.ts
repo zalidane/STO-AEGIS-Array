@@ -93,6 +93,21 @@ export function dropHangarRankPrefix(name: string): string | undefined {
     : undefined;
 }
 
+/**
+ * Fleet gear often reuses the base weapon’s wiki icon when the
+ * `Advanced Fleet …` / `Elite Fleet …` file title is missing on the wiki.
+ * Longer prefixes first. Keep in sync with VueUI `dropFleetItemPrefix`.
+ */
+const FLEET_ITEM_PREFIX =
+  /^(?:Elite Fleet Colony Security|Advanced Fleet|Elite Fleet)\s+/i;
+
+export function dropFleetItemPrefix(name: string): string | undefined {
+  const stripped = name.replace(FLEET_ITEM_PREFIX, "").replace(/\s+/g, " ").trim();
+  return stripped && stripped.toLowerCase() !== name.toLowerCase()
+    ? stripped
+    : undefined;
+}
+
 /** Exact cargo name, then without mods, then without Mk — first wiki hit wins. */
 export function itemIconNameCandidates(name: string): string[] {
   const decoded = decodeHtmlEntities(name).replace(INVISIBLE_CHARS, "").trim();
@@ -100,27 +115,49 @@ export function itemIconNameCandidates(name: string): string[] {
   const withoutMark = withoutMods.replace(ITEM_MARK_SUFFIX, "").trim();
   const hangarBase =
     dropHangarRankPrefix(withoutMark) ?? dropHangarRankPrefix(decoded);
-  return uniqueNames([decoded, withoutMods, withoutMark, hangarBase ?? ""]);
+  const fleetBase =
+    dropFleetItemPrefix(withoutMark) ?? dropFleetItemPrefix(decoded);
+  return uniqueNames([
+    decoded,
+    withoutMods,
+    withoutMark,
+    hangarBase ?? "",
+    fleetBase ?? "",
+  ]);
 }
 
-/** ASCII/Unicode apostrophes and ampersands. Strip so public paths stay POSIX/WAF/URL-safe. */
-export const WIKI_APOSTROPHES = /['\u2018\u2019\u02BC&]/g;
+/**
+ * Characters that break public image paths or static hosting.
+ * Strip so Extractor writes and VueUI lookups stay POSIX/WAF/URL-safe.
+ * Includes apostrophes/ampersands (legacy) plus `:`, `/`, `!`, `,`, and quotes (#75/#77).
+ */
+export const WIKI_UNSAFE_FILENAME_CHARS =
+  /['\u2018\u2019\u02BC&:/!,\"\u201C\u201D]/g;
 
+/** @deprecated Use WIKI_UNSAFE_FILENAME_CHARS */
+export const WIKI_APOSTROPHES = WIKI_UNSAFE_FILENAME_CHARS;
+
+export function stripWikiUnsafeFilenameChars(name: string): string {
+  return name.replace(WIKI_UNSAFE_FILENAME_CHARS, "");
+}
+
+/** @deprecated Use stripWikiUnsafeFilenameChars */
 export function stripWikiApostrophes(name: string): string {
-  return name.replace(WIKI_APOSTROPHES, "");
+  return stripWikiUnsafeFilenameChars(name);
 }
 
-/** Case-insensitive key that also ignores apostrophes and ampersands still present on disk. */
+/** Case-insensitive key that also ignores unsafe chars still present on disk. */
 export function imageFileMatchKey(filename: string): string {
-  return stripWikiApostrophes(filename).toLowerCase();
+  return stripWikiUnsafeFilenameChars(filename).toLowerCase();
 }
 
 export function localFilename(fileTitle: string): string {
-  return stripWikiApostrophes(
-    normalizeWikiFileTitle(fileTitle)
-      .replace(/^File:/i, "")
-      .replaceAll(" ", "_"),
-  );
+  const stem = stripWikiUnsafeFilenameChars(
+    normalizeWikiFileTitle(fileTitle).replace(/^File:/i, ""),
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+  return stem.replaceAll(" ", "_");
 }
 
 export function matchKey(fileTitle: string): string {

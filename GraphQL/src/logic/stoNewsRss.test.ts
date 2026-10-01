@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   absolutizeStoNewsUrl,
+  extractStoNewsArticleId,
   htmlToSnippet,
   limitFeedEntries,
   mapArcApiNewsItem,
@@ -9,6 +10,7 @@ import {
   newestEntryDate,
   parseRssDate,
   parseStoNewsRss,
+  publicStoNewsArticleUrl,
   shouldPreferRssFeed,
   STO_NEWS_RSS_URL,
 } from "./stoNewsRss.js";
@@ -72,7 +74,7 @@ describe("parseStoNewsRss", () => {
     assert.equal(first.title, "The Galaxy Goes to Red Alert");
     assert.equal(
       first.link,
-      "https://www.arcgames.com/en/games/star-trek-online/news/detail/11569706-the-galaxy-goes-to-red-alert",
+      "https://www.playstartrekonline.com/en/news/article/11569706",
     );
     assert.ok(first.publishedAt);
     assert.equal(first.publishedAt!.toISOString(), "2024-06-21T15:00:00.000Z");
@@ -83,10 +85,33 @@ describe("parseStoNewsRss", () => {
 });
 
 describe("absolutizeStoNewsUrl / parseRssDate", () => {
-  it("resolves relative Arc paths", () => {
+  it("rewrites Arc paths to public STO article URLs", () => {
+    assert.equal(
+      absolutizeStoNewsUrl(
+        "/en/games/star-trek-online/news/detail/11583242-example",
+      ),
+      "https://www.playstartrekonline.com/en/news/article/11583242",
+    );
+    assert.equal(
+      absolutizeStoNewsUrl("https://www.arcgames.com/en/news/article/11583242"),
+      "https://www.playstartrekonline.com/en/news/article/11583242",
+    );
     assert.equal(
       absolutizeStoNewsUrl("/en/games/star-trek-online/news"),
-      "https://www.arcgames.com/en/games/star-trek-online/news",
+      "https://www.playstartrekonline.com/en/games/star-trek-online/news",
+    );
+  });
+
+  it("extracts article ids and builds public URLs", () => {
+    assert.equal(
+      extractStoNewsArticleId(
+        "https://www.arcgames.com/en/news/article/11583242",
+      ),
+      "11583242",
+    );
+    assert.equal(
+      publicStoNewsArticleUrl("11583242"),
+      "https://www.playstartrekonline.com/en/news/article/11583242",
     );
   });
 
@@ -109,7 +134,7 @@ describe("Arc API mapping + RSS freshness preference", () => {
     assert.equal(entry!.id, "11583119");
     assert.equal(
       entry!.link,
-      "https://www.arcgames.com/en/news/article/11583119",
+      "https://www.playstartrekonline.com/en/news/article/11583119",
     );
     assert.ok(entry!.publishedAt);
     assert.equal(entry!.publishedAt!.toISOString(), "2026-09-21T09:00:01.000Z");

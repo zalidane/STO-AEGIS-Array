@@ -55,18 +55,43 @@ describe("normalizeFullSpec / extractFullSpecs", () => {
     expect(normalizeFullSpec(null)).toBeNull();
   });
 
-  it("extracts unique specs in canonical order", () => {
+  it("extracts unique CMDR-seat specs in canonical order", () => {
     expect(
       extractFullSpecs(
-        "Commander Tactical-Miracle Worker,Lieutenant Commander Universal-Command,Ensign Science-Intelligence",
+        "Commander Tactical-Miracle Worker,Commander Science-Command,Lieutenant Commander Universal-Temporal Operative",
       ),
-    ).toEqual(["Command", "Intel", "Miracle Worker"]);
+    ).toEqual(["Command", "Miracle Worker"]);
+  });
+
+  it("ignores specialization on seats below Commander", () => {
+    expect(
+      extractFullSpecs(
+        "Commander Tactical,Lieutenant Commander Universal-Command,Ensign Science-Intelligence,Lieutenant Engineering-Pilot",
+      ),
+    ).toEqual([]);
   });
 
   it("returns empty when there is no specialization seating", () => {
     expect(
       extractFullSpecs("Commander Tactical,Lieutenant Engineering"),
     ).toEqual([]);
+  });
+
+  it("excludes Thrai-style Lieutenant Command hybrid from CMDR full-spec", () => {
+    // Real Thrai Dreadnought Warbird boffs: Command is Lt Engineering, not CMDR.
+    expect(
+      extractFullSpecs(
+        "Lieutenant Commander Tactical-Temporal Operative,Commander Engineering,Lieutenant Engineering-Command,Lieutenant Science,Lieutenant Universal",
+      ),
+    ).toEqual([]);
+  });
+
+  it("includes hulls with CMDR-level Command", () => {
+    expect(
+      extractFullSpecs(
+        "Commander Science-Command,Lieutenant Commander Science,Lieutenant Engineering",
+      ),
+    ).toEqual(["Command"]);
   });
 });
 
@@ -257,27 +282,52 @@ describe("matchesAdvancedShipSearchFilters", () => {
     expect(filterAdvancedShipSearchRows(rows, either)).toHaveLength(3);
   });
 
-  it("ORs full-spec seats and supports None", () => {
+  it("ORs CMDR full-spec seats and supports None", () => {
     const mw = createDefaultAdvancedShipSearchFilters();
     mw.fullSpecs = ["Miracle Worker"];
     expect(
       filterAdvancedShipSearchRows(rows, mw).map((row) => row.name),
     ).toEqual(["Achilles Miracle Worker Heavy Destroyer"]);
 
+    // Fleet Advanced Escort has Pilot on LtCmdr only — must not match.
     const pilotOrCommand = createDefaultAdvancedShipSearchFilters();
     pilotOrCommand.fullSpecs = ["Pilot", "Command"];
     expect(
       filterAdvancedShipSearchRows(rows, pilotOrCommand).map((row) => row.name),
-    ).toEqual([
-      "Fleet Advanced Escort",
-      "Caitian Atrox Carrier (T6)",
-    ]);
+    ).toEqual(["Caitian Atrox Carrier (T6)"]);
 
+    // Fleet Advanced Escort has no CMDR specialization → counts as None.
     const none = createDefaultAdvancedShipSearchFilters();
     none.fullSpecs = ["None"];
     expect(
       filterAdvancedShipSearchRows(rows, none).map((row) => row.name).sort(),
-    ).toEqual(["Advanced Escort", "B'rel Bird-of-Prey"].sort());
+    ).toEqual(
+      ["Advanced Escort", "B'rel Bird-of-Prey", "Fleet Advanced Escort"].sort(),
+    );
+  });
+
+  it("Command filter excludes Thrai and includes CMDR-Command hulls", () => {
+    const thrai = deriveAdvancedShipSearchRow(
+      ship({
+        id: 73,
+        name: "Thrai Dreadnought Warbird",
+        displayClass: "Thrai",
+        factionLede: "Romulan Republic",
+        boffs:
+          "Lieutenant Commander Tactical-Temporal Operative,Commander Engineering,Lieutenant Engineering-Command,Lieutenant Science,Lieutenant Universal",
+      }),
+      new Set(),
+    );
+    const atrox = rows.find((row) => row.name.startsWith("Caitian Atrox"))!;
+
+    expect(thrai.fullSpecs).toEqual([]);
+    expect(thrai.hasFullSpec).toBe(false);
+    expect(atrox.fullSpecs).toEqual(["Command"]);
+
+    const command = createDefaultAdvancedShipSearchFilters();
+    command.fullSpecs = ["Command"];
+    expect(matchesAdvancedShipSearchFilters(thrai, command)).toBe(false);
+    expect(matchesAdvancedShipSearchFilters(atrox, command)).toBe(true);
   });
 
   it("filters secondary deflector and hangars (null hangars as 0)", () => {

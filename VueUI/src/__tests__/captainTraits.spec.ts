@@ -148,6 +148,8 @@ describe("captain trait slots", () => {
     expect(traitAllowsRace("Jem'Hadar Vanguard,", "Jem'Hadar")).toBe(true);
     expect(traitAllowsCareer("eng", "engineering")).toBe(true);
     expect(traitAllowsCareer("eng", "tactical")).toBe(false);
+    expect(traitAllowsCareer("Tactical", "tactical")).toBe(true);
+    expect(traitAllowsCareer("Tactical", "engineering")).toBe(false);
     const shipSlot = buildCaptainTraitSlots({
       faction: "federation",
       race: "human",
@@ -164,6 +166,39 @@ describe("captain trait slots", () => {
         shipSlot,
       ),
     ).toBe(true);
+  });
+
+  it("hides A Good Day to Die from Eng/Sci captains (#69)", () => {
+    const slot = buildCaptainTraitSlots({
+      faction: "federation",
+      race: "human",
+    }).find((row) => row.group === "personalSpace")!;
+    const goodDay = {
+      id: 3,
+      name: "A Good Day to Die",
+      type: "char",
+      environment: "space",
+      career: "tac",
+      catalogKind: "trait" as const,
+    };
+    expect(
+      traitFitsCaptainSlot(goodDay, slot, {
+        career: "tactical",
+        raceLabel: "Human",
+      }),
+    ).toBe(true);
+    expect(
+      traitFitsCaptainSlot(goodDay, slot, {
+        career: "engineering",
+        raceLabel: "Human",
+      }),
+    ).toBe(false);
+    expect(
+      traitFitsCaptainSlot(goodDay, slot, {
+        career: "science",
+        raceLabel: "Human",
+      }),
+    ).toBe(false);
   });
 
   it("seats a collected personal trait on the active loadout (#16)", () => {

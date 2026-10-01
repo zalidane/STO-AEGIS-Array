@@ -17,13 +17,25 @@ import {
   type ModifierSupplementRow,
 } from "./mergeModifiers.js";
 import {
+  mergeReputation,
+  type ReputationCargoRow,
+  type ReputationSupplementRow,
+} from "./mergeReputation.js";
+import {
   mergeSetBonus,
   type SetBonusCargoRow,
   type SetBonusSupplementRow,
 } from "./mergeSetBonus.js";
+import {
+  mergeTraits,
+  type TraitCargoRow,
+  type TraitSupplementRow,
+} from "./mergeTraits.js";
 
 export const MODIFIERS_SUPPLEMENT_PATH = "output/supplements/Modifiers.json";
+export const REPUTATION_SUPPLEMENT_PATH = "output/supplements/Reputation.json";
 export const SET_BONUS_SUPPLEMENT_PATH = "output/supplements/SetBonus.json";
+export const TRAITS_SUPPLEMENT_PATH = "output/supplements/Traits.json";
 
 function mergeModifiersSupplement(
   cargo: Record<string, unknown>[],
@@ -38,6 +50,19 @@ function mergeModifiersSupplement(
   ) as Record<string, unknown>[];
 }
 
+function mergeReputationSupplement(
+  cargo: Record<string, unknown>[],
+  supplement: unknown,
+): Record<string, unknown>[] {
+  if (!Array.isArray(supplement)) {
+    throw new Error("Reputation supplement must be a JSON array");
+  }
+  return mergeReputation(
+    cargo as ReputationCargoRow[],
+    supplement as ReputationSupplementRow[],
+  ) as Record<string, unknown>[];
+}
+
 function mergeSetBonusSupplement(
   cargo: Record<string, unknown>[],
   supplement: unknown,
@@ -48,6 +73,19 @@ function mergeSetBonusSupplement(
   return mergeSetBonus(
     cargo as SetBonusCargoRow[],
     supplement as SetBonusSupplementRow[],
+  ) as Record<string, unknown>[];
+}
+
+function mergeTraitsSupplement(
+  cargo: Record<string, unknown>[],
+  supplement: unknown,
+): Record<string, unknown>[] {
+  if (!Array.isArray(supplement)) {
+    throw new Error("Traits supplement must be a JSON array");
+  }
+  return mergeTraits(
+    cargo as TraitCargoRow[],
+    supplement as TraitSupplementRow[],
   ) as Record<string, unknown>[];
 }
 
@@ -82,6 +120,8 @@ export const importMappings = {
     model: "reputation",
     uniqueFields: ["name"],
     mapper: mapReputation,
+    supplementFile: REPUTATION_SUPPLEMENT_PATH,
+    mergeSupplement: mergeReputationSupplement,
   },
   SetBonus: {
     model: "setBonus",
@@ -109,6 +149,8 @@ export const importMappings = {
     model: "trait",
     uniqueFields: ["name", "type", "environment"],
     mapper: mapTrait,
+    supplementFile: TRAITS_SUPPLEMENT_PATH,
+    mergeSupplement: mergeTraitsSupplement,
   },
   TraySkill: {
     model: "traySkill",
