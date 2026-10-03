@@ -215,6 +215,110 @@ describe("buildTraitTriggersPanel", () => {
     expect(withBeam[0]?.statusLine).toContain("Phaser Beam Array");
   });
 
+  it("Critical Systems, Super Charged Weapons, and Five Magicks say how they match", () => {
+    const critical: LoadoutItem = {
+      id: 920,
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+      ...MOCK_TRAIT_SOURCES.criticalSystems,
+    };
+    const improved: LoadoutItem = {
+      id: 921,
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+      ...MOCK_TRAIT_SOURCES.improvedCriticalSystems,
+    };
+    const superCharged: LoadoutItem = {
+      id: 922,
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+      ...MOCK_TRAIT_SOURCES.superChargedWeapons,
+    };
+    const five: LoadoutItem = {
+      id: 923,
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+      ...MOCK_TRAIT_SOURCES.fiveMagicks,
+    };
+    const hullSlots = [
+      { id: "foreWeapon-0", kind: "foreWeapon" as const },
+      { id: "aftWeapon-0", kind: "aftWeapon" as const },
+    ];
+
+    const missing = buildTraitTriggersPanel({
+      slots: [
+        { slotId: "starshipTrait-0", itemId: critical.id, catalogKind: "starshipTrait" },
+        { slotId: "starshipTrait-1", itemId: improved.id, catalogKind: "starshipTrait" },
+        { slotId: "starshipTrait-2", itemId: superCharged.id, catalogKind: "starshipTrait" },
+        { slotId: "starshipTrait-3", itemId: five.id, catalogKind: "starshipTrait" },
+        mockTrayFill(MOCK_TRAY_SKILLS.tacticalTeam),
+      ],
+      catalog: mockCatalog(
+        critical,
+        improved,
+        superCharged,
+        five,
+        MOCK_TRAY_SKILLS.tacticalTeam,
+      ),
+      hullSlots,
+    });
+    expect(missing.find((row) => row.traitName === "Critical Systems")?.statusLine).toBe(
+      "Unsatisfied: needs Emergency Power",
+    );
+    expect(
+      missing.find((row) => row.traitName === "Improved Critical Systems")?.statusLine,
+    ).toBe("Unsatisfied: needs Emergency Power");
+    expect(
+      missing.find((row) => row.traitName === "Super Charged Weapons")?.statusLine,
+    ).toBe("Unsatisfied: needs Energy weapon, Torpedo");
+    expect(missing.find((row) => row.traitName === "Five Magicks")?.statusLine).toBe(
+      "Unsatisfied: needs Fire, Cold, Electrical, Radiation, Psionic, or Disruptor",
+    );
+    expect(missing.every((row) => row.satisfied === false)).toBe(true);
+
+    const seated = buildTraitTriggersPanel({
+      slots: [
+        { slotId: "starshipTrait-0", itemId: critical.id, catalogKind: "starshipTrait" },
+        { slotId: "starshipTrait-1", itemId: improved.id, catalogKind: "starshipTrait" },
+        { slotId: "starshipTrait-2", itemId: superCharged.id, catalogKind: "starshipTrait" },
+        { slotId: "starshipTrait-3", itemId: five.id, catalogKind: "starshipTrait" },
+        mockTrayFill(MOCK_TRAY_SKILLS.epte),
+        mockWeaponFill(MOCK_WEAPONS.disruptorBeam, "foreWeapon-0"),
+        mockWeaponFill(MOCK_WEAPONS.quantumTorpedo, "aftWeapon-0"),
+      ],
+      catalog: mockCatalog(
+        critical,
+        improved,
+        superCharged,
+        five,
+        MOCK_TRAY_SKILLS.epte,
+        MOCK_WEAPONS.disruptorBeam,
+        MOCK_WEAPONS.quantumTorpedo,
+      ),
+      hullSlots,
+    });
+    expect(seated.find((row) => row.traitName === "Critical Systems")).toMatchObject({
+      satisfied: true,
+      statusLine: "Satisfied by: Emergency Power to Engines",
+    });
+    expect(
+      seated.find((row) => row.traitName === "Improved Critical Systems"),
+    ).toMatchObject({
+      satisfied: true,
+      statusLine: "Satisfied by: Emergency Power to Engines",
+    });
+    expect(
+      seated.find((row) => row.traitName === "Super Charged Weapons"),
+    ).toMatchObject({
+      satisfied: true,
+      statusLine: "Satisfied by: Disruptor Beam Array, Quantum Torpedo Launcher",
+    });
+    expect(seated.find((row) => row.traitName === "Five Magicks")).toMatchObject({
+      satisfied: true,
+      statusLine: "Satisfied by: Disruptor Beam Array",
+    });
+  });
+
   it("includes personal traits seated on captain boards", () => {
     const personal: LoadoutItem = {
       id: 900,

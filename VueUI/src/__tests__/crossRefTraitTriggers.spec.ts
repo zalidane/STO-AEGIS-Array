@@ -317,6 +317,73 @@ describe("crossRefTraitTriggers — functional & combat state", () => {
     expect(withNonControl[0]?.satisfied).toBe(false);
   });
 
+  it("Critical Systems is satisfied by any seated EPtX power", () => {
+    const triggers = extractTraitTriggers(MOCK_TRAIT_SOURCES.criticalSystems);
+    for (const power of [
+      MOCK_TRAY_SKILLS.eptw,
+      MOCK_TRAY_SKILLS.epts,
+      MOCK_TRAY_SKILLS.epte,
+      MOCK_TRAY_SKILLS.epta,
+    ]) {
+      const rows = crossRefTraitTriggers(triggers, [mockSeatedTray(power)]);
+      expect(rows[0]?.satisfied).toBe(true);
+      expect(rows[0]?.matchedItems.map((item) => item.name)).toEqual([
+        power.name,
+      ]);
+    }
+
+    const other = crossRefTraitTriggers(triggers, [
+      mockSeatedTray(MOCK_TRAY_SKILLS.tacticalTeam),
+    ]);
+    expect(other[0]?.satisfied).toBe(false);
+    expect(other[0]?.matchedItems).toEqual([]);
+  });
+
+  it("Super Charged Weapons needs both an energy weapon and a torpedo", () => {
+    const triggers = extractTraitTriggers(
+      MOCK_TRAIT_SOURCES.superChargedWeapons,
+    );
+    const energyOnly = crossRefTraitTriggers(triggers, [
+      mockSeatedWeapon(MOCK_WEAPONS.disruptorBeam),
+    ]);
+    expect(energyOnly.map((row) => row.satisfied)).toEqual([true, false]);
+
+    const torpedoOnly = crossRefTraitTriggers(triggers, [
+      mockSeatedWeapon(MOCK_WEAPONS.quantumTorpedo),
+    ]);
+    expect(torpedoOnly.map((row) => row.satisfied)).toEqual([false, true]);
+
+    const both = crossRefTraitTriggers(triggers, [
+      mockSeatedWeapon(MOCK_WEAPONS.phaserBeamArray),
+      mockSeatedWeapon(MOCK_WEAPONS.quantumTorpedo, "aftWeapon-0"),
+    ]);
+    expect(both.every((row) => row.satisfied)).toBe(true);
+  });
+
+  it("Five Magicks names the slotted Disruptor or other matching damage type", () => {
+    const triggers = extractTraitTriggers(MOCK_TRAIT_SOURCES.fiveMagicks);
+    const disruptor = crossRefTraitTriggers(triggers, [
+      mockSeatedWeapon(MOCK_WEAPONS.disruptorBeam),
+    ]);
+    expect(disruptor[0]?.satisfied).toBe(true);
+    expect(disruptor[0]?.matchedItems[0]?.statusLabel ?? disruptor[0]?.matchedItems[0]?.name).toBe(
+      "Disruptor Beam Array",
+    );
+
+    const radiation = crossRefTraitTriggers(triggers, [
+      mockSeatedWeapon(MOCK_WEAPONS.gravimetricTorpedo),
+    ]);
+    expect(radiation[0]?.satisfied).toBe(true);
+    expect(radiation[0]?.matchedItems[0]?.statusLabel).toBe(
+      "Radiation (Gravimetric Photon Torpedo)",
+    );
+
+    const phaser = crossRefTraitTriggers(triggers, [
+      mockSeatedWeapon(MOCK_WEAPONS.phaserBeamArray),
+    ]);
+    expect(phaser[0]?.satisfied).toBe(false);
+  });
+
   it("The Boimler Effect satisfied by any seated BOff power", () => {
     const triggers = extractTraitTriggers(MOCK_TRAIT_SOURCES.boimlerEffect);
     expect(triggers[0]).toMatchObject({
