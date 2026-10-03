@@ -6,9 +6,8 @@ import {
   InfoboxDocument,
   type InfoboxQuery,
 } from "@/graphql/generated/graphql";
-import DetailFieldList from "@/components/shared/DetailFieldList.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
-import { displayInfoboxType } from "@/logic/collection/itemBrowser";
+import { buildItemDetailSections } from "@/logic/collection/itemText";
 import { publicUsageLabel } from "@/logic/share/usage";
 
 const props = defineProps<{
@@ -35,128 +34,171 @@ const grantingShips = computed(() => {
   return [...byId.values()];
 });
 
-const fields = computed(() => {
-  if (!item.value) return [];
-  const i = item.value;
-  const heads = [1, 2, 3, 4, 5, 6, 7, 8, 9].flatMap((n) => [
-    { label: `Head ${n}`, value: i[`head${n}` as keyof Detail] },
-    { label: `Subhead ${n}`, value: i[`subhead${n}` as keyof Detail] },
-    { label: `Text ${n}`, value: i[`text${n}` as keyof Detail] },
-  ]);
-  return [
-    { label: "Rarity", value: i.rarity },
-    { label: "Type", value: displayInfoboxType(i.type) },
-    { label: "Bound To", value: i.boundto },
-    { label: "Bound When", value: i.boundwhen },
-    { label: "Who", value: i.who },
-    { label: "Equip Limit", value: i.equiplimit },
-    ...heads,
-    { label: "Created", value: i.createdAt },
-    { label: "Updated", value: i.updatedAt },
-  ];
+const sections = computed(() =>
+  item.value ? buildItemDetailSections(item.value) : [],
+);
+
+const hasRelated = computed(() => {
+  if (!item.value) return false;
+  return (
+    grantingShips.value.length > 0 ||
+    item.value.gwLockBoxes.length > 0 ||
+    item.value.swLockBoxes.length > 0
+  );
 });
 
 const usage = computed(() =>
   item.value ? publicUsageLabel(item.value.publicBuildCount) : null,
 );
+
+function openShip(id: number) {
+  void router.push(`/ships/${id}`);
+}
 </script>
 
 <template>
-  <div class="item-full-details">
+  <div class="item-detail">
     <loading-panel v-if="loading" message="Item details" />
     <v-alert v-else-if="error" type="error" density="compact" class="mb-3">
       {{ error.message }}
     </v-alert>
     <template v-else-if="item">
-      <p v-if="usage" class="item-full-details__usage">{{ usage }}</p>
+      <p v-if="usage" class="item-detail__usage">{{ usage }}</p>
+      <p
+        v-if="sections.length === 0 && !hasRelated"
+        class="item-detail__empty"
+      >
+        No additional details available.
+      </p>
 
-      <section class="item-full-details__section">
-        <h3 class="item-full-details__title">Details</h3>
-        <DetailFieldList :items="fields" />
-      </section>
-
-      <section class="item-full-details__section">
-        <h3 class="item-full-details__title">Granted by ships</h3>
-        <v-list density="compact" class="item-full-details__list">
-          <v-list-item
-            v-for="ship in grantingShips"
-            :key="ship.id"
-            @click="router.push(`/ships/${ship.id}`)"
+      <section
+        v-for="(section, index) in sections"
+        :key="`${section.title}-${index}`"
+        class="item-detail__section"
+      >
+        <h3 class="item-detail__title">{{ section.title }}</h3>
+        <ul v-if="section.blocks.length" class="item-detail__blocks">
+          <li
+            v-for="(block, blockIndex) in section.blocks"
+            :key="blockIndex"
+            class="item-detail__block"
           >
-            <v-list-item-title>{{ ship.name }}</v-list-item-title>
-            <v-list-item-subtitle>Tier {{ ship.tier }}</v-list-item-subtitle>
-          </v-list-item>
-          <v-list-item v-if="!grantingShips.length">
-            <v-list-item-title>None</v-list-item-title>
-          </v-list-item>
-        </v-list>
+            <span class="item-detail__text">{{ block.text }}</span>
+            <sub v-if="block.subscript" class="item-detail__sub">{{
+              block.subscript
+            }}</sub>
+          </li>
+        </ul>
       </section>
 
-      <section class="item-full-details__section">
-        <h3 class="item-full-details__title">Ground Lock Boxes</h3>
-        <v-list density="compact" class="item-full-details__list">
-          <v-list-item v-for="box in item.gwLockBoxes" :key="box.id">
-            <v-list-item-title>{{ box.flavor }}</v-list-item-title>
-            <v-list-item-subtitle>
-              {{ box.cat }} • {{ box.type }}
-            </v-list-item-subtitle>
-          </v-list-item>
-          <v-list-item v-if="!item.gwLockBoxes.length">
-            <v-list-item-title>None</v-list-item-title>
-          </v-list-item>
-        </v-list>
+      <section v-if="grantingShips.length" class="item-detail__section">
+        <h3 class="item-detail__title">Granted by ships</h3>
+        <ul class="item-detail__links">
+          <li v-for="ship in grantingShips" :key="ship.id">
+            <button type="button" class="item-detail__link" @click="openShip(ship.id)">
+              {{ ship.name }}
+            </button>
+            <span class="item-detail__meta">Tier {{ ship.tier }}</span>
+          </li>
+        </ul>
       </section>
 
-      <section class="item-full-details__section">
-        <h3 class="item-full-details__title">Space Lock Boxes</h3>
-        <v-list density="compact" class="item-full-details__list">
-          <v-list-item v-for="box in item.swLockBoxes" :key="box.id">
-            <v-list-item-title>{{ box.flavor }}</v-list-item-title>
-            <v-list-item-subtitle>
-              {{ box.cat }} • {{ box.type }}
-            </v-list-item-subtitle>
-          </v-list-item>
-          <v-list-item v-if="!item.swLockBoxes.length">
-            <v-list-item-title>None</v-list-item-title>
-          </v-list-item>
-        </v-list>
+      <section v-if="item.gwLockBoxes.length" class="item-detail__section">
+        <h3 class="item-detail__title">Ground lock boxes</h3>
+        <ul class="item-detail__links">
+          <li v-for="box in item.gwLockBoxes" :key="box.id">
+            <span class="item-detail__text">{{ box.flavor }}</span>
+            <span class="item-detail__meta">{{ box.cat }} · {{ box.type }}</span>
+          </li>
+        </ul>
+      </section>
+
+      <section v-if="item.swLockBoxes.length" class="item-detail__section">
+        <h3 class="item-detail__title">Space lock boxes</h3>
+        <ul class="item-detail__links">
+          <li v-for="box in item.swLockBoxes" :key="box.id">
+            <span class="item-detail__text">{{ box.flavor }}</span>
+            <span class="item-detail__meta">{{ box.cat }} · {{ box.type }}</span>
+          </li>
+        </ul>
       </section>
     </template>
   </div>
 </template>
 
 <style scoped>
-.item-full-details {
+.item-detail {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 1.15rem;
 }
 
-.item-full-details__usage {
+.item-detail__usage,
+.item-detail__empty {
   margin: 0;
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.9rem;
 }
 
-.item-full-details__section {
+.item-detail__section {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
 }
 
-.item-full-details__title {
-  margin: 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
+.item-detail__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #7dd3fc;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 650;
 }
 
-.item-full-details__list {
-  background: transparent;
+.item-detail__blocks,
+.item-detail__links {
+  margin: 0;
   padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.item-detail__block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.12rem;
+}
+
+.item-detail__text {
+  margin: 0;
+  white-space: pre-line;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.item-detail__sub,
+.item-detail__meta {
+  font-size: 0.78em;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.58);
+  font-style: italic;
+}
+
+.item-detail__link {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #7dd3fc;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item-detail__link:hover {
+  text-decoration: underline;
 }
 </style>

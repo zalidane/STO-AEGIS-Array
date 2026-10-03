@@ -27,6 +27,9 @@ describe("APP_NAV_ITEMS", () => {
     expect(titles).toContain("Home");
     expect(titles).toContain("Pack Simulator");
     expect(titles).toContain("News");
+    expect(titles).toContain("Reputations and Specializations");
+    expect(titles).toContain("Tray Skills");
+    expect(titles).toContain("Items");
     expect(titles).toContain("Compare");
     expect(titles).toContain("Ship Search");
     expect(APP_NAV_ITEMS.find((item) => item.title === "Ship Search")?.to).toBe(

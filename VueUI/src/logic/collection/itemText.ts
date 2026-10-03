@@ -69,3 +69,62 @@ export function infoboxTextBlocks(
     (block): block is InfoboxTextBlock => block != null,
   );
 }
+
+const DETAIL_INDEXES = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+
+export type InfoboxDetailFields = InfoboxTextFields & {
+  [Key in
+    | `head${(typeof DETAIL_INDEXES)[number]}`
+    | `subhead${(typeof DETAIL_INDEXES)[number]}`]?: string | null;
+};
+
+export type ItemDetailSection = {
+  title: string;
+  blocks: InfoboxTextBlock[];
+};
+
+/**
+ * Group cargo head/subhead/text rows the way the trait card groups a labeled
+ * section and its body. Named heads become section titles; unnamed stats share
+ * one Description section.
+ */
+export function buildItemDetailSections(
+  fields: InfoboxDetailFields,
+): ItemDetailSection[] {
+  const rows = DETAIL_INDEXES.flatMap((index) => {
+    const head = cleanTraitDescriptionText(fields[`head${index}`]);
+    const subhead = cleanTraitDescriptionText(fields[`subhead${index}`]);
+    const block = parseInfoboxTextField(fields[`text${index}`]);
+    if (!head && !subhead && !block) return [];
+    return [
+      {
+        head,
+        text: block?.text ?? "",
+        subscript: subhead ?? block?.subscript ?? null,
+      },
+    ];
+  }).filter((row) => row.head || row.text || row.subscript);
+
+  if (rows.length === 0) return [];
+
+  const titled = rows.some((row) => row.head);
+  if (!titled) {
+    return [
+      {
+        title: "Description",
+        blocks: rows.map((row) => ({
+          text: row.text,
+          subscript: row.subscript,
+        })),
+      },
+    ];
+  }
+
+  return rows.map((row) => ({
+    title: row.head ?? "Description",
+    blocks:
+      row.text || row.subscript
+        ? [{ text: row.text, subscript: row.subscript }]
+        : [],
+  }));
+}

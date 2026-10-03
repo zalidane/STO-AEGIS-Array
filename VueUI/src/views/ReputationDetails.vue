@@ -9,6 +9,10 @@ import {
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import DetailFieldList from "@/components/shared/DetailFieldList.vue";
+import {
+  REPUTATION_BROWSER_TITLE,
+  reputationKindLabel,
+} from "@/logic/reputationCatalog";
 
 const route = useRoute();
 const id = computed(() => Number(route.params.id));
@@ -41,15 +45,29 @@ const fields = computed(() => {
 <template>
   <v-container>
     <AppBreadcrumbs :title="item?.name" />
-    <loading-panel v-if="loading" :message="'Reputation Details'" />
+    <loading-panel v-if="loading" :message="REPUTATION_BROWSER_TITLE" />
     <v-alert v-else-if="error" type="error">{{ error.message }}</v-alert>
     <template v-else-if="item">
+      <p class="reputation-kind">{{ reputationKindLabel(item.environment) }}</p>
       <h3>{{ item.name }}</h3>
       <v-card class="mt-4">
         <v-card-title>Details</v-card-title>
         <DetailFieldList :items="fields" />
       </v-card>
     </template>
-    <v-alert v-else type="warning">Reputation not found</v-alert>
+    <v-alert v-else type="warning">
+      Not found in {{ REPUTATION_BROWSER_TITLE }}.
+    </v-alert>
   </v-container>
 </template>
+
+<style scoped>
+.reputation-kind {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 650;
+}
+</style>

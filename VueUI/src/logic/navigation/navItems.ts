@@ -1,3 +1,5 @@
+import { REPUTATION_BROWSER_TITLE } from "@/logic/reputationCatalog";
+
 export type AppNavItem = {
   title: string;
   icon: string;
@@ -21,7 +23,7 @@ export const APP_NAV_ITEMS: readonly AppNavItem[] = [
   { title: "Starship Traits", icon: "mdi-star", to: "/starship-traits" },
   { title: "Items", icon: "mdi-cube-outline", to: "/items" },
   { title: "Tray Skills", icon: "mdi-lightning-bolt", to: "/tray-skills" },
-  { title: "Reputations", icon: "mdi-medal", to: "/reputations" },
+  { title: REPUTATION_BROWSER_TITLE, icon: "mdi-medal", to: "/reputations" },
   {
     title: "Pack Simulator",
     icon: "mdi-package-variant-closed",

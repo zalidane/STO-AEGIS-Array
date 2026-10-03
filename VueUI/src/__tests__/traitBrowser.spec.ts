@@ -7,6 +7,7 @@ import {
   firstNonEmpty,
   mapPersonalTraitToBrowserItem,
   mapStarshipTraitToBrowserItem,
+  mapTraySkillToBrowserItem,
   resolveSelectedTrait,
   traitBrowserMetaChips,
   uniqueTraitFacetValues,
@@ -220,5 +221,50 @@ describe("traitBrowser", () => {
     expect(mapped.ships).toEqual([
       { id: 2, name: "Legendary D7 Intel Battlecruiser" },
     ]);
+  });
+
+  it("maps tray skills with icon paths that drop special characters", () => {
+    const mapped = mapTraySkillToBrowserItem({
+      id: 7,
+      name: "Beams: Fire at Will",
+      description: "Fires all beams.",
+      descriptionLong: "Longer description.",
+      type: "Tactical",
+      region: "Space",
+      system: "Beams",
+      targets: "Foe",
+      affects: "Foe",
+      activation: "0.5",
+      rechargeBase: 20,
+      rechargeGlobal: 15,
+      image: null,
+    });
+    expect(mapped.type).toBe("Tactical");
+    expect(mapped.environment).toBe("Space");
+    expect(mapped.imageSrc).toBe(
+      "/images/tray-skills/Beams_Fire_at_Will_icon_(Federation).png",
+    );
+    expect(mapped.meta).toEqual(
+      expect.arrayContaining([{ label: "Recharge", value: "Base 20s · Global 15s" }]),
+    );
+
+    const stored = mapTraySkillToBrowserItem({
+      id: 8,
+      name: "Captain's Initiative",
+      description: null,
+      descriptionLong: null,
+      type: "Command",
+      region: "Ground",
+      system: null,
+      targets: null,
+      affects: null,
+      activation: null,
+      rechargeBase: null,
+      rechargeGlobal: null,
+      image: "Captain's_Initiative_icon.png",
+    });
+    expect(stored.imageSrc).toBe(
+      "/images/tray-skills/Captains_Initiative_icon.png",
+    );
   });
 });

@@ -30,6 +30,7 @@ import About from "@/views/About.vue";
 import PackSimulator from "@/views/PackSimulator.vue";
 import News from "@/views/News.vue";
 import HttpError from "@/views/HttpError.vue";
+import { REPUTATION_BROWSER_TITLE } from "@/logic/reputationCatalog";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -145,13 +146,13 @@ const router = createRouter({
       path: "/reputations",
       name: "reputations",
       component: Reputations,
-      meta: { breadcrumb: "Reputations" },
+      meta: { breadcrumb: REPUTATION_BROWSER_TITLE },
     },
     {
       path: "/reputations/:id",
       name: "reputation-details",
       component: ReputationDetails,
-      meta: { breadcrumb: "Reputation Details", parent: "/reputations" },
+      meta: { breadcrumb: "Details", parent: "/reputations" },
     },
     {
       path: "/modifiers",
