@@ -16,6 +16,8 @@ const { prisma, pool } = createPrismaClient(process.env.DATABASE_URL);
 
 Cargo-backed tables: **Ship**, **Infobox**, **Trait**, **StarshipTrait**, **TraySkill**, **Mastery**, **Reputation**, **Modifier**, **SetBonus**, **GwObtain**, **SwObtain**. Join / lookup: **ShipType**, **StarshipTraitShip**, **ModifierItem**.
 
+**CatalogSupplement** is app data, not a Cargo dump. One row is one correction. `kind` names the Cargo table (`Modifiers` first; other missing-data kinds use the same table). `payload` is the Cargo-shaped record that kind's importer merges. Extractor replace never deletes these rows, so a correction survives the next import without a repository change.
+
 Ships store wiki console counts and `t5uConsole`; unique console and experimental weapon FKs (`uniconsoleId`, `experimentalWeaponId`) are filled by Extractor `linkRelations` after import.
 
 Schema: [`prisma/schema.prisma`](prisma/schema.prisma).
