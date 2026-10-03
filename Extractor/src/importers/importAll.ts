@@ -7,7 +7,13 @@ import { loadState, saveState } from "./importState.js";
 import { getFileHash } from "../extractors/getFileHash.js";
 import { linkRelations } from "./linkRelations.js";
 import { SHIP_EXPERIMENTAL_WEAPONS_PATH } from "../extractors/extractShipExperimentalWeapons.js";
+import {
+  catalogSupplementFingerprint,
+  payloadsFromCatalogSupplementRows,
+  prismaCatalogSupplementReader,
+} from "./catalogSupplement.js";
 
+import type { PrismaClient } from "@sto-aegis/database";
 import type { ImportConfig } from "./importConfig.js";
 
 const IMPORT_ORDER = [
@@ -24,18 +30,48 @@ const IMPORT_ORDER = [
   "TraySkill",
 ] as const;
 
-/** Cargo hash, or cargo+supplement when a table uses a committed overlay. */
+class CatalogSupplementReadError extends Error {}
+
+function supplementFileOf(config: object): string | undefined {
+  if (!("supplementFile" in config)) return undefined;
+  const path = (config as { supplementFile?: string }).supplementFile;
+  return path;
+}
+
+function supplementKindOf(config: object): string | undefined {
+  if (!("supplementKind" in config)) return undefined;
+  const kind = (config as { supplementKind?: string }).supplementKind;
+  return kind;
+}
+
+/**
+ * Cargo hash, plus a committed file and/or CatalogSupplement fingerprint.
+ * A database edit changes the fingerprint, so the next import merges it
+ * without a Cargo or repository change.
+ */
 async function tableImportHash(
+  prisma: PrismaClient,
   filePath: string,
-  config: { supplementFile?: string },
+  config: object,
 ): Promise<string> {
-  const cargoHash = await getFileHash(filePath);
-  const supplementPath = config.supplementFile;
-  if (!supplementPath || !existsSync(supplementPath)) {
-    return cargoHash;
+  const parts = [await getFileHash(filePath)];
+  const supplementPath = supplementFileOf(config);
+  if (supplementPath && existsSync(supplementPath)) {
+    parts.push(await getFileHash(supplementPath));
   }
-  const supplementHash = await getFileHash(supplementPath);
-  return `${cargoHash}:${supplementHash}`;
+  const supplementKind = supplementKindOf(config);
+  if (supplementKind) {
+    try {
+      const stored =
+        await prismaCatalogSupplementReader(prisma).findByKind(supplementKind);
+      payloadsFromCatalogSupplementRows(stored);
+      parts.push(catalogSupplementFingerprint(stored));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new CatalogSupplementReadError(`${supplementKind}: ${message}`);
+    }
+  }
+  return parts.join(":");
 }
 
 export async function importAll(forceImport = false) {
@@ -51,7 +87,16 @@ export async function importAll(forceImport = false) {
       if (!config) continue;
 
       const filePath = `output/${table}.json`;
-      const currentHash = await tableImportHash(filePath, config);
+      let currentHash: string;
+      try {
+        currentHash = await tableImportHash(prisma, filePath, config);
+      } catch (error) {
+        if (!(error instanceof CatalogSupplementReadError)) throw error;
+        console.error(
+          `${table}: could not read CatalogSupplement (${error.message}). Apply database migrations before import.`,
+        );
+        continue;
+      }
       const previousHash = state[table]?.hash;
 
       if (!forceImport && currentHash === previousHash) {

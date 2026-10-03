@@ -319,6 +319,90 @@ describe("slotModifiers", () => {
     expect(itemHasSuffixCatalog(catalog, phaser)).toBe(true);
   });
 
+  it("offers supplemented deflector mods Cargo does not publish as standalones (#11)", () => {
+    const axion = {
+      type: "Ship Deflector Dish",
+      name: "Elite Fleet Axion Deflector Array",
+    };
+    const hullHealCargo: LoadoutModifier = {
+      modifier: "[HullHeal]",
+      stats: "+__ Starship Hull Restoration",
+      type: "Ship Deflector Dish",
+      available:
+        "Advanced Graviton Deflector Array,Advanced Neutrino Deflector Array,Advanced Tachyon Deflector Array,Advanced Positron Deflector Array,Non-Baryonic Matter Deflector",
+      isunique: true,
+      isepic: false,
+    };
+    const supplemented: LoadoutModifier[] = [
+      {
+        modifier: "[HullCap]",
+        stats: "+__ Starship Hull Capacity",
+        type: "Ship Deflector Dish,Ship Secondary Deflector",
+        available: null,
+        isunique: true,
+        isepic: false,
+      },
+      {
+        modifier: "[ShCap]",
+        stats: "+__ Starship Shield Capacity",
+        type: "Ship Deflector Dish,Ship Secondary Deflector",
+        available: null,
+        isunique: true,
+        isepic: false,
+      },
+      {
+        modifier: "[ShdHeal]",
+        stats: "+__ Starship Shield Restoration",
+        type: "Ship Deflector Dish,Ship Secondary Deflector",
+        available: null,
+        isunique: true,
+        isepic: false,
+      },
+      { ...hullHealCargo, available: null },
+    ];
+
+    const cargoOnly = modifierSocketsForItem({
+      kind: "deflector",
+      quality: "Very Rare",
+      itemType: axion.type,
+      itemName: axion.name,
+      catalog: [hullHealCargo],
+    });
+    expect(cargoOnly[0]?.options.map((row) => row.token)).not.toContain(
+      "[HullHeal]",
+    );
+    expect(cargoOnly[0]?.options.map((row) => row.token)).not.toContain(
+      "[HullCap]",
+    );
+
+    const sockets = modifierSocketsForItem({
+      kind: "deflector",
+      quality: "Very Rare",
+      itemType: axion.type,
+      itemName: axion.name,
+      catalog: supplemented,
+    });
+    expect(sockets[0]?.options.map((row) => row.token)).toEqual([
+      "[HullCap]",
+      "[HullHeal]",
+      "[ShCap]",
+      "[ShdHeal]",
+    ]);
+
+    const secondary = modifierSocketsForItem({
+      kind: "secondaryDeflector",
+      quality: "Ultra Rare",
+      itemType: "Ship Secondary Deflector",
+      itemName: "Deteriorating Secondary Deflector",
+      catalog: supplemented,
+    });
+    expect(secondary[0]?.options.map((row) => row.token)).toEqual([
+      "[HullCap]",
+      "[ShCap]",
+      "[ShdHeal]",
+    ]);
+  });
+
   it("lists stackable mods in standard sockets and epic mods last", () => {
     const sockets = modifierSocketsForItem({
       kind: "foreWeapon",

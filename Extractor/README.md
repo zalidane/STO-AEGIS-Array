@@ -2,12 +2,12 @@
 
 Extracts Star Trek Online game data from [STOWiki](https://stowiki.net) Cargo tables into `output/*.json`, then imports those files into PostgreSQL via `@sto-aegis/database`. Image files are downloaded into `VueUI/public/images/`. After Cargo extract, experimental-weapon names are scraped from hull wikitext into `output/ShipExperimentalWeapons.json` (not a Cargo table).
 
-Committed **supplements** under `output/supplements/` fill Cargo gaps (missing modifier tokens, incomplete `available` lists, incomplete set-bonus membership, missing reputation factions, missing personal-trait `career` flags, and later other tables). Import merges each supplement with its Cargo file before writing Prisma models. Cargo remains primary: supplements insert missing rows and may widen `type` / `available` / `Members` or fill empty reputation fields and empty `career`, but do not overwrite non-empty wiki `stats`, `Passives`, or reputation descriptions.
+Cargo gaps are filled at import, and Cargo stays the source of the committed JSON. **CatalogSupplement** (a database table) holds corrections that must survive without a repository update — modifier tokens first, and the same table for later missing-data kinds. Committed files under `output/supplements/` still fill other gaps (set-bonus membership, reputation factions, personal-trait `career`). Import merges either source with its Cargo file before writing Prisma models. Cargo remains primary: supplements insert missing rows and may widen `type` / `available` / `Members` or fill empty reputation fields and empty `career`, but do not overwrite non-empty wiki `stats`, `Passives`, or reputation descriptions.
 
 **Workflow**
 
 1. **Extract (manual or monthly home check, local)** — fetch wiki → commit `output/*.json` (and optionally images)
-2. **Import (automatic / deploy)** — read committed JSON (+ supplements) → production DB
+2. **Import (automatic / deploy)** — read committed JSON, merge file supplements and `CatalogSupplement` rows → production DB
 
 Production never hits STOWiki; it only imports JSON shipped in git. Run extract from a home/residential IP, not Railway.
 
@@ -19,7 +19,7 @@ Production never hits STOWiki; it only imports JSON shipped in git. Run extract 
 | **ShipExperimentalWeapons** | Yes (new hulls) | Only experimental ships missing from the sidecar JSON are scraped. Delete the sidecar to rebuild. `--force-refresh` does **not** re-scrape existing hulls. |
 | **Images** | Yes (files) | Skips files already under `VueUI/public/images/`; skips titles already recorded missing/skipped in `imageIndex.json`. Only new or previously failed titles hit the wiki. `--force-images` re-queries and re-downloads. |
 | **Official images category** | Cached list | Incremental image runs reuse `OfficialImages.json`; `--force-images` re-lists the category. |
-| **Import / `linkRelations`** | N/A (no wiki) | Runs against committed JSON only. Local `importState.json` (gitignored) hash-skips unchanged tables unless `--force-import`. |
+| **Import / `linkRelations`** | N/A (no wiki) | Runs against committed JSON, then merges file supplements and `CatalogSupplement`. Local `importState.json` (gitignored) hash-skips unchanged tables unless `--force-import`. A `CatalogSupplement` edit changes that hash, so the next import applies it without a new commit. |
 
 There was no gap to “fix” for images — they were already file-level incremental. Cargo cannot be row-level incremental via the public Cargo API without fetching tables; the 24h gate plus the monthly home check is the intended skip policy.
 
@@ -144,14 +144,35 @@ Import order is Infobox → Ships → StarshipTraits → Mastery → Modifiers �
 
 ### Supplements
 
-| File | Merges into | Purpose |
-|------|-------------|---------|
-| `output/supplements/Modifiers.json` | Modifiers | Missing tokens (e.g. `[HullCap]`, `[ShCap]`); widen or clear `available` (e.g. `[HullHeal]`); widen `[Proc]` Type with `Ship Fore Weapon` |
+Cargo JSON stays the import source. Corrections are merged into those rows; they do not replace the local-first pipeline.
+
+| Source | Merges into | Purpose |
+|--------|-------------|---------|
+| Database `CatalogSupplement` where `kind = Modifiers` | Modifiers | Missing tokens Cargo only publishes as combos (`[HullCap]`, `[ShCap]`, `[ShdHeal]`); clear `[HullHeal]` `available` so any deflector can offer it; widen `[Proc]` Type with `Ship Fore Weapon` (#10, #11) |
 | `output/supplements/Reputation.json` | Reputation | Missing reputation factions (empty `environment`) that Cargo omits — e.g. Delta Alliance, Iconian Resistance — so the catalog matches the ~13 in-game tracks (#80) |
 | `output/supplements/SetBonus.json` | SetBonus | Missing set pages (Nausicaan Weaponry Augmentation, Counter-Command Ordnance) plus `Members` globs so the loadout card can match weapons + career consoles (#13) |
 | `output/supplements/Traits.json` | Traits | Fill empty profession `career` (`tac` / `eng` / `sci`) on lockbox personal traits Cargo left blank (#69) |
 
-Modifier supplement rows are Cargo-shaped. Optional `_merge` metadata (stripped before DB write):
+`CatalogSupplement` is not a modifier-only table. `kind` is the Cargo table name and `payload` is the Cargo-shaped record that kind's merger already accepts. A later gap (reputation, set bonus, traits, or something else) is more rows in this table plus that kind's existing merge function — not a new storage pattern. Import never deletes these rows. Apply migrations before import so the seeded modifier rows exist.
+
+Abbreviated combo halves are not seeded. `[Ac]` / `[Dm]` are short forms of `[Acc]` / `[Dmg]`, `[Sh]` of `[ShCap]`, `[C]` / `[R]` / `[Cp]` / `[Rg]` of `[Cap]` / `[Reg]`, `[KP]` / `[Wpn]` of `[KPerf]` / `[WpnDmg]`, and `[RegenHP]` of `[RegHP]`. Those standalones are already in Cargo.
+
+To add another modifier correction without a repository update, insert a row and run import:
+
+```sql
+INSERT INTO "CatalogSupplement" ("kind", "key", "variant", "payload", "updatedAt")
+VALUES (
+  'Modifiers',
+  '[Example]',
+  '',
+  '{"modifier":"[Example]","stats":"+__ Example","type":"Ship Deflector Dish","available":null,"isunique":"1","isepic":"0","info":null}'::jsonb,
+  CURRENT_TIMESTAMP
+);
+```
+
+`key` must match `payload.modifier`. `variant` is `''` unless the same token needs more than one correction. Optional `_merge` inside `payload` follows the rules below.
+
+Modifier supplement payloads are Cargo-shaped (`isunique` / `isepic` are `"0"` / `"1"`, as in the wiki extract). Optional `_merge` metadata (stripped before the Modifier write):
 
 - `clearAvailable: true` — drop the Cargo item-name allowlist so eligibility follows **Type**
 - `matchType: "…"` — when several Cargo rows share a modifier name, pick which `type` blob to widen
@@ -160,7 +181,7 @@ Reputation supplement rows are Cargo-shaped (`name`, `link`, `description`, `rel
 
 SetBonus supplement rows are also Cargo-shaped. Optional `Members` is a newline-separated list of item-name globs (`*` = any run of characters). The loadout matcher ignores Mk suffixes and counts at most one seated item per pattern (so two Heavy Bio-Molecular turrets still count as one piece).
 
-Import hashes Cargo + supplement together, so editing only the supplement still re-imports that table.
+Import hashes Cargo together with any committed supplement file and, when a table reads `CatalogSupplement`, a fingerprint of those rows. Editing only the database rows still re-imports that table.
 
 ### Starship trait ranks (#12)
 
@@ -189,7 +210,7 @@ From the monorepo root:
 npm run test:extractor
 ```
 
-Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier / reputation / set-bonus / traits supplement merge, import name dedupe, and the monthly home-extract schedule gate.
+Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier / reputation / set-bonus / traits supplement merge, the `CatalogSupplement` loader, import name dedupe, and the monthly home-extract schedule gate.
 
 ## Images
 
@@ -210,7 +231,7 @@ Third-party licensing for extracted text and images is documented in
 
 ## Output in git
 
-`Extractor/output/*.json` **is tracked** so production deploys can import without extracting (including `ShipExperimentalWeapons.json` and `output/supplements/*.json`).
+`Extractor/output/*.json` **is tracked** so production deploys can import without extracting (including `ShipExperimentalWeapons.json` and the remaining `output/supplements/*.json` files). Modifier corrections are not in that directory; they live in `CatalogSupplement`.
 
 `output/importState.json`, `output/last-extract.json`, and `output/.wiki-session.json` are **local-only** (gitignored).
 

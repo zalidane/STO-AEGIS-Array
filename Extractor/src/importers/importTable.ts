@@ -2,6 +2,10 @@ import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 
 import type { PrismaClient } from "@sto-aegis/database";
+import {
+  mergeCatalogSupplement,
+  prismaCatalogSupplementReader,
+} from "./catalogSupplement.js";
 import type { ImportConfig } from "./importConfig.js";
 import { planIdentityReplace } from "./identityReplace.js";
 import { validateCargoJson } from "../utils/validateCargoJson.js";
@@ -52,6 +56,36 @@ export async function importTable<
         console.error(`${table}: supplement merge failed — ${message}`);
         return false;
       }
+    }
+  }
+
+  if (config.supplementKind) {
+    if (!config.mergeSupplement) {
+      console.error(
+        `${table}: supplementKind ${config.supplementKind} has no mergeSupplement — import skipped`,
+      );
+      return false;
+    }
+    try {
+      const before = rows.length;
+      const merged = await mergeCatalogSupplement(
+        prismaCatalogSupplementReader(prisma),
+        config.supplementKind,
+        rows,
+        config.mergeSupplement,
+      );
+      rows = merged.rows;
+      if (merged.applied > 0) {
+        console.log(
+          `${table}: merged ${merged.applied} CatalogSupplement row(s) (${config.supplementKind}) (${before} → ${rows.length} rows)`,
+        );
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(
+        `${table}: database supplement merge failed — ${message}`,
+      );
+      return false;
     }
   }
 

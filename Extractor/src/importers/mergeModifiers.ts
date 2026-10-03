@@ -1,5 +1,5 @@
 /**
- * Merge Cargo Modifiers rows with a committed supplement.
+ * Merge Cargo Modifiers rows with catalog supplement payloads.
  *
  * Rules:
  * - Missing (modifier) tokens are inserted as full Cargo-shaped rows.
