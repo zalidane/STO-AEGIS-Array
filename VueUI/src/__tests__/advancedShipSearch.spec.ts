@@ -3,9 +3,12 @@ import {
   buildAcquisitionSelectItems,
   classifyAcquisitionPrimary,
   createDefaultAdvancedShipSearchFilters,
+  compareWeaponLayouts,
   deriveAdvancedShipSearchRow,
   extractFullSpecs,
   filterAdvancedShipSearchRows,
+  formatSearchConsoleLabel,
+  formatWeaponLayout,
   indexAdvancedShipSearchRows,
   loadAdvancedShipSearchFilterPrefs,
   matchesAdvancedShipSearchFilters,
@@ -565,12 +568,80 @@ describe("derive + sort", () => {
       }),
       new Set(),
     );
-    expect(row.consoleLabel).toContain("ENG");
-    expect(row.consoleLabel).toContain("UNI");
+    expect(row.foreWeapons).toBe(5);
+    expect(row.aftWeapons).toBe(2);
+    expect(row.experimental).toBe(true);
+    expect(row.weaponsLabel).toBe("5/2/1");
+    expect(row.consoles).toEqual({
+      engineering: 2,
+      science: 4,
+      tactical: 5,
+      universal: 3,
+    });
+    expect(row.consoleLabel).toBe("2 E | 4 S | 5 T | 3 U");
     expect(row.acquisitionLabel).toContain("Zen");
     expect(row.fullSpecs).toEqual(["Miracle Worker"]);
     expect(row.dualCannons).toBe(true);
     expect(row.totalWeapons).toBe(8);
+  });
+
+  it("formats weapon layouts as fore/aft/experimental with 1 or 0", () => {
+    expect(
+      formatWeaponLayout({
+        foreWeapons: 5,
+        aftWeapons: 2,
+        experimental: true,
+      }),
+    ).toBe("5/2/1");
+    expect(
+      formatWeaponLayout({
+        foreWeapons: 4,
+        aftWeapons: 3,
+        experimental: false,
+      }),
+    ).toBe("4/3/0");
+  });
+
+  it("sorts weapon layouts by fore, then aft, then experimental", () => {
+    const low = { foreWeapons: 4, aftWeapons: 3, experimental: false };
+    const mid = { foreWeapons: 5, aftWeapons: 2, experimental: false };
+    const high = { foreWeapons: 5, aftWeapons: 2, experimental: true };
+    expect(compareWeaponLayouts(low, mid)).toBeLessThan(0);
+    expect(compareWeaponLayouts(mid, high)).toBeLessThan(0);
+    expect(compareWeaponLayouts(high, high)).toBe(0);
+    expect(
+      compareWeaponLayouts(
+        { foreWeapons: 10, aftWeapons: 0, experimental: false },
+        { foreWeapons: 9, aftWeapons: 3, experimental: true },
+      ),
+    ).toBeGreaterThan(0);
+  });
+
+  it("shortens console abbreviations and omits zero careers", () => {
+    expect(
+      formatSearchConsoleLabel({
+        engineering: 5,
+        science: 2,
+        tactical: 3,
+        universal: 1,
+      }),
+    ).toBe("5 E | 2 S | 3 T | 1 U");
+    expect(
+      formatSearchConsoleLabel({
+        engineering: 0,
+        science: 2,
+        tactical: 0,
+        universal: 1,
+      }),
+    ).toBe("2 S | 1 U");
+    expect(
+      formatSearchConsoleLabel({
+        engineering: 0,
+        science: 0,
+        tactical: 0,
+        universal: 0,
+      }),
+    ).toBe("");
   });
 
   it("sorts by weapon counts and name tie-break", () => {
