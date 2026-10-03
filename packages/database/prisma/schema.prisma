@@ -366,7 +366,7 @@ model ModifierItem {
  * App data — Extractor replace must never touch these rows.
  *
  * One table for every missing-data kind. `kind` selects the Cargo table
- * (`Modifiers` first; later kinds reuse this table). `payload` is the
+ * (`Modifiers`, `Reputation`, `SetBonus`, `Traits`). `payload` is the
  * Cargo-shaped record that kind's importer already merges, including
  * optional `_merge` instructions. Edit rows here; the next import applies
  * them without a repository change.
@@ -374,9 +374,11 @@ model ModifierItem {
 model CatalogSupplement {
   id        Int      @id @default(autoincrement())
   kind      String
-  /// Stable identity within `kind`. Modifiers use the token, e.g. "[HullCap]".
+  /// Stable identity within `kind`. Modifiers use the token (`[HullCap]`).
+  /// Reputation and Traits use `name`. SetBonus uses `Name`.
   key       String
-  /// Extra identity when one key has several corrections (modifier type match).
+  /// Extra identity when one key has several corrections (modifier type match,
+  /// or the same trait name under another type and environment).
   variant   String   @default("")
   payload   Json
   createdAt DateTime @default(now())

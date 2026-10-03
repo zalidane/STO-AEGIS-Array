@@ -21,8 +21,9 @@ export interface ImportConfig<
   supplementFile?: string;
   /**
    * Load CatalogSupplement rows for this kind and merge them after any file
-   * supplement. The kind string is the Cargo table name (`Modifiers` now;
-   * other tables later) so a new missing-data kind does not need a new table.
+   * supplement. The kind string is the Cargo table name (`Modifiers`,
+   * `Reputation`, `SetBonus`, `Traits`) so a new missing-data kind does not
+   * need a new table.
    */
   supplementKind?: string;
   /** Merge Cargo rows with a supplement payload (file JSON or database rows). */

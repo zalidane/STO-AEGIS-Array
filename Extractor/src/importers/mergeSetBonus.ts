@@ -1,5 +1,5 @@
 /**
- * Merge Cargo SetBonus rows with a committed supplement (#13).
+ * Merge Cargo SetBonus rows with CatalogSupplement payloads (#13).
  *
  * Rules:
  * - Missing bonus Names are inserted as full Cargo-shaped rows.
