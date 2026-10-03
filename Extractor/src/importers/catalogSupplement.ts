@@ -1,10 +1,11 @@
 /**
- * Database corrections merged with Cargo on import (#11).
+ * Database corrections merged with Cargo on import.
  *
  * CatalogSupplement is one table for every missing-data kind. `kind` selects
- * the Cargo table; `payload` is the Cargo-shaped record that table's merger
- * already understands. Import reads the rows. It does not replace them, so a
- * correction survives the next Cargo import without a repository change.
+ * the Cargo table (`Modifiers`, `Reputation`, `SetBonus`, `Traits`); `payload`
+ * is the Cargo-shaped record that table's merger already understands. Import
+ * reads the rows. It does not replace them, so a correction survives the next
+ * Cargo import without a repository change.
  */
 
 import { createHash } from "node:crypto";
@@ -88,27 +89,39 @@ function assertObjectPayload(
   return row.payload as Record<string, unknown>;
 }
 
+function requirePayloadString(
+  row: CatalogSupplementRow,
+  payload: Record<string, unknown>,
+  field: string,
+): string {
+  const value = payload[field];
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(
+      `CatalogSupplement ${row.kind}/${row.key} payload.${field} is required`,
+    );
+  }
+  return value;
+}
+
+function assertKeyMatchesPayload(
+  row: CatalogSupplementRow,
+  field: string,
+  value: string,
+): void {
+  if (value !== row.key) {
+    throw new Error(
+      `CatalogSupplement ${row.kind} key ${row.key} does not match payload.${field} ${value}`,
+    );
+  }
+}
+
 function assertModifierPayload(
   row: CatalogSupplementRow,
   payload: Record<string, unknown>,
 ): void {
-  const modifier = payload.modifier;
-  const type = payload.type;
-  if (typeof modifier !== "string" || !modifier.trim()) {
-    throw new Error(
-      `CatalogSupplement Modifiers/${row.key} payload.modifier is required`,
-    );
-  }
-  if (modifier !== row.key) {
-    throw new Error(
-      `CatalogSupplement Modifiers key ${row.key} does not match payload.modifier ${modifier}`,
-    );
-  }
-  if (typeof type !== "string" || !type.trim()) {
-    throw new Error(
-      `CatalogSupplement Modifiers/${row.key} payload.type is required`,
-    );
-  }
+  const modifier = requirePayloadString(row, payload, "modifier");
+  assertKeyMatchesPayload(row, "modifier", modifier);
+  requirePayloadString(row, payload, "type");
   const merge = payload._merge;
   if (merge != null && (typeof merge !== "object" || Array.isArray(merge))) {
     throw new Error(
@@ -117,10 +130,36 @@ function assertModifierPayload(
   }
 }
 
+function assertReputationPayload(
+  row: CatalogSupplementRow,
+  payload: Record<string, unknown>,
+): void {
+  const name = requirePayloadString(row, payload, "name");
+  assertKeyMatchesPayload(row, "name", name);
+}
+
+function assertSetBonusPayload(
+  row: CatalogSupplementRow,
+  payload: Record<string, unknown>,
+): void {
+  const name = requirePayloadString(row, payload, "Name");
+  assertKeyMatchesPayload(row, "Name", name);
+}
+
+function assertTraitPayload(
+  row: CatalogSupplementRow,
+  payload: Record<string, unknown>,
+): void {
+  const name = requirePayloadString(row, payload, "name");
+  assertKeyMatchesPayload(row, "name", name);
+  requirePayloadString(row, payload, "type");
+}
+
 /**
  * Validate stored rows and return the payloads a kind's merger consumes.
- * Modifiers check token identity. Any other kind accepts a Cargo-shaped object
- * so a later table can reuse this store without a new schema.
+ * Known kinds check the identity field that merger matches on. Any other kind
+ * accepts a Cargo-shaped object so a later table can reuse this store without
+ * a new schema.
  */
 export function payloadsFromCatalogSupplementRows(
   rows: readonly CatalogSupplementRow[],
@@ -132,6 +171,12 @@ export function payloadsFromCatalogSupplementRows(
     const payload = assertObjectPayload(row);
     if (row.kind === "Modifiers") {
       assertModifierPayload(row, payload);
+    } else if (row.kind === "Reputation") {
+      assertReputationPayload(row, payload);
+    } else if (row.kind === "SetBonus") {
+      assertSetBonusPayload(row, payload);
+    } else if (row.kind === "Traits") {
+      assertTraitPayload(row, payload);
     }
     return payload;
   });
