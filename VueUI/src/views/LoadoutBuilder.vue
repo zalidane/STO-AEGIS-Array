@@ -37,6 +37,11 @@ import {
   orphanedFills,
 } from "@/logic/loadout/state";
 import {
+  decideLoadoutPresence,
+  deleteLoadoutConfirmText,
+  loadoutsAfterDeleteChoice,
+} from "@/logic/loadout/ensureLoadout";
+import {
   equippedItemsForLoadout,
   matchSetBonuses,
   shortSetPieceName,
@@ -115,6 +120,9 @@ const pendingUniqueSeatId = ref<string | null>(null);
 const onlyCollected = ref(true);
 const shareOpen = ref(false);
 const exportOpen = ref(false);
+const deleteTarget = ref<{ id: string; name: string } | null>(null);
+/** Ship+captain key whose empty loadout list must not be refilled automatically. */
+const suppressCreateKey = ref<string | null>(null);
 const shareStore = useShareStore();
 
 const {
@@ -304,11 +312,21 @@ const loadoutCosts = computed(() =>
   }),
 );
 
+function captainShipKey() {
+  return `${shipId.value}:${activeCharacter.value?.id ?? ""}`;
+}
+
 watch(
   [ship, activeCharacter, shipLoadouts],
   () => {
-    if (!ship.value || !activeCharacter.value) return;
-    if (shipLoadouts.value.length === 0) {
+    const decision = decideLoadoutPresence({
+      hasShip: Boolean(ship.value),
+      hasCharacter: Boolean(activeCharacter.value),
+      loadoutIds: shipLoadouts.value.map((loadout) => loadout.id),
+      selectedId: selectedId.value,
+      suppressCreate: suppressCreateKey.value === captainShipKey(),
+    });
+    if (decision.action === "create" && ship.value) {
       const created = store.addLoadout(ship.value.id);
       if (created) {
         selectedId.value = created.id;
@@ -316,11 +334,8 @@ watch(
       }
       return;
     }
-    if (
-      selectedId.value == null ||
-      !shipLoadouts.value.some((loadout) => loadout.id === selectedId.value)
-    ) {
-      selectedId.value = shipLoadouts.value[0]?.id ?? null;
+    if (decision.action === "select") {
+      selectedId.value = decision.selectedId;
     }
   },
   { immediate: true },
@@ -666,11 +681,32 @@ function renameActive() {
   store.updateLoadoutName(loadout.id, name);
 }
 
-function removeActive() {
+function askDelete() {
   const loadout = activeLoadout.value;
   if (!loadout) return;
-  store.removeLoadout(loadout.id);
-  selectedId.value = null;
+  deleteTarget.value = { id: loadout.id, name: loadout.name };
+}
+
+function dismissDelete() {
+  deleteTarget.value = null;
+}
+
+function onDeleteDialog(open: boolean) {
+  if (!open) dismissDelete();
+}
+
+function confirmDelete() {
+  const target = deleteTarget.value;
+  if (!target) return;
+  const next = loadoutsAfterDeleteChoice(
+    shipLoadouts.value.map((loadout) => loadout.id),
+    target.id,
+  );
+  suppressCreateKey.value = next.suppressCreate ? captainShipKey() : null;
+  if (pendingUniqueSeatId.value === target.id) pendingUniqueSeatId.value = null;
+  store.removeLoadout(target.id);
+  selectedId.value = next.selectedId;
+  deleteTarget.value = null;
 }
 
 watch(activeLoadout, (loadout) => {
@@ -739,7 +775,7 @@ watch(activeLoadout, (loadout) => {
             <v-btn variant="text" color="primary" @click="exportOpen = true">
               Export
             </v-btn>
-            <v-btn variant="text" color="error" @click="removeActive">
+            <v-btn variant="text" color="error" @click="askDelete">
               Delete
             </v-btn>
           </div>
@@ -1125,7 +1161,31 @@ watch(activeLoadout, (loadout) => {
           </aside>
         </div>
       </template>
+      <div v-else class="empty-featured">
+        <p>No builds for this hull.</p>
+        <v-btn size="small" variant="text" color="primary" @click="createAnother">
+          New build
+        </v-btn>
+      </div>
     </template>
+
+    <v-dialog
+      :model-value="deleteTarget != null"
+      max-width="420"
+      @update:model-value="onDeleteDialog"
+    >
+      <v-card>
+        <v-card-title>Delete loadout</v-card-title>
+        <v-card-text>
+          {{ deleteLoadoutConfirmText(deleteTarget?.name ?? "") }}
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="dismissDelete">No</v-btn>
+          <v-btn color="error" @click="confirmDelete">Yes</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <v-dialog v-model="pickerOpen" max-width="560">
       <v-card>
@@ -1277,6 +1337,10 @@ watch(activeLoadout, (loadout) => {
   color: rgba(255, 255, 255, 0.6);
   border: 1px dashed rgba(255, 255, 255, 0.15);
   border-radius: 14px;
+}
+
+.empty-featured .v-btn {
+  margin-top: 0.75rem;
 }
 
 .loadout-toolbar {
