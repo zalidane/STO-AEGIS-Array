@@ -7,6 +7,7 @@ import {
   asCaptainTrait,
   lookupLoadoutItem,
 } from "@/logic/loadout/catalogMap";
+import { pickerCandidateOwned } from "@/logic/loadout/mergePickerItems";
 import { pickerCandidatesFor } from "@/logic/loadout/pickerCandidates";
 import { equipMessage } from "@/logic/loadout/equipMessages";
 import {
@@ -113,9 +114,7 @@ export function useLoadoutPicker(input: {
   }
 
   function itemIsOwned(item: LoadoutItem): boolean {
-    return toValue(input.ownedKeys).has(
-      loadoutOwnershipKey(item.catalogKind, item.id),
-    );
+    return pickerCandidateOwned(item, toValue(input.ownedKeys));
   }
 
   const pickerLabel = computed(() => {

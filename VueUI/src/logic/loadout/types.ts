@@ -55,6 +55,11 @@ export type LoadoutItem = {
   /** Picker/seated roman rank index when a power has two versions at one officer rank. */
   abilityRank?: number;
   /**
+   * Catalog ids collapsed into this picker row (faction or ship duplicates).
+   * Includes this item's id. Absent when the row is a single catalog entry.
+   */
+  mergedIds?: number[];
+  /**
    * Trait / starship-trait trigger text for #31/#33.
    * Personal traits map `shortDescription` → short and `description` → basic.
    */

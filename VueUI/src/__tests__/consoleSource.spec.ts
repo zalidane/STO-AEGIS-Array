@@ -111,6 +111,117 @@ describe("consolePickerSource", () => {
     ).toBeNull();
   });
 
+  it("keeps a single granting hull as the short name, without a tier", () => {
+    expect(
+      consolePickerSource(domino, [{ ...bajoran, tier: 6 }]),
+    ).toBe("Bajoran Interceptor");
+  });
+
+  it("collapses faction hulls to one family and tier", () => {
+    const crimson: ConsoleSourceItem = {
+      id: 873,
+      name: "Console - Universal - Crimson Force Field",
+      type: "Universal Console",
+      catalogKind: "item",
+    };
+    const tucker: ConsoleSourceShip = {
+      id: 737,
+      name: "Tucker Class Miracle Worker Cruiser",
+      displayClass: "Tucker",
+      displayType: "Tactical Miracle Worker Cruiser",
+      tier: 6,
+      uniconsole: crimson.name,
+      uniconsoleId: crimson.id,
+    };
+    const klothos: ConsoleSourceShip = {
+      id: 437,
+      name: "Klothos Tactical Miracle Worker Cruiser",
+      displayClass: "Klothos",
+      displayType: "Tactical Miracle Worker Cruiser",
+      tier: 6,
+      uniconsole: crimson.name,
+    };
+    const tebok: ConsoleSourceShip = {
+      id: 707,
+      name: "Tebok Tactical Miracle Worker Warbird",
+      displayClass: "Tebok",
+      displayType: "Tactical Miracle Worker Warbird",
+      tier: 6,
+      uniconsoleId: crimson.id,
+    };
+    expect(consolePickerSource(crimson, [klothos, tebok, tucker])).toBe(
+      "Miracle Worker Cruiser [T6]",
+    );
+  });
+
+  it("collapses a heavy warbird onto the battlecruiser family", () => {
+    const shielding: ConsoleSourceItem = {
+      id: 803,
+      name: "Console - Universal - Ablative Hazard Shielding",
+      type: "Universal Console",
+      catalogKind: "item",
+    };
+    const hull = (
+      id: number,
+      name: string,
+      displayClass: string,
+      displayType: string,
+    ): ConsoleSourceShip => ({
+      id,
+      name,
+      displayClass,
+      displayType,
+      tier: 6,
+      uniconsoleId: shielding.id,
+    });
+    expect(
+      consolePickerSource(shielding, [
+        hull(34, "Arbiter Battlecruiser", "Arbiter", "Battlecruiser"),
+        hull(448, "Kurak Battlecruiser", "Kurak", "Battlecruiser"),
+        hull(540, "Morrigu Heavy Warbird", "Morrigu", "Heavy Warbird"),
+      ]),
+    ).toBe("Battlecruiser [T6]");
+  });
+
+  it("keeps unrelated granting hulls as separate family labels", () => {
+    const cloak: ConsoleSourceItem = {
+      id: 864,
+      name: "Console - Universal - Cloaking Device",
+      type: "Universal Console",
+      catalogKind: "item",
+    };
+    expect(
+      consolePickerSource(cloak, [
+        {
+          id: 127,
+          name: "Defiant Tactical Escort Retrofit",
+          displayClass: "Defiant",
+          displayType: "Tactical Escort Retrofit",
+          tier: 5,
+          uniconsoleId: cloak.id,
+        },
+        {
+          id: 141,
+          name: "Dreadnought Cruiser",
+          displayClass: "Galaxy",
+          displayType: "Dreadnought Cruiser",
+          tier: 5,
+          uniconsoleId: cloak.id,
+        },
+        {
+          id: 900,
+          name: "Hathos Warbird",
+          displayClass: "Hathos",
+          displayType: "Warbird",
+          tier: 6,
+          uniconsole: cloak.name,
+        },
+      ]),
+    ).toBe(
+      "Dreadnought Cruiser [T5] · Escort Retrofit [T5] · Warbird [T6]",
+    );
+  });
+
   it("joins distinct granting hulls and collapses duplicate labels", () => {
     const andorian: ConsoleSourceShip = {
       id: 1,
