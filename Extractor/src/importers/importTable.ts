@@ -55,6 +55,14 @@ export async function importTable<
     }
   }
 
+  if (config.prepareRows) {
+    const before = rows.length;
+    rows = config.prepareRows(rows);
+    if (rows.length !== before) {
+      console.log(`${table}: prepared rows (${before} → ${rows.length})`);
+    }
+  }
+
   const model = (prisma as unknown as Record<string, any>)[config.model];
 
   if (!model) {

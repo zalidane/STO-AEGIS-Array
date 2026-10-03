@@ -31,6 +31,7 @@ import {
   type TraitCargoRow,
   type TraitSupplementRow,
 } from "./mergeTraits.js";
+import { expandStarshipTraitRanks } from "./expandStarshipTraitRanks.js";
 
 export const MODIFIERS_SUPPLEMENT_PATH = "output/supplements/Modifiers.json";
 export const REPUTATION_SUPPLEMENT_PATH = "output/supplements/Reputation.json";
@@ -139,6 +140,7 @@ export const importMappings = {
     model: "starshipTrait",
     uniqueFields: ["name"],
     mapper: mapStarshipTrait,
+    prepareRows: expandStarshipTraitRanks,
   },
   SwObtain: {
     model: "swObtain",
