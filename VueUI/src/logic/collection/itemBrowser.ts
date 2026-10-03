@@ -91,9 +91,16 @@ export type EquipmentInfoboxSource = InfoboxTextFields & {
   type: string | null;
   rarity?: string | null;
   boundto?: string | null;
+  boundwhen?: string | null;
   who?: string | null;
   image?: string | null;
+  equiplimit?: number | string | null;
 };
+
+function metaValue(value: string | number | null | undefined): string {
+  if (value == null) return "";
+  return String(value).trim();
+}
 
 export function mapEquipmentInfoboxToBrowserItem(
   item: EquipmentInfoboxSource,
@@ -119,6 +126,8 @@ export function mapEquipmentInfoboxToBrowserItem(
       { label: "Type", value: type ?? "" },
       { label: "Rarity", value: item.rarity ?? "" },
       { label: "Bound", value: item.boundto ?? "" },
+      { label: "Bound when", value: item.boundwhen ?? "" },
+      { label: "Equip limit", value: metaValue(item.equiplimit) },
     ],
   };
 }

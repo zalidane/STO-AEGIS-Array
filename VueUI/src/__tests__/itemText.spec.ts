@@ -4,6 +4,7 @@ import {
   mapEquipmentInfoboxToBrowserItem,
 } from "@/logic/collection/itemBrowser";
 import {
+  buildItemDetailSections,
   infoboxTextBlocks,
   parseInfoboxTextField,
 } from "@/logic/collection/itemText";
@@ -113,6 +114,30 @@ describe("mapEquipmentInfoboxToBrowserItem", () => {
     expect(mapped.imageSrc).toBe(
       "/images/items/Obelisk_Subspace_Rift_Warp_Core_icon.png",
     );
+    expect(mapped.meta).toEqual(
+      expect.arrayContaining([
+        { label: "Type", value: "Warp Core" },
+        { label: "Rarity", value: "Very Rare" },
+        { label: "Bound", value: "account" },
+      ]),
+    );
+  });
+
+  it("keeps bound-when and equip limit on the detail chips", () => {
+    const mapped = mapEquipmentInfoboxToBrowserItem({
+      id: 3,
+      name: "Console - Universal - Sticky Web",
+      type: "Universal Console",
+      boundto: "Character",
+      boundwhen: "Equipped",
+      equiplimit: 1,
+    });
+    expect(mapped.meta).toEqual(
+      expect.arrayContaining([
+        { label: "Bound when", value: "Equipped" },
+        { label: "Equip limit", value: "1" },
+      ]),
+    );
   });
 
   it("prefers a stored infobox image filename over the name guess", () => {
@@ -154,6 +179,49 @@ describe("mapEquipmentInfoboxToBrowserItem", () => {
         (item) => item.id,
       ),
     ).toEqual([11]);
+  });
+});
+
+describe("buildItemDetailSections", () => {
+  it("groups unnamed stats under one Description section", () => {
+    expect(
+      buildItemDetailSections({
+        text1: "+7.5 Additional Auxiliary Power \n:''(Bonus increases at low Auxiliary Power)''",
+        text2: "Maximum Warp Factor 9.97",
+      }),
+    ).toEqual([
+      {
+        title: "Description",
+        blocks: [
+          {
+            text: "+7.5 Additional Auxiliary Power",
+            subscript: "(Bonus increases at low Auxiliary Power)",
+          },
+          { text: "Maximum Warp Factor 9.97", subscript: null },
+        ],
+      },
+    ]);
+  });
+
+  it("uses ability heads as section titles, matching trait sections", () => {
+    expect(
+      buildItemDetailSections({
+        head1: "Throw Carrot",
+        text1: "Single Target Ranged Attack",
+        subhead2: "Cooldown note",
+        text2: "Carrot Fan",
+        head2: "Carrot Fan",
+      }),
+    ).toEqual([
+      {
+        title: "Throw Carrot",
+        blocks: [{ text: "Single Target Ranged Attack", subscript: null }],
+      },
+      {
+        title: "Carrot Fan",
+        blocks: [{ text: "Carrot Fan", subscript: "Cooldown note" }],
+      },
+    ]);
   });
 });
 

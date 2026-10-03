@@ -96,6 +96,10 @@ function collectBindChoicePromptFor(item: TraitBrowserItem): string {
     <TraitBrowserLayout
       title="Items"
       source-label="Who"
+      tab-facets="type"
+      hide-list-description
+      hide-detail-body
+      empty-noun="items"
       :items="items"
       :loading="loading"
       :error-message="error?.message"
