@@ -33,7 +33,6 @@ import {
 } from "./mergeTraits.js";
 import { expandStarshipTraitRanks } from "./expandStarshipTraitRanks.js";
 
-export const MODIFIERS_SUPPLEMENT_PATH = "output/supplements/Modifiers.json";
 export const REPUTATION_SUPPLEMENT_PATH = "output/supplements/Reputation.json";
 export const SET_BONUS_SUPPLEMENT_PATH = "output/supplements/SetBonus.json";
 export const TRAITS_SUPPLEMENT_PATH = "output/supplements/Traits.json";
@@ -114,7 +113,8 @@ export const importMappings = {
     strategy: "replace" as const,
     identityFields: ["modifier", "type"] as const,
     mapper: mapModifier,
-    supplementFile: MODIFIERS_SUPPLEMENT_PATH,
+    // Corrections live in CatalogSupplement (kind Modifiers), not a committed file.
+    supplementKind: "Modifiers",
     mergeSupplement: mergeModifiersSupplement,
   },
   Reputation: {
