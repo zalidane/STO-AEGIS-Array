@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyModifierPick,
   itemHasSuffixCatalog,
+  matchesModifierQuery,
   modifierFitsItem,
   modifierFitsSocket,
   modifierSlotCountForQuality,
@@ -423,6 +424,21 @@ describe("slotModifiers", () => {
       "[Pen]",
     ]);
     expect(sockets[4]?.options.map((row) => row.token)).toEqual(["[Ac/Dm]"]);
+  });
+
+  it("treats a cleared modifier search as an empty query", () => {
+    const auxiliary = {
+      token: "[A->E]",
+      stats:
+        "Adds 7.5% of your Auxiliary power to your Engine Power as bonus Power",
+    };
+    const crit = { token: "[CrtH]", stats: "+2% Critical Chance" };
+    expect(matchesModifierQuery(auxiliary, "as")).toBe(true);
+    expect(matchesModifierQuery(crit, "as")).toBe(false);
+    expect(matchesModifierQuery(auxiliary, "")).toBe(true);
+    expect(matchesModifierQuery(crit, "   ")).toBe(true);
+    expect(matchesModifierQuery(auxiliary, null)).toBe(true);
+    expect(matchesModifierQuery(crit, undefined)).toBe(true);
   });
 
   it("writes a pick into the requested socket and trims empty tail slots", () => {
