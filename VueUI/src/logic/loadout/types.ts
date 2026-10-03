@@ -76,7 +76,7 @@ export type LoadoutEquipContext = {
   modifiers?: ReadonlyArray<import("./slotModifiers").LoadoutModifier>;
   /** When false, unowned catalog items may still be seated. Defaults to true. */
   requireOwned?: boolean;
-  /** Hangar-pet `who` matching; ignored for non-hangar slots. */
+  /** Hull for hangar-pet and ship-locked console `who` matching. */
   ship?: HangarShip | null;
 };
 

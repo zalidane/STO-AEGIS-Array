@@ -7,7 +7,7 @@ import {
   itemFitsHullSlot,
   loadoutOwnershipKey,
 } from "./setBonus";
-import { hangarPetFitsShip } from "./hangarWho";
+import { itemWhoFitsShip } from "./hangarWho";
 import { seatedSuffixModifiers, trimModifiersForQuality } from "./slotModifiers";
 import { inheritModsFromPreviousSameKind, modsForNewFill } from "./slotQuality";
 import {
@@ -256,7 +256,7 @@ export function equipLoadoutSlot(
   if (!itemFitsHullSlot(item, slot.kind)) {
     return { ok: false, reason: "illegal-slot" };
   }
-  if (slot.kind === "hangar" && !hangarPetFitsShip(item, context.ship)) {
+  if (!itemWhoFitsShip(item, context.ship)) {
     return { ok: false, reason: "illegal-slot" };
   }
 

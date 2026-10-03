@@ -2,12 +2,17 @@ import { describe, expect, it } from "vitest";
 import {
   hangarPetFitsShip,
   hangarShipFromCatalog,
+  itemWhoFitsShip,
   parseHangarWhoTokens,
   type HangarShip,
 } from "@/logic/loadout/hangarWho";
 
 function pet(who: string | null): { type: string; who: string | null } {
   return { type: "Hangar Bay", who };
+}
+
+function uniConsole(who: string | null): { type: string; who: string | null } {
+  return { type: "universal console", who };
 }
 
 function ship(fields: HangarShip): HangarShip {
@@ -137,7 +142,7 @@ const vanguardSupport = ship({
 });
 
 describe("hangarWho", () => {
-  it("splits wiki who on commas and or", () => {
+  it("splits wiki who on commas, or, and and", () => {
     expect(
       parseHangarWhoTokens(
         "Tholian Carrier or Dreadnought Cruiser",
@@ -152,6 +157,11 @@ describe("hangarWho", () => {
       "Xindi Dreadnought Cruiser",
       "Xindi Strike Wing Escort",
     ]);
+    expect(
+      parseHangarWhoTokens(
+        "Equippable on Command Battlecruisers and Command Warbirds",
+      ),
+    ).toEqual(["Command Battlecruisers", "Command Warbirds"]);
   });
 
   it("lets unrestricted hangar pets onto any hangar hull", () => {
@@ -160,13 +170,55 @@ describe("hangarWho", () => {
     expect(hangarPetFitsShip(pet("Any Full Carrier"), null)).toBe(false);
   });
 
-  it("ignores unique-console who text", () => {
+  it("lets hangarPetFitsShip ignore unique-console who text", () => {
     expect(
       hangarPetFitsShip(
         { type: "universal console", who: "Any Tuffli" },
         obelisk,
       ),
     ).toBe(true);
+  });
+
+  it("filters ship-locked universal consoles with itemWhoFitsShip", () => {
+    const fcmWho = "Carrier (T6), Fleet Carrier (T6)";
+    const jupiter = ship({
+      name: "Jupiter Carrier",
+      wikiName: "Jupiter Carrier",
+      type: "Science Carrier",
+      displayType: "Carrier",
+      displayClass: "Jupiter",
+      tier: 6,
+    });
+    const defiant = ship({
+      name: "Defiant Tactical Escort Retrofit",
+      type: "Escort",
+      displayType: "Tactical Escort Retrofit",
+      displayClass: "Defiant",
+      tier: 5,
+    });
+    expect(itemWhoFitsShip(uniConsole(fcmWho), jupiter)).toBe(true);
+    expect(itemWhoFitsShip(uniConsole(fcmWho), fleetAtrox)).toBe(true);
+    expect(itemWhoFitsShip(uniConsole(fcmWho), defiant)).toBe(false);
+    expect(itemWhoFitsShip(uniConsole(fcmWho), quas)).toBe(false);
+    expect(itemWhoFitsShip(uniConsole(null), defiant)).toBe(true);
+    expect(itemWhoFitsShip(uniConsole(""), defiant)).toBe(true);
+    expect(
+      itemWhoFitsShip(
+        uniConsole("Equippable on Command Battlecruisers and Command Warbirds"),
+        ship({
+          name: "Arbiter Battlecruiser",
+          type: "Command Battlecruiser",
+          displayType: "Command Battlecruiser",
+          tier: 6,
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      itemWhoFitsShip(
+        uniConsole("Equippable on Command Battlecruisers and Command Warbirds"),
+        jupiter,
+      ),
+    ).toBe(false);
   });
 
   it("treats Any Full Carrier as a true carrier, not a flight-deck hull", () => {

@@ -22,7 +22,7 @@ import {
 } from "@/logic/loadout/pickerRank";
 import { matchesPickerQuery } from "@/logic/loadout/pickerSearch";
 import {
-  hangarPetFitsShip,
+  itemWhoFitsShip,
   type HangarShip,
 } from "@/logic/loadout/hangarWho";
 import {
@@ -54,9 +54,7 @@ export function fittingItems(input: {
 }): LoadoutItem[] {
   return input.catalog.filter((item) => {
     if (!itemFitsHullSlot(item, input.kind)) return false;
-    if (input.kind === "hangar" && !hangarPetFitsShip(item, input.ship)) {
-      return false;
-    }
+    if (!itemWhoFitsShip(item, input.ship)) return false;
     if (!itemHasOpenCopy(item, input.seated, input.exceptSlotId)) return false;
     if (!input.collectedOnly) return true;
     return input.ownedKeys.has(
