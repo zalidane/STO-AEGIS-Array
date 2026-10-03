@@ -3,6 +3,7 @@ import { normalizeWikiPlainText } from "@/logic/wikiPlainText";
 import {
   getStarshipTraitImageUrl,
   getTraitImageUrl,
+  getTraySkillImageUrl,
 } from "@/utils/wikiImage";
 
 export type TraitBrowserShip = {
@@ -262,5 +263,62 @@ export function mapStarshipTraitToBrowserItem(
     career: null,
     ships: trait.ships,
     imageSrc: getStarshipTraitImageUrl(trait.name, trait.iconName),
+  };
+}
+
+export type TraySkillSource = {
+  id: number;
+  name: string;
+  description: string | null;
+  descriptionLong: string | null;
+  type: string | null;
+  region: string | null;
+  system: string | null;
+  targets: string | null;
+  affects: string | null;
+  activation: string | null;
+  rechargeBase: number | null;
+  rechargeGlobal: number | null;
+  image?: string | null;
+};
+
+export function formatTraySkillRecharge(
+  rechargeBase: number | null | undefined,
+  rechargeGlobal: number | null | undefined,
+): string | null {
+  const parts: string[] = [];
+  if (rechargeBase != null) parts.push(`Base ${rechargeBase}s`);
+  if (rechargeGlobal != null) parts.push(`Global ${rechargeGlobal}s`);
+  return parts.length ? parts.join(" · ") : null;
+}
+
+export function mapTraySkillToBrowserItem(
+  skill: TraySkillSource,
+): TraitBrowserItem {
+  const summary = cleanTraitDescriptionText(skill.description);
+  return {
+    id: skill.id,
+    name: skill.name,
+    listDescription: summary,
+    detailDescription: summary,
+    source: skill.descriptionLong?.trim() || null,
+    type: skill.type,
+    environment: skill.region,
+    career: skill.system,
+    imageSrc: getTraySkillImageUrl(skill.name, skill.image),
+    meta: [
+      { label: "Type", value: skill.type ?? "" },
+      { label: "Region", value: skill.region ?? "" },
+      { label: "System", value: skill.system ?? "" },
+      { label: "Targets", value: skill.targets ?? "" },
+      { label: "Affects", value: skill.affects ?? "" },
+      { label: "Activation", value: skill.activation ?? "" },
+      {
+        label: "Recharge",
+        value:
+          formatTraySkillRecharge(skill.rechargeBase, skill.rechargeGlobal) ??
+          "",
+      },
+    ],
   };
 }

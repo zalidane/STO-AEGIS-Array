@@ -16,6 +16,15 @@ import type { BindScope, CatalogKind } from "@/logic/collection/types";
 import { defaultBindForKind } from "@/logic/collection/bind";
 import { useCollectionStore } from "@/stores/collection";
 import WikiIcon from "@/components/shared/WikiIcon.vue";
+import CatalogFacetTabs from "@/components/shared/CatalogFacetTabs.vue";
+import {
+  catalogTabEmptyMessage,
+  countFacetMatches,
+  defaultRegionKey,
+  facetKey,
+  facetLabel,
+  listFacetKeys,
+} from "@/logic/catalogBrowserTabs";
 
 const props = defineProps<{
   title: string;
@@ -34,6 +43,17 @@ const props = defineProps<{
   collectBindChoicePrompt?: string | ((item: TraitBrowserItem) => string);
   /** Type and environment chips, matching the ship registry filters. */
   facetFilters?: boolean;
+  /**
+   * Exclusive tabs. `type` is one row of type tabs. `type-and-region` adds
+   * region sub-tabs drawn from the whole catalog so an empty combo is reachable.
+   */
+  tabFacets?: "type" | "type-and-region";
+  /** Sidebar shows the name only. */
+  hideListDescription?: boolean;
+  /** Leave the card body to the extra slot (item details). */
+  hideDetailBody?: boolean;
+  /** Plural noun used in tab empty states, such as "skills" or "items". */
+  emptyNoun?: string;
 }>();
 
 const collectionStore = useCollectionStore();
@@ -43,6 +63,9 @@ const selectedId = ref<number | null>(null);
 const selectedTypes = ref<string[]>([]);
 const selectedEnvironments = ref<string[]>([]);
 const hideCollected = ref(false);
+const selectedTypeKey = ref<string | null>(null);
+const selectedRegionKey = ref<string | null>(null);
+const userPickedTabs = ref(false);
 
 const availableTypes = computed(() =>
   uniqueTraitFacetValues(props.items, "type"),
@@ -52,10 +75,16 @@ const availableEnvironments = computed(() =>
 );
 
 const showTypeFilters = computed(
-  () => props.facetFilters && availableTypes.value.length > 1,
+  () =>
+    !props.tabFacets &&
+    props.facetFilters &&
+    availableTypes.value.length > 1,
 );
 const showEnvironmentFilters = computed(
-  () => props.facetFilters && availableEnvironments.value.length > 1,
+  () =>
+    !props.tabFacets &&
+    props.facetFilters &&
+    availableEnvironments.value.length > 1,
 );
 const showHideCollected = computed(() => Boolean(props.collectKind));
 const showFilters = computed(
@@ -70,14 +99,140 @@ const collectedIds = computed(() => {
   return collectionStore.ownedCatalogIds(props.collectKind);
 });
 
+const typeTabs = computed(() => {
+  if (!props.tabFacets) return [];
+  return listFacetKeys(props.items, "type").map((key) => ({
+    key,
+    label: facetLabel("type", key),
+    count: countFacetMatches(props.items, { type: key }),
+  }));
+});
+
+const regionTabs = computed(() => {
+  if (props.tabFacets !== "type-and-region") return [];
+  return listFacetKeys(props.items, "environment").map((key) => ({
+    key,
+    label: facetLabel("environment", key),
+    count: countFacetMatches(props.items, {
+      type: selectedTypeKey.value,
+      environment: key,
+    }),
+  }));
+});
+
+function snapTabsToPreferred() {
+  const preferredId = props.preferredSelectedId;
+  if (preferredId == null || !props.tabFacets) return false;
+  const match = props.items.find((item) => item.id === preferredId);
+  if (!match) return false;
+  selectedTypeKey.value = facetKey(match.type);
+  if (props.tabFacets === "type-and-region") {
+    selectedRegionKey.value = facetKey(match.environment);
+  }
+  return true;
+}
+
+function ensureTabSelection() {
+  if (!props.tabFacets) return;
+  if (!userPickedTabs.value && snapTabsToPreferred()) return;
+
+  const types = typeTabs.value.map((tab) => tab.key);
+  if (selectedTypeKey.value == null || !types.includes(selectedTypeKey.value)) {
+    selectedTypeKey.value = types[0] ?? null;
+    selectedRegionKey.value = null;
+  }
+  if (props.tabFacets !== "type-and-region") return;
+  const regions = regionTabs.value.map((tab) => tab.key);
+  if (
+    selectedRegionKey.value != null &&
+    regions.includes(selectedRegionKey.value)
+  ) {
+    return;
+  }
+  selectedRegionKey.value = defaultRegionKey(
+    props.items,
+    selectedTypeKey.value,
+    regions,
+  );
+}
+
+watch(
+  () => [props.items, props.tabFacets, props.preferredSelectedId] as const,
+  () => {
+    ensureTabSelection();
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.preferredSelectedId,
+  () => {
+    userPickedTabs.value = false;
+    ensureTabSelection();
+  },
+);
+
+function selectTypeTab(key: string) {
+  userPickedTabs.value = true;
+  selectedTypeKey.value = key;
+}
+
+function selectRegionTab(key: string) {
+  userPickedTabs.value = true;
+  selectedRegionKey.value = key;
+}
+
+const facetScopedItems = computed(() => {
+  if (!props.tabFacets) return props.items;
+  return props.items.filter((item) => {
+    if (
+      selectedTypeKey.value != null &&
+      facetKey(item.type) !== selectedTypeKey.value
+    ) {
+      return false;
+    }
+    if (
+      props.tabFacets === "type-and-region" &&
+      selectedRegionKey.value != null &&
+      facetKey(item.environment) !== selectedRegionKey.value
+    ) {
+      return false;
+    }
+    return true;
+  });
+});
+
 const filteredItems = computed(() =>
-  filterTraitBrowserItems(props.items, search.value, {
-    types: selectedTypes.value,
-    environments: selectedEnvironments.value,
+  filterTraitBrowserItems(facetScopedItems.value, search.value, {
+    types: props.tabFacets ? [] : selectedTypes.value,
+    environments: props.tabFacets ? [] : selectedEnvironments.value,
     hideCollected: hideCollected.value,
     collectedIds: collectedIds.value,
   }),
 );
+
+const emptyListMessage = computed(() => {
+  if (!props.tabFacets) {
+    return "No results match the current search and filters.";
+  }
+  const searching =
+    Boolean(search.value.trim()) ||
+    hideCollected.value ||
+    selectedTypes.value.length > 0 ||
+    selectedEnvironments.value.length > 0;
+  return catalogTabEmptyMessage({
+    noun: props.emptyNoun ?? "results",
+    searching,
+    typeLabel:
+      selectedTypeKey.value != null
+        ? facetLabel("type", selectedTypeKey.value)
+        : null,
+    regionLabel:
+      props.tabFacets === "type-and-region" && selectedRegionKey.value != null
+        ? facetLabel("environment", selectedRegionKey.value)
+        : null,
+  });
+});
 
 const selected = computed(() =>
   resolveSelectedTrait(filteredItems.value, selectedId.value),
@@ -272,6 +427,23 @@ const selectedCollectBindChoicePrompt = computed(() => {
         </div>
       </section>
 
+      <CatalogFacetTabs
+        v-if="typeTabs.length"
+        :model-value="selectedTypeKey"
+        :tabs="typeTabs"
+        ariaLabel="Type"
+        @update:model-value="selectTypeTab"
+      />
+      <CatalogFacetTabs
+        v-if="regionTabs.length"
+        class="trait-browser__region-tabs"
+        :model-value="selectedRegionKey"
+        :tabs="regionTabs"
+        ariaLabel="Region"
+        density="compact"
+        @update:model-value="selectRegionTab"
+      />
+
       <v-text-field
         v-model="search"
         label="Search"
@@ -283,7 +455,7 @@ const selectedCollectBindChoicePrompt = computed(() => {
       <div class="trait-browser__layout">
         <aside class="trait-browser__list-pane">
           <div v-if="filteredItems.length === 0" class="trait-browser__empty">
-            No results match the current search and filters.
+            {{ emptyListMessage }}
           </div>
 
           <div
@@ -294,6 +466,7 @@ const selectedCollectBindChoicePrompt = computed(() => {
             class="trait-browser__list-item"
             :class="{
               'trait-browser__list-item--active': selected?.id === item.id,
+              'trait-browser__list-item--name-only': hideListDescription,
             }"
             @click="selectItem(item.id)"
             @keydown.enter.prevent="selectItem(item.id)"
@@ -301,7 +474,7 @@ const selectedCollectBindChoicePrompt = computed(() => {
             <WikiIcon :src="item.imageSrc" :alt="item.name" :size="36" />
             <div class="trait-browser__list-copy">
             <div class="trait-browser__list-name">{{ item.name }}</div>
-            <div class="trait-browser__list-desc">
+            <div v-if="!hideListDescription" class="trait-browser__list-desc">
               {{ item.listDescription || "No description available." }}
             </div>
             </div>
@@ -329,6 +502,7 @@ const selectedCollectBindChoicePrompt = computed(() => {
             :source-label="sourceLabel"
             :description-label="descriptionLabel"
             :details-path="detailsPath"
+            :hide-detail-body="hideDetailBody"
             :collect-kind="collectKind"
             :collect-bind="selectedCollectBind"
             :collect-account-unlock="selectedCollectAccountUnlock"
@@ -340,7 +514,11 @@ const selectedCollectBindChoicePrompt = computed(() => {
           </TraitDetailCard>
 
           <div v-else class="trait-browser__empty trait-browser__card">
-            Select an item to view details.
+            {{
+              filteredItems.length === 0
+                ? emptyListMessage
+                : "Select an item to view details."
+            }}
           </div>
         </section>
       </div>
@@ -463,6 +641,19 @@ const selectedCollectBindChoicePrompt = computed(() => {
       rgba(var(--v-theme-primary), 0.16),
       rgba(13, 22, 36, 0.85)
     );
+}
+
+.trait-browser__list-item--name-only {
+  align-items: center;
+}
+
+.trait-browser__list-item--name-only .trait-browser__list-name {
+  margin-bottom: 0;
+}
+
+.trait-browser__region-tabs {
+  margin-top: -0.15rem;
+  margin-bottom: 0.75rem;
 }
 
 .trait-browser__list-name {

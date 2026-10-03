@@ -28,6 +28,8 @@ const props = defineProps<{
   collectBindChoicePrompt?: string;
   /** Compact featured cards: placeholder if `item.imageSrc` is missing or fails. */
   artSrc?: string | null;
+  /** Item browser renders its body in the extra slot, using the same card chrome. */
+  hideDetailBody?: boolean;
 }>();
 
 const artFailed = ref(false);
@@ -62,11 +64,14 @@ const description = computed(() =>
     : props.item.detailDescription,
 );
 const textBlocks = computed(() =>
-  props.compact ? [] : (props.item.textBlocks ?? []),
+  props.compact || props.hideDetailBody ? [] : (props.item.textBlocks ?? []),
 );
 const showTextBlocks = computed(() => textBlocks.value.length > 0);
 const showDescription = computed(
-  () => !showTextBlocks.value && Boolean(description.value?.trim()),
+  () =>
+    !props.hideDetailBody &&
+    !showTextBlocks.value &&
+    Boolean(description.value?.trim()),
 );
 const showSource = computed(
   () => !props.compact && Boolean(props.item.source?.trim()),
