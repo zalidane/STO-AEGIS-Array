@@ -722,6 +722,54 @@ describe("loadout equip", () => {
     );
     expect(illegal).toEqual({ ok: false, reason: "illegal-slot" });
   });
+
+  it("refuses a ship-locked console when the active hull does not match who", () => {
+    const consoleItems: LoadoutItem[] = [
+      ...items,
+      {
+        id: 92,
+        name: "Console - Universal - Fleet Coordination Module",
+        type: "universal console",
+        who: "Carrier (T6), Fleet Carrier (T6)",
+        equiplimit: 1,
+      },
+    ];
+    const consoleContext = {
+      hullSlots,
+      items: consoleItems,
+      ownedKeys: new Set(consoleItems.map((item) => `item:${item.id}`)),
+      ship: {
+        name: "Defiant Tactical Escort Retrofit",
+        type: "Escort",
+        tier: 5,
+      },
+    };
+    const state = withLoadout();
+    const loadoutId = state.loadouts[0]!.id;
+    const illegal = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "tacticalConsole-0", itemId: 92 },
+      consoleContext,
+      clock,
+    );
+    expect(illegal).toEqual({ ok: false, reason: "illegal-slot" });
+
+    const carrierOk = equipLoadoutSlot(
+      state,
+      { loadoutId, slotId: "tacticalConsole-0", itemId: 92 },
+      {
+        ...consoleContext,
+        ship: {
+          name: "Jupiter Carrier",
+          type: "Science Carrier",
+          displayType: "Carrier",
+          tier: 6,
+        },
+      },
+      clock,
+    );
+    expect(carrierOk.ok).toBe(true);
+  });
 });
 
 describe("matchSetBonuses", () => {
