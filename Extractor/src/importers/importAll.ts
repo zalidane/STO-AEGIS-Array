@@ -45,7 +45,8 @@ function supplementKindOf(config: object): string | undefined {
 }
 
 /**
- * Cargo hash, plus a committed file and/or CatalogSupplement fingerprint.
+ * Cargo hash, plus a committed file when a mapping still has one, and a
+ * CatalogSupplement fingerprint when the mapping sets `supplementKind`.
  * A database edit changes the fingerprint, so the next import merges it
  * without a Cargo or repository change.
  */

@@ -33,10 +33,6 @@ import {
 } from "./mergeTraits.js";
 import { expandStarshipTraitRanks } from "./expandStarshipTraitRanks.js";
 
-export const REPUTATION_SUPPLEMENT_PATH = "output/supplements/Reputation.json";
-export const SET_BONUS_SUPPLEMENT_PATH = "output/supplements/SetBonus.json";
-export const TRAITS_SUPPLEMENT_PATH = "output/supplements/Traits.json";
-
 function mergeModifiersSupplement(
   cargo: Record<string, unknown>[],
   supplement: unknown,
@@ -121,14 +117,14 @@ export const importMappings = {
     model: "reputation",
     uniqueFields: ["name"],
     mapper: mapReputation,
-    supplementFile: REPUTATION_SUPPLEMENT_PATH,
+    supplementKind: "Reputation",
     mergeSupplement: mergeReputationSupplement,
   },
   SetBonus: {
     model: "setBonus",
     uniqueFields: ["name"],
     mapper: mapSetBonus,
-    supplementFile: SET_BONUS_SUPPLEMENT_PATH,
+    supplementKind: "SetBonus",
     mergeSupplement: mergeSetBonusSupplement,
   },
   Ships: {
@@ -151,7 +147,7 @@ export const importMappings = {
     model: "trait",
     uniqueFields: ["name", "type", "environment"],
     mapper: mapTrait,
-    supplementFile: TRAITS_SUPPLEMENT_PATH,
+    supplementKind: "Traits",
     mergeSupplement: mergeTraitsSupplement,
   },
   TraySkill: {

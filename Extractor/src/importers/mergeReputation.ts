@@ -1,10 +1,10 @@
 /**
- * Merge Cargo Reputation rows with a committed supplement (#80).
+ * Merge Cargo Reputation rows with CatalogSupplement payloads (#80).
  *
  * The wiki Reputation Cargo table currently only stores a few true reputations
  * (empty `environment`) plus specialization tracks. Trait sources and the
  * in-game reputation system list ~13 reputation factions; missing ones are
- * filled from this supplement until Cargo catches up.
+ * filled from CatalogSupplement until Cargo catches up.
  *
  * Rules:
  * - Missing names are inserted as full Cargo-shaped rows.
