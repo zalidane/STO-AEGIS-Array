@@ -193,7 +193,9 @@ const resolvedBind = computed(
       </section>
 
       <p
-        v-if="!showSource && !showTextBlocks && !showDescription"
+        v-if="
+          !hideDetailBody && !showSource && !showTextBlocks && !showDescription
+        "
         class="trait-browser__empty"
       >
         No additional details available.
