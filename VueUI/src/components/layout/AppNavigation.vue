@@ -121,6 +121,13 @@ function itemTo(item: (typeof APP_NAV_ITEMS)[number]): string {
   padding-top: 0.25rem;
 }
 
+.app-navigation:not(.v-navigation-drawer--rail) :deep(.v-list-item-title) {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.25;
+}
+
 .app-nav-toggle {
   display: flex;
   /* Keep the control under the rail icons so expand-on-hover does not shift the hit target. */

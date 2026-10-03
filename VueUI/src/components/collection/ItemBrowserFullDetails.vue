@@ -38,6 +38,15 @@ const sections = computed(() =>
   item.value ? buildItemDetailSections(item.value) : [],
 );
 
+const hasRelated = computed(() => {
+  if (!item.value) return false;
+  return (
+    grantingShips.value.length > 0 ||
+    item.value.gwLockBoxes.length > 0 ||
+    item.value.swLockBoxes.length > 0
+  );
+});
+
 const usage = computed(() =>
   item.value ? publicUsageLabel(item.value.publicBuildCount) : null,
 );
@@ -55,6 +64,12 @@ function openShip(id: number) {
     </v-alert>
     <template v-else-if="item">
       <p v-if="usage" class="item-detail__usage">{{ usage }}</p>
+      <p
+        v-if="sections.length === 0 && !hasRelated"
+        class="item-detail__empty"
+      >
+        No additional details available.
+      </p>
 
       <section
         v-for="(section, index) in sections"
@@ -118,7 +133,8 @@ function openShip(id: number) {
   gap: 1.15rem;
 }
 
-.item-detail__usage {
+.item-detail__usage,
+.item-detail__empty {
   margin: 0;
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.9rem;
