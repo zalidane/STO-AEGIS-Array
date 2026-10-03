@@ -114,7 +114,7 @@ export function fittingBoffPowers(input: {
 }
 
 export function pickerCandidatesFor(input: {
-  query: string;
+  query: string | null | undefined;
   hullSlot?: HullSlot | null;
   captainSlot?: CaptainTraitSlot | null;
   boffSlot?: BoffStationSlot | null;
@@ -128,7 +128,7 @@ export function pickerCandidatesFor(input: {
   identity: PickerCaptainIdentity;
   ship?: HangarShip | null;
 }): LoadoutItem[] {
-  const query = input.query.trim();
+  const query = input.query?.trim() ?? "";
   const captainSlot = input.captainSlot ?? null;
   const hullSlot = input.hullSlot ?? null;
   const boffSlot = input.boffSlot ?? null;

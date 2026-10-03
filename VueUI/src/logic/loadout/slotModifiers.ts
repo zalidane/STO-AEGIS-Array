@@ -275,9 +275,9 @@ export function modifierStatsText(stats: string | null | undefined): string {
 
 export function matchesModifierQuery(
   option: Pick<ModifierOption, "token" | "stats">,
-  query: string,
+  query: string | null | undefined,
 ): boolean {
-  const needle = query.trim().toLowerCase();
+  const needle = query?.trim().toLowerCase() ?? "";
   if (!needle) return true;
   return (
     option.token.toLowerCase().includes(needle) ||
