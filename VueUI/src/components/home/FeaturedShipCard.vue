@@ -151,6 +151,7 @@ watch(
         <div @click.prevent.stop @mousedown.prevent.stop>
           <CollectToggle
             compact
+            account-wide
             kind="ship"
             :catalog-id="ship.id"
             :bind="collectBind"

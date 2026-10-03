@@ -30,6 +30,8 @@ import {
   uncollectItem,
   uncollectMany,
   catalogIdsOwnedByActive,
+  listedForActiveCharacter,
+  shipIdsVisibleToActive,
   visibleEntriesForActiveCharacter,
 } from "@/logic/collection/state";
 import { unusedAccountName } from "@/logic/collection/accounts";
@@ -310,6 +312,82 @@ describe("collection state", () => {
 
     state = { ...state, activeCharacterId: "id-1" };
     expect(catalogIdsOwnedByActive(state, "ship").size).toBe(0);
+  });
+
+  it("lists an account-owned hull for every captain on that STO account", () => {
+    let state = withCaptains();
+    state = collectItem(
+      state,
+      { kind: "ship", catalogId: 10, bind: "account" },
+      clock,
+    );
+    state = collectItem(
+      state,
+      { kind: "ship", catalogId: 11, bind: "character" },
+      clock,
+    );
+    const ships = [
+      { id: 10, cost: "3000;Zen" },
+      { id: 11, cost: "1;LB" },
+    ];
+
+    expect([...shipIdsVisibleToActive(state, ships)].sort()).toEqual([10, 11]);
+
+    state = setActiveCharacter(state, "id-1");
+    expect([...shipIdsVisibleToActive(state, ships)]).toEqual([10]);
+    expect(catalogIdsOwnedByActive(state, "ship").size).toBe(0);
+    expect(
+      listedForActiveCharacter(
+        collectionStatus(state, {
+          kind: "ship",
+          catalogId: 10,
+          bind: "account",
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      listedForActiveCharacter(
+        collectionStatus(state, {
+          kind: "ship",
+          catalogId: 11,
+          bind: "character",
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      visibleEntriesForActiveCharacter(state, (entry) => entry.bind ?? "unknown")
+        .filter((entry) => entry.kind === "ship")
+        .map((entry) => entry.catalogId),
+    ).toEqual([10]);
+  });
+
+  it("uses catalog cost when an account hull has no stored bind", () => {
+    let state = withCaptains();
+    state = collectItem(state, { kind: "ship", catalogId: 10 }, clock);
+    state = setActiveCharacter(state, "id-1");
+
+    expect(
+      [...shipIdsVisibleToActive(state, [{ id: 10, cost: "3000;Zen" }])],
+    ).toEqual([10]);
+    expect(
+      shipIdsVisibleToActive(state, [{ id: 10, cost: "1;LB" }]).size,
+    ).toBe(0);
+  });
+
+  it("keeps account hulls on a different STO account off the other roster", () => {
+    let state = withCaptains();
+    state = collectItem(
+      state,
+      { kind: "ship", catalogId: 10, bind: "account" },
+      clock,
+    );
+    state = createAccount(state, { name: "Xbox", platform: "xbox" }, clock);
+    state = createCharacter(state, "Carol", clock);
+    const ships = [{ id: 10, cost: "3000;Zen" }];
+
+    expect(shipIdsVisibleToActive(state, ships).size).toBe(0);
+    state = setActiveCharacter(state, "id-1");
+    expect([...shipIdsVisibleToActive(state, ships)]).toEqual([10]);
   });
 
   it("shows a Phoenix copy on other captains only after it is marked unlocked for account", () => {

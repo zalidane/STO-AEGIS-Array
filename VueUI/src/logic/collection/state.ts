@@ -28,6 +28,7 @@ import {
   unusedAccountName,
 } from "./accounts";
 import type { BindScope } from "./types";
+import { bindScopeFromShipCost } from "./bind";
 import { isCombatParseSummary } from "@/logic/combatlog/parseLog";
 import type { CollectionLoadout } from "@/logic/loadout/types";
 import { careerById, factionById, raceById, sanitizeCaptainSpecializations } from "@/logic/captain/identity";
@@ -612,6 +613,35 @@ export function catalogIdsOwnedByActive(
     }
   }
   return ids;
+}
+
+/**
+ * True when Collection would list this catalog row for the active captain:
+ * their own copy, or a bound-to-account copy on another captain of this STO account.
+ */
+export function listedForActiveCharacter(
+  status: Pick<CollectionStatus, "ownedByActive" | "otherAccountCopies">,
+): boolean {
+  return status.ownedByActive || status.otherAccountCopies.length > 0;
+}
+
+/**
+ * Ship catalog ids the active captain's Collection lists.
+ * Own hulls, plus bound-to-account hulls from other captains on the same STO
+ * account. Character-bound hulls stay with the captain who collected them.
+ * A missing stored bind falls back to the catalog cost, matching Collection.
+ */
+export function shipIdsVisibleToActive(
+  state: CollectionState,
+  ships: ReadonlyArray<{ id: number; cost?: string | null }>,
+): Set<number> {
+  const costById = new Map(ships.map((ship) => [ship.id, ship.cost]));
+  return visibleCatalogIds(state, "ship", (entry) =>
+    resolvedBindForEntry(
+      entry,
+      bindScopeFromShipCost(costById.get(entry.catalogId)),
+    ),
+  );
 }
 
 export function hydrateCollectionState(

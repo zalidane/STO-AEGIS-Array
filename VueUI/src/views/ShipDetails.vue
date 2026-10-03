@@ -337,6 +337,7 @@ watch(
 
               <div class="acquisition-collect">
                 <CollectToggle
+                  account-wide
                   kind="ship"
                   :catalog-id="ship.id"
                   :bind="collectBind"

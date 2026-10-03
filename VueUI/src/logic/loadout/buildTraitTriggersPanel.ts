@@ -145,7 +145,9 @@ export function formatTraitTriggerStatusLine(
   }
 
   const matchNames = uniqueNames(
-    triggers.flatMap((t) => t.matchedItems.map((item) => item.name)),
+    triggers.flatMap((t) =>
+      t.matchedItems.map((item) => item.statusLabel ?? item.name),
+    ),
   );
   if (matchNames.length > 0) {
     return `Satisfied by: ${matchNames.join(", ")}`;

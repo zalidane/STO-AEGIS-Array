@@ -332,6 +332,32 @@ describe("pickerCandidates", () => {
     expect(hits.map((item) => item.name)).toEqual(["Jam Targeting Sensors I"]);
   });
 
+  it("returns the unfiltered equip list when search is cleared", () => {
+    const input = {
+      hullSlot: fore0,
+      catalog: [phaser, disruptor],
+      stations: [],
+      hullSlots: [fore0],
+      hullFills: [],
+      seated: [],
+      collectedOnly: false,
+      ownedKeys: new Set<string>(),
+      identity: {},
+    };
+    const open = pickerCandidatesFor({ ...input, query: "" }).map(
+      (item) => item.id,
+    );
+    expect(open.length).toBeGreaterThan(0);
+    expect(
+      pickerCandidatesFor({ ...input, query: null }).map((item) => item.id),
+    ).toEqual(open);
+    expect(
+      pickerCandidatesFor({ ...input, query: undefined }).map(
+        (item) => item.id,
+      ),
+    ).toEqual(open);
+  });
+
   it("matches hull picker search against body copy", () => {
     const hits = pickerCandidatesFor({
       query: "kinetic",
@@ -431,5 +457,37 @@ describe("pickerCandidates", () => {
         ship: jupiterShip,
       }).map((item) => item.id),
     ).toEqual([14]);
+  });
+
+  it("offers Improved Critical Systems beside the base rank", () => {
+    const slot = defined(
+      buildCaptainTraitSlots({}).find((candidate) => candidate.group === "starship"),
+    );
+    const base: LoadoutItem = {
+      id: 40,
+      name: "Critical Systems",
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+    };
+    const improved: LoadoutItem = {
+      id: 41,
+      name: "Improved Critical Systems",
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+    };
+    expect(
+      pickerCandidatesFor({
+        query: "critical systems",
+        captainSlot: slot,
+        catalog: [base, improved],
+        stations: [],
+        hullSlots: [],
+        hullFills: [],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        identity: {},
+      }).map((item) => item.name),
+    ).toEqual(["Critical Systems", "Improved Critical Systems"]);
   });
 });
