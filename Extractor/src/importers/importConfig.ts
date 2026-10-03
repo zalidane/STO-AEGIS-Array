@@ -16,9 +16,16 @@ export interface ImportConfig<
   /**
    * Optional committed supplement (JSON) merged with Cargo before upsert/replace.
    * Path is relative to the Extractor working directory.
+   * Prefer `supplementKind` when corrections must persist without a repo update.
    */
   supplementFile?: string;
-  /** Merge Cargo rows with the parsed supplement payload. */
+  /**
+   * Load CatalogSupplement rows for this kind and merge them after any file
+   * supplement. The kind string is the Cargo table name (`Modifiers` now;
+   * other tables later) so a new missing-data kind does not need a new table.
+   */
+  supplementKind?: string;
+  /** Merge Cargo rows with a supplement payload (file JSON or database rows). */
   mergeSupplement?: (cargo: TRaw[], supplement: unknown) => TRaw[];
   /**
    * Optional row transform after supplement merge and before upsert/replace.

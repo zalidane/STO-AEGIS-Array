@@ -362,6 +362,31 @@ model ModifierItem {
 }
 
 /**
+ * Persistent corrections merged with Cargo on import.
+ * App data — Extractor replace must never touch these rows.
+ *
+ * One table for every missing-data kind. `kind` selects the Cargo table
+ * (`Modifiers` first; later kinds reuse this table). `payload` is the
+ * Cargo-shaped record that kind's importer already merges, including
+ * optional `_merge` instructions. Edit rows here; the next import applies
+ * them without a repository change.
+ */
+model CatalogSupplement {
+  id        Int      @id @default(autoincrement())
+  kind      String
+  /// Stable identity within `kind`. Modifiers use the token, e.g. "[HullCap]".
+  key       String
+  /// Extra identity when one key has several corrections (modifier type match).
+  variant   String   @default("")
+  payload   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([kind, key, variant])
+  @@index([kind])
+}
+
+/**
  * Published loadout snapshots. App data — Extractor replace must never touch these.
  * Hulls and items are keyed by wiki name so Cargo id churn cannot orphan a share.
  */
