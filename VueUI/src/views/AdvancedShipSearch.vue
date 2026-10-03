@@ -7,6 +7,7 @@ import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import AdvancedShipSearchFilters from "@/components/ships/AdvancedShipSearchFilters.vue";
 import {
+  compareWeaponLayouts,
   createDefaultAdvancedShipSearchFilters,
   filterAdvancedShipSearchRows,
   indexAdvancedShipSearchRows,
@@ -34,7 +35,6 @@ const filteredRows = computed(() =>
 
 type TableRow = AdvancedShipSearchRow & {
   fullSpecLabel: string;
-  experimentalLabel: string;
   secondaryDeflectorLabel: string;
   dualCannonsLabel: string;
   fleetAvailableLabel: string;
@@ -52,7 +52,6 @@ const tableItems = computed<TableRow[]>(() =>
   filteredRows.value.map((row) => ({
     ...row,
     fullSpecLabel: fullSpecLabel(row),
-    experimentalLabel: yesNo(row.experimental),
     secondaryDeflectorLabel: yesNo(row.secondaryDeflector),
     dualCannonsLabel: yesNo(row.dualCannons),
     fleetAvailableLabel: yesNo(row.fleetAvailable),
@@ -61,14 +60,30 @@ const tableItems = computed<TableRow[]>(() =>
 
 const headers = [
   { title: "Ship", key: "name" },
-  { title: "Fore", key: "foreWeapons" },
-  { title: "Aft", key: "aftWeapons" },
-  { title: "Exp", key: "experimentalLabel" },
+  {
+    title: "Fore/Aft/Exp",
+    key: "weaponsLabel",
+    nowrap: true,
+    headerProps: {
+      title: "Fore / Aft / Experimental. Experimental is 1 or 0.",
+    },
+    cellProps: { class: "adv-table__scan" },
+    sortRaw: (left: TableRow, right: TableRow) =>
+      compareWeaponLayouts(left, right),
+  },
   { title: "Total Weapons", key: "totalWeapons" },
   { title: "Full-spec", key: "fullSpecLabel" },
   { title: "Sec. def", key: "secondaryDeflectorLabel" },
   { title: "Hangars", key: "hangars" },
-  { title: "Consoles", key: "consoleLabel" },
+  {
+    title: "Consoles",
+    key: "consoleLabel",
+    nowrap: true,
+    headerProps: {
+      title: "Engineering (E), Science (S), Tactical (T), Universal (U).",
+    },
+    cellProps: { class: "adv-table__scan" },
+  },
   { title: "Dual cannons", key: "dualCannonsLabel" },
   { title: "Acquisition", key: "acquisitionLabel" },
   { title: "Faction", key: "faction" },
@@ -204,6 +219,10 @@ function onRowClick(_event: Event, row: { item: TableRow }) {
 .adv-table__name {
   color: #e8f4ff;
   font-weight: 600;
+}
+
+.adv-table :deep(.adv-table__scan) {
+  font-variant-numeric: tabular-nums;
 }
 
 .adv-table :deep(tbody tr) {

@@ -23,6 +23,12 @@ export {
   totalWeaponCount,
 } from "./derive";
 export {
+  compareWeaponLayouts,
+  formatSearchConsoleLabel,
+  formatWeaponLayout,
+  type WeaponLayout,
+} from "./display";
+export {
   advancedShipSearchFiltersAreActive,
   filterAdvancedShipSearchRows,
   matchesAdvancedShipSearchFilters,
