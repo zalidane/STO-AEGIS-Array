@@ -122,6 +122,20 @@ describe("traitBrowser", () => {
     ]);
   });
 
+  it("treats a cleared search as an empty query", () => {
+    const open = filterTraitBrowserItems(items, "").map((item) => item.id);
+    expect(open).toEqual([1, 2]);
+    expect(filterTraitBrowserItems(items, null).map((item) => item.id)).toEqual(
+      open,
+    );
+    expect(
+      filterTraitBrowserItems(items, undefined).map((item) => item.id),
+    ).toEqual(open);
+    expect(filterTraitBrowserItems(items, "   ").map((item) => item.id)).toEqual(
+      open,
+    );
+  });
+
   it("filters by type and environment facets", () => {
     expect(
       filterTraitBrowserItems(items, "", { types: ["char"] }).map((i) => i.id),

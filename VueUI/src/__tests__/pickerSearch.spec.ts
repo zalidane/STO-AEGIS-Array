@@ -23,4 +23,14 @@ describe("loadout picker search", () => {
     expect(matchesPickerQuery(sticky, "tetryon")).toBe(true);
     expect(matchesPickerQuery(sticky, "phaser")).toBe(false);
   });
+
+  it("treats a cleared field as an empty query", () => {
+    const sticky = {
+      name: "Console - Universal - Sticky Web",
+      searchText: "+25% Tetryon Damage",
+    };
+    expect(matchesPickerQuery(sticky, null)).toBe(true);
+    expect(matchesPickerQuery(sticky, undefined)).toBe(true);
+    expect(matchesPickerQuery(sticky, "   ")).toBe(true);
+  });
 });

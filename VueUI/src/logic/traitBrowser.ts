@@ -152,10 +152,10 @@ export function uniqueTraitFacetValues(
 
 export function filterTraitBrowserItems(
   items: readonly TraitBrowserItem[],
-  search: string,
+  search: string | null | undefined,
   facets?: TraitBrowserFacets,
 ): TraitBrowserItem[] {
-  const needle = search.trim().toLowerCase();
+  const needle = search?.trim().toLowerCase() ?? "";
   const types = facets?.types ?? [];
   const environments = facets?.environments ?? [];
 

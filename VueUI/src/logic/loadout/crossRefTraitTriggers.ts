@@ -16,10 +16,16 @@ import {
 } from "@/logic/loadout/slotClass";
 import {
   abilitiesForFunctionalCategory,
+  isAbilityInFamily,
   normalizeTriggerAbilityName,
   resolveTriggerAbilityAlias,
+  type TriggerAbilityFamily,
   type TriggerFunctionalCategory,
 } from "@/logic/loadout/triggerAliases";
+import {
+  damageTypesFromWeapon,
+  weaponClassesFromWeapon,
+} from "@/logic/loadout/weaponProfile";
 import type {
   LoadoutCatalogKind,
   LoadoutItem,
@@ -43,6 +49,11 @@ export type TraitTriggerMatchedItem = {
   slotId?: string;
   /** Tray-skill profession/spec (`type`) when applicable. */
   type?: string | null;
+  /**
+   * Hover phrase when the catalog name does not already say how it matched
+   * (damage type on a weapon whose name omits that type).
+   */
+  statusLabel?: string;
 };
 
 /**
@@ -71,12 +82,16 @@ export type SeatedTriggerFill = {
   slotId?: string;
   /** Hull / BOff / captain seat kind when known. */
   slotKind?: HullSlotKind | "boff" | "captain";
+  /** Infobox body copy. Damage procs often live here rather than in the name. */
+  searchText?: string | null;
 };
 
 export type CollectSeatedTriggerFillsInput = {
   slots: ReadonlyArray<LoadoutSlotFill>;
   catalog: ReadonlyArray<
-    Pick<LoadoutItem, "id" | "name" | "type" | "catalogKind">
+    Pick<LoadoutItem, "id" | "name" | "type" | "catalogKind"> & {
+      searchText?: string | null;
+    }
   >;
   /** Used to classify hangar fills by slot kind. */
   hullSlots?: ReadonlyArray<{ id: string; kind: HullSlotKind }>;
@@ -134,16 +149,14 @@ function isCaptainPowerFill(fill: SeatedTriggerFill): boolean {
   return fill.catalogKind === "captainAbility" || fill.slotKind === "captain";
 }
 
-const WEAPON_SLOT_KINDS = new Set<HullSlotKind>([
+const WEAPON_SLOT_KINDS = new Set<string>([
   "foreWeapon",
   "aftWeapon",
   "experimental",
 ]);
 
 function isWeaponFill(fill: SeatedTriggerFill): boolean {
-  if (fill.slotKind && WEAPON_SLOT_KINDS.has(fill.slotKind as HullSlotKind)) {
-    return true;
-  }
+  if (fill.slotKind && WEAPON_SLOT_KINDS.has(fill.slotKind)) return true;
   if (fill.catalogKind !== "item") return false;
   return itemSlotClassesFromType(fill.type).some((kind) =>
     WEAPON_SLOT_KINDS.has(kind),
@@ -151,19 +164,16 @@ function isWeaponFill(fill: SeatedTriggerFill): boolean {
 }
 
 /**
- * Classify a seated energy weapon by catalog name.
+ * Classify a seated weapon by catalog name and body copy.
  * Beams: Beam Array, Dual Beam Bank, Omni-Directional … Beam …
  * Cannons: Dual Cannons, Dual Heavy Cannons, Turret, … Cannon …
+ * Energy: beams, cannons, and other directed-energy names.
+ * Torpedo: a torpedo launcher. Plasma Torpedo stays a torpedo.
  */
 export function weaponClassesFromItemName(
   name: string | null | undefined,
 ): TraitTriggerWeaponClass[] {
-  if (!name?.trim()) return [];
-  const lower = name.toLowerCase();
-  const classes: TraitTriggerWeaponClass[] = [];
-  if (/\bbeams?\b/.test(lower)) classes.push("beam");
-  if (/\b(?:cannons?|turrets?)\b/.test(lower)) classes.push("cannon");
-  return classes;
+  return weaponClassesFromWeapon({ name });
 }
 
 function toMatchedItem(fill: SeatedTriggerFill): TraitTriggerMatchedItem {
@@ -225,6 +235,7 @@ export function collectSeatedTriggerFills(
       type: item.type,
       slotId: slotFill.slotId,
       slotKind: isBoff ? "boff" : hullKind,
+      searchText: item.searchText,
     });
   }
 
@@ -299,6 +310,15 @@ function matchFunctionalCategory(
   });
 }
 
+function matchAbilityFamily(
+  family: TriggerAbilityFamily,
+  seated: ReadonlyArray<SeatedTriggerFill>,
+): SeatedTriggerFill[] {
+  return seated.filter(
+    (fill) => isTraySkillFill(fill) && isAbilityInFamily(fill.name, family),
+  );
+}
+
 function matchWeaponClass(
   classes: readonly TraitTriggerWeaponClass[],
   seated: ReadonlyArray<SeatedTriggerFill>,
@@ -307,8 +327,41 @@ function matchWeaponClass(
   const wanted = new Set(classes);
   return seated.filter((fill) => {
     if (!isWeaponFill(fill)) return false;
-    return weaponClassesFromItemName(fill.name).some((cls) => wanted.has(cls));
+    return weaponClassesFromWeapon(fill).some((cls) => wanted.has(cls));
   });
+}
+
+function matchingDamageLabel(
+  fill: SeatedTriggerFill,
+  types: readonly string[],
+): string | null {
+  const wanted = new Set(types.map((type) => type.toLowerCase()));
+  const found = damageTypesFromWeapon(fill).filter((type) =>
+    wanted.has(type.toLowerCase()),
+  );
+  if (found.length === 0) return null;
+  const named = found.find((type) =>
+    fill.name.toLowerCase().includes(type.toLowerCase()),
+  );
+  const type = named ?? found[0];
+  if (!type) return fill.name;
+  if (fill.name.toLowerCase().includes(type.toLowerCase())) return fill.name;
+  return `${type} (${fill.name})`;
+}
+
+function matchDamageType(
+  types: readonly string[],
+  seated: ReadonlyArray<SeatedTriggerFill>,
+): Array<{ fill: SeatedTriggerFill; label: string }> {
+  if (types.length === 0) return [];
+  const matches: Array<{ fill: SeatedTriggerFill; label: string }> = [];
+  for (const fill of seated) {
+    if (!isWeaponFill(fill)) continue;
+    const label = matchingDamageLabel(fill, types);
+    if (!label) continue;
+    matches.push({ fill, label });
+  }
+  return matches;
 }
 
 function satisfyOne(
@@ -326,6 +379,27 @@ function satisfyOne(
     };
   }
 
+  if (trigger.kind === "damageType") {
+    const damageMatches = matchDamageType(trigger.damageTypes, seated);
+    const matchedItems = uniqueMatched(damageMatches.map((row) => row.fill)).map(
+      (item) => {
+        const label = damageMatches.find(
+          (row) =>
+            row.fill.itemId === item.itemId &&
+            row.fill.slotId === item.slotId,
+        )?.label;
+        return label ? { ...item, statusLabel: label } : item;
+      },
+    );
+    return {
+      label: trigger.display,
+      kind: trigger.kind,
+      satisfied: matchedItems.length > 0,
+      matchedItems,
+      trigger,
+    };
+  }
+
   let matches: SeatedTriggerFill[] = [];
   if (trigger.kind === "namedAbility") {
     matches = matchNamedAbility(trigger.abilityName, seated);
@@ -333,6 +407,8 @@ function satisfyOne(
     matches = matchProfessionCategory(trigger.professions, seated);
   } else if (trigger.kind === "functionalCategory") {
     matches = matchFunctionalCategory(trigger.category, seated);
+  } else if (trigger.kind === "abilityFamily") {
+    matches = matchAbilityFamily(trigger.family, seated);
   } else if (trigger.kind === "weaponClass") {
     matches = matchWeaponClass(trigger.classes, seated);
   }

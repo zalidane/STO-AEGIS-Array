@@ -20,6 +20,18 @@ export const MOCK_TRAY_SKILLS = {
     type: "Engineering",
     catalogKind: BOFF_CATALOG_KIND,
   },
+  epte: {
+    id: 103,
+    name: "Emergency Power to Engines",
+    type: "Engineering",
+    catalogKind: BOFF_CATALOG_KIND,
+  },
+  epta: {
+    id: 104,
+    name: "Emergency Power to Auxiliary",
+    type: "Engineering",
+    catalogKind: BOFF_CATALOG_KIND,
+  },
   gravityWell: {
     id: 201,
     name: "Gravity Well",
@@ -130,6 +142,19 @@ export const MOCK_WEAPONS = {
     type: "ship fore weapon",
     catalogKind: "item" as const,
   },
+  disruptorBeam: {
+    id: 7004,
+    name: "Disruptor Beam Array",
+    type: "ship fore weapon",
+    catalogKind: "item" as const,
+  },
+  gravimetricTorpedo: {
+    id: 7005,
+    name: "Gravimetric Photon Torpedo",
+    type: "ship fore weapon",
+    catalogKind: "item" as const,
+    searchText: "Radiation Damage",
+  },
 } as const satisfies Record<string, LoadoutItem>;
 
 export function mockCatalog(
@@ -210,6 +235,7 @@ export function mockSeatedWeapon(
     type: weapon.type,
     slotId,
     slotKind: "foreWeapon",
+    searchText: weapon.searchText,
   };
 }
 
@@ -298,6 +324,40 @@ export const MOCK_TRAIT_SOURCES = {
     basic:
       "Provides a chance for using Bridge Officer Abilities to recharge all other Bridge Officer Ability recharge times up to their respective Shared Cooldown Categories.",
     detailed: null,
+  },
+  criticalSystems: {
+    name: "Critical Systems",
+    short:
+      "+Critical Chance and +Critical Damage after using Emergency Power BOff Ability.",
+    basic:
+      "* Each time you use an Emergency Power bridge officer ability, you gain a Critical Damage and Critical Chance buff for a short time. This buff does not stack, but refreshes every time an Emergency Power is used.",
+    detailed:
+      "* to self: +2% Critical Chance and for 10 sec when using an Emergency Power bridge officer ability\n* to self: +10% Critical Severity for 10 sec when using an Emergency Power bridge officer ability",
+  },
+  improvedCriticalSystems: {
+    name: "Improved Critical Systems",
+    short:
+      "+Critical Chance and +Critical Damage after using Emergency Power BOff Ability.",
+    basic:
+      "* Each time you use an Emergency Power bridge officer ability, you gain a Critical Damage and Critical Chance buff for a short time. This buff does not stack, but refreshes every time an Emergency Power is used.",
+    detailed:
+      "* to self: +3% Critical Chance and for 15 sec when using an Emergency Power bridge officer ability\n* to self: +15% Critical Severity for 15 sec when using an Emergency Power bridge officer ability",
+  },
+  superChargedWeapons: {
+    name: "Super Charged Weapons",
+    short: "Energy Weapon Performance Enhanced by Torpedoes",
+    basic:
+      "* Firing a torpedo will provide a stack of the Super Charged buff. This buff provides a boost to directed energy weapons, increasing their damage, critical hit chance and critical severity for a short time. This buff stacks up to 3 times.",
+    detailed:
+      ": Firing a Torpedo grants 1 stack of the Super Charged buff\n: '''Super Charged''' (Stacks up to 3 times)\n: Directed Energy Weapons gain:\n:* +10% Damage for 20 sec\n:* +1.5% Critical Chance for 20 sec\n:* +6.6% Critical Severity for 20 sec",
+  },
+  fiveMagicks: {
+    name: "Five Magicks",
+    short: "Damage from the Five Magicks provides bonuses",
+    basic:
+      "* Dealing Fire, Cold, Electrical, Psionic, or Radiation to Foes boosts current Engine Power levels per sec for 15 sec and grants bonus Disruptor, Fire, Cold, Electrical, Psionic, and Radiation Damage based on Engine Power.",
+    detailed:
+      "When dealing Damage with any of the Five Magicks (Fire, Cold, Electrical, Radiation and Psionic), apply the following for 15 sec:\n* +5 Current Engine Power per sec\n* +15% Bonus Damage to the Five Magicks and Disruptor (15% + 0.15% per Engine Power)",
   },
   checkmate: {
     name: "Checkmate",

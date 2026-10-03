@@ -18,6 +18,11 @@ const emit = defineEmits<{
 const query = ref("");
 const openIndex = ref<number | null>(null);
 
+/** Vuetify clearable fields emit `null`; keep a string so filtering never throws. */
+function onSearchUpdate(value: unknown) {
+  query.value = value == null ? "" : String(value);
+}
+
 function filteredOptions(socket: ModifierSocketView) {
   return socket.options.filter((option) =>
     matchesModifierQuery(option, query.value),
@@ -69,13 +74,14 @@ function socketTitle(socket: ModifierSocketView): string {
       </template>
       <div class="suffix-menu" role="listbox">
         <v-text-field
-          v-model="query"
+          :model-value="query"
           density="compact"
           hide-details
           clearable
           label="Search modifiers"
           class="suffix-menu__search"
           @click.stop
+          @update:model-value="onSearchUpdate"
         />
         <button
           type="button"
