@@ -107,7 +107,10 @@ export type AdvancedShipSearchRow = {
   secondaryDeflector: boolean;
   hangars: number;
   consoles: HullConsoleCounts;
+  /** Compact console summary, e.g. `5 E | 2 S | 3 T | 1 U`. */
   consoleLabel: string;
+  /** Fore/aft/experimental slash triple, e.g. `5/2/1`. */
+  weaponsLabel: string;
   dualCannons: boolean;
   acquisitionCodes: string[];
   acquisitionLabel: string;

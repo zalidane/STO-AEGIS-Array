@@ -1,7 +1,5 @@
-import {
-  formatHullConsoleSummary,
-  hullConsoleCounts,
-} from "@/logic/loadout/consoleSummary";
+import { hullConsoleCounts } from "@/logic/loadout/consoleSummary";
+import { formatSearchConsoleLabel, formatWeaponLayout } from "./display";
 import { isFleetShip } from "@/logic/shipsBinder";
 import {
   BOFF_RANK_ORDER,
@@ -111,7 +109,12 @@ export function deriveAdvancedShipSearchRow(
     secondaryDeflector: ship.secondaryDeflector === true,
     hangars: countOrZero(ship.hangars),
     consoles,
-    consoleLabel: formatHullConsoleSummary(ship) || "—",
+    consoleLabel: formatSearchConsoleLabel(consoles) || "—",
+    weaponsLabel: formatWeaponLayout({
+      foreWeapons,
+      aftWeapons,
+      experimental,
+    }),
     dualCannons: ship.equipCannons === true,
     acquisitionCodes,
     acquisitionLabel: acquisitionLabel || "—",
