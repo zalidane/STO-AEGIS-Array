@@ -332,6 +332,32 @@ describe("pickerCandidates", () => {
     expect(hits.map((item) => item.name)).toEqual(["Jam Targeting Sensors I"]);
   });
 
+  it("returns the unfiltered equip list when search is cleared", () => {
+    const input = {
+      hullSlot: fore0,
+      catalog: [phaser, disruptor],
+      stations: [],
+      hullSlots: [fore0],
+      hullFills: [],
+      seated: [],
+      collectedOnly: false,
+      ownedKeys: new Set<string>(),
+      identity: {},
+    };
+    const open = pickerCandidatesFor({ ...input, query: "" }).map(
+      (item) => item.id,
+    );
+    expect(open.length).toBeGreaterThan(0);
+    expect(
+      pickerCandidatesFor({ ...input, query: null }).map((item) => item.id),
+    ).toEqual(open);
+    expect(
+      pickerCandidatesFor({ ...input, query: undefined }).map(
+        (item) => item.id,
+      ),
+    ).toEqual(open);
+  });
+
   it("matches hull picker search against body copy", () => {
     const hits = pickerCandidatesFor({
       query: "kinetic",
