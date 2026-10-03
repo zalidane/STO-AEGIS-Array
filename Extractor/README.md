@@ -162,6 +162,10 @@ SetBonus supplement rows are also Cargo-shaped. Optional `Members` is a newline-
 
 Import hashes Cargo + supplement together, so editing only the supplement still re-imports that table.
 
+### Starship trait ranks (#12)
+
+Cargo `StarshipTraits` stores one row per specialization family. Improved and Superior unlocks are underlined inside `obtained` (`Improved Going the Extra Mile`, `Superior Command Frequency`) and their numbers share one `detailed` string (`+10/15/20%`). Import expands each of those unlocks into its own `StarshipTrait` row, with that rank's stats and unlock line, so the catalog and loadout picker can select them. The base row keeps the family name and the base numbers. Traits the wiki does not list as Improved or Superior stay a single row (including traits whose name merely starts with Superior, such as Superior Area Denial). Rank rows reuse the family's icon. A later Cargo extract does not need to grow new pages for this; the next import reads the folded row and expands it again.
+
 ## CLI
 
 | Command / flag | Effect |

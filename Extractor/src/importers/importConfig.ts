@@ -20,4 +20,9 @@ export interface ImportConfig<
   supplementFile?: string;
   /** Merge Cargo rows with the parsed supplement payload. */
   mergeSupplement?: (cargo: TRaw[], supplement: unknown) => TRaw[];
+  /**
+   * Optional row transform after supplement merge and before upsert/replace.
+   * Used when Cargo folds several selectable records into one row.
+   */
+  prepareRows?: (rows: TRaw[]) => TRaw[];
 }
