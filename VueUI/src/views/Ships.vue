@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
+import { storeToRefs } from "pinia";
 import { ShipsDocument } from "@/graphql/generated/graphql";
 import type { ShipsQuery } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
@@ -24,6 +25,7 @@ import {
 } from "@/logic/shipsBinder";
 import { useKeepAliveScrollRestore } from "@/composables/useKeepAliveScrollRestore";
 import CompareLaunch from "@/components/compare/CompareLaunch.vue";
+import { shipIdsVisibleToActive } from "@/logic/collection/state";
 import { useCollectionStore } from "@/stores/collection";
 
 defineOptions({ name: "Ships" });
@@ -33,6 +35,7 @@ useKeepAliveScrollRestore();
 const router = useRouter();
 const route = useRoute();
 const collectionStore = useCollectionStore();
+const { state: collectionState } = storeToRefs(collectionStore);
 
 type Ship = ShipsQuery["ships"][number];
 
@@ -75,7 +78,9 @@ const shipFilters = computed<ShipsListFilters>({
   },
 });
 
-const collectedShipIds = computed(() => collectionStore.ownedCatalogIds("ship"));
+const collectedShipIds = computed(() =>
+  shipIdsVisibleToActive(collectionState.value, ships.value),
+);
 
 const filteredShips = computed(() =>
   filterShips(ships.value, shipFilters.value, collectedShipIds.value),
