@@ -18,6 +18,7 @@ import { useLoadoutPicker } from "@/composables/useLoadoutPicker";
 import { ownedCopyCount } from "@/logic/collection/state";
 import { bindScopeFromCatalog } from "@/logic/collection/catalogBind";
 import { displayInfoboxType } from "@/logic/collection/itemBrowser";
+import { consoleSourceLabels } from "@/logic/loadout/consoleSource";
 import {
   buildHullSlots,
   groupHullSlots,
@@ -38,6 +39,7 @@ import {
 } from "@/logic/loadout/state";
 import {
   equippedItemsForLoadout,
+  loadoutOwnershipKey,
   matchSetBonuses,
   shortSetPieceName,
 } from "@/logic/loadout/setBonus";
@@ -131,6 +133,18 @@ const {
   starshipTraits,
   loading,
 } = useLoadoutCatalog(shipId);
+
+const pickerSourceByKey = computed(() =>
+  consoleSourceLabels(catalogItems.value, fleetShips.value),
+);
+
+function pickerItemSource(item: LoadoutItem): string | null {
+  return (
+    pickerSourceByKey.value.get(
+      loadoutOwnershipKey(item.catalogKind, item.id),
+    ) ?? null
+  );
+}
 
 const rawHullSlots = computed(() =>
   ship.value ? buildHullSlots(ship.value) : [],
@@ -1206,6 +1220,9 @@ watch(activeLoadout, (loadout) => {
                 <span v-if="item.rarity"> · {{ item.rarity }}</span>
                 <span v-if="!pickerBoffSlot && !itemIsOwned(item)">
                   · Not collected
+                </span>
+                <span v-if="pickerItemSource(item)">
+                  · {{ pickerItemSource(item) }}
                 </span>
               </div>
             </div>
