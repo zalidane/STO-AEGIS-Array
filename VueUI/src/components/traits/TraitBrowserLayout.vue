@@ -59,6 +59,11 @@ const props = defineProps<{
 const collectionStore = useCollectionStore();
 
 const search = ref("");
+
+/** Vuetify clearable fields emit `null`; keep a string so filtering never throws. */
+function onSearchUpdate(value: unknown) {
+  search.value = value == null ? "" : String(value);
+}
 const selectedId = ref<number | null>(null);
 const selectedTypes = ref<string[]>([]);
 const selectedEnvironments = ref<string[]>([]);
@@ -216,7 +221,7 @@ const emptyListMessage = computed(() => {
     return "No results match the current search and filters.";
   }
   const searching =
-    Boolean(search.value.trim()) ||
+    Boolean(search.value?.trim()) ||
     hideCollected.value ||
     selectedTypes.value.length > 0 ||
     selectedEnvironments.value.length > 0;
@@ -445,11 +450,12 @@ const selectedCollectBindChoicePrompt = computed(() => {
       />
 
       <v-text-field
-        v-model="search"
+        :model-value="search"
         label="Search"
         class="mb-4"
         hide-details
         clearable
+        @update:model-value="onSearchUpdate"
       />
 
       <div class="trait-browser__layout">
