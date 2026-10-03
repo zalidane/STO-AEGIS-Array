@@ -7,7 +7,7 @@ class ResizeObserverStub {
 }
 vi.stubGlobal("ResizeObserver", ResizeObserverStub);
 
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia } from "pinia";
 import { createVuetify } from "vuetify";
 import TraitBrowserLayout from "@/components/traits/TraitBrowserLayout.vue";
@@ -108,5 +108,26 @@ describe("TraitBrowserLayout tabs", () => {
     expect(wrapper.text()).toContain("Sticky Web");
     expect(wrapper.text()).not.toContain("Phaser Beam Array");
     expect(wrapper.text()).not.toContain("Secret console description");
+  });
+
+  it("restores the current tab after the search field is cleared", async () => {
+    const wrapper = mountBrowser();
+    expect(wrapper.text()).toContain("Pilot Team");
+
+    await wrapper.get("input").setValue("zzz");
+    await flushPromises();
+    expect(wrapper.text()).not.toContain("Pilot Team");
+    expect(wrapper.text()).toContain(
+      "No results match the current search and filters.",
+    );
+
+    await wrapper.get(".v-field__clearable .v-icon").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Pilot Team");
+    expect(wrapper.text()).not.toContain(
+      "No results match the current search and filters.",
+    );
+    expect(wrapper.get("input").element).toHaveProperty("value", "");
   });
 });
