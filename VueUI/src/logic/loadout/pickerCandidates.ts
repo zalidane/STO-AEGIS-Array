@@ -26,10 +26,11 @@ import {
   type HangarShip,
 } from "@/logic/loadout/hangarWho";
 import {
-  itemFitsHullSlot,
-  itemHasOpenCopy,
-  loadoutOwnershipKey,
-} from "@/logic/loadout/setBonus";
+  logicalGroupHasOpenCopy,
+  mergeLogicalPickerItems,
+  pickerCandidateOwned,
+} from "@/logic/loadout/mergePickerItems";
+import { itemFitsHullSlot, itemHasOpenCopy } from "@/logic/loadout/setBonus";
 import type { HullSlot } from "@/logic/loadout/hullSlots";
 import type { LoadoutItem, LoadoutSlotFill } from "@/logic/loadout/types";
 
@@ -52,14 +53,17 @@ export function fittingItems(input: {
   exceptSlotId?: string;
   ship?: HangarShip | null;
 }): LoadoutItem[] {
-  return input.catalog.filter((item) => {
-    if (!itemFitsHullSlot(item, input.kind)) return false;
-    if (!itemWhoFitsShip(item, input.ship)) return false;
-    if (!itemHasOpenCopy(item, input.seated, input.exceptSlotId)) return false;
+  const eligible = input.catalog.filter(
+    (item) =>
+      itemFitsHullSlot(item, input.kind) &&
+      itemWhoFitsShip(item, input.ship),
+  );
+  return mergeLogicalPickerItems(eligible, input.ownedKeys).filter((item) => {
+    if (!logicalGroupHasOpenCopy(item, input.seated, input.exceptSlotId)) {
+      return false;
+    }
     if (!input.collectedOnly) return true;
-    return input.ownedKeys.has(
-      loadoutOwnershipKey(item.catalogKind, item.id),
-    );
+    return pickerCandidateOwned(item, input.ownedKeys);
   });
 }
 
