@@ -6,6 +6,7 @@ import {
   findProfessionKeywords,
   takeActivationSegment,
 } from "@/logic/loadout/extractTraitTriggers";
+import { MOCK_TRAIT_SOURCES } from "./mocks/traitTriggerFixtures";
 
 describe("extractWikiLinkRefs", () => {
   it("returns empty for nullish or blank input", () => {
@@ -273,6 +274,56 @@ describe("extractTraitTriggers — readiness examples", () => {
             t.abilityName === "Cannons: Rapid Fire"),
       ),
     ).toBe(false);
+  });
+
+  it("Critical Systems → Emergency Power family, not a single EPtX power", () => {
+    for (const source of [
+      MOCK_TRAIT_SOURCES.criticalSystems,
+      MOCK_TRAIT_SOURCES.improvedCriticalSystems,
+    ]) {
+      expect(extractTraitTriggers(source)).toEqual([
+        {
+          kind: "abilityFamily",
+          family: "eptx",
+          display: "Emergency Power",
+        },
+      ]);
+    }
+  });
+
+  it("Super Charged Weapons → energy weapon and torpedo, both required", () => {
+    expect(
+      extractTraitTriggers(MOCK_TRAIT_SOURCES.superChargedWeapons),
+    ).toEqual([
+      {
+        kind: "weaponClass",
+        classes: ["energy"],
+        display: "Energy weapon",
+      },
+      {
+        kind: "weaponClass",
+        classes: ["torpedo"],
+        display: "Torpedo",
+      },
+    ]);
+  });
+
+  it("Five Magicks → the five damage types and the Disruptor bonus", () => {
+    expect(extractTraitTriggers(MOCK_TRAIT_SOURCES.fiveMagicks)).toEqual([
+      {
+        kind: "damageType",
+        damageTypes: [
+          "Fire",
+          "Cold",
+          "Electrical",
+          "Radiation",
+          "Psionic",
+          "Disruptor",
+        ],
+        display:
+          "Fire, Cold, Electrical, Radiation, Psionic, or Disruptor",
+      },
+    ]);
   });
 
   it("Checkmate → control functional category", () => {

@@ -1,8 +1,15 @@
 import { decodeHtmlEntities } from "@/utils/decodeHtmlEntities";
 import {
   resolveTriggerAbilityAlias,
+  textMentionsEmergencyPowerFamily,
+  type TriggerAbilityFamily,
   type TriggerFunctionalCategory,
 } from "@/logic/loadout/triggerAliases";
+import {
+  damageTypesRequiredByTrait,
+  formatDamageTypeList,
+  requiresEnergyWeaponAndTorpedo,
+} from "@/logic/loadout/weaponProfile";
 
 /**
  * Trigger-extraction for traits & starship traits (#31 / epic #29).
@@ -31,11 +38,16 @@ export type TraitTriggerKind =
   | "namedAbility"
   | "professionCategory"
   | "functionalCategory"
+  | "abilityFamily"
   | "weaponClass"
+  | "damageType"
   | "combatState";
 
-/** Energy weapon families that traits may require slotted. */
-export type TraitTriggerWeaponClass = "beam" | "cannon";
+/**
+ * Beam / cannon: at least one of the listed classes (OR).
+ * Energy / torpedo: used as their own triggers so both can be required.
+ */
+export type TraitTriggerWeaponClass = "beam" | "cannon" | "energy" | "torpedo";
 
 export type NamedAbilityTrigger = {
   kind: "namedAbility";
@@ -67,6 +79,23 @@ export type WeaponClassTrigger = {
   display: string;
 };
 
+/** Any seated power in an ability family (Emergency Power to X, and so on). */
+export type AbilityFamilyTrigger = {
+  kind: "abilityFamily";
+  family: TriggerAbilityFamily;
+  display: string;
+};
+
+/**
+ * Slotted weapon whose damage type is one of `damageTypes` (OR).
+ * Five Magicks uses this so the hover can name the matching weapon.
+ */
+export type DamageTypeTrigger = {
+  kind: "damageType";
+  damageTypes: readonly string[];
+  display: string;
+};
+
 export type CombatStateTrigger = {
   kind: "combatState";
   display: string;
@@ -76,7 +105,9 @@ export type ExtractedTraitTrigger =
   | NamedAbilityTrigger
   | ProfessionCategoryTrigger
   | FunctionalCategoryTrigger
+  | AbilityFamilyTrigger
   | WeaponClassTrigger
+  | DamageTypeTrigger
   | CombatStateTrigger;
 
 /** Starship-trait-shaped Cargo fields (personal traits may leave some empty). */
@@ -246,14 +277,27 @@ const WEAPON_CLASS_PATTERNS: ReadonlyArray<{
   },
 ];
 
+function weaponClassLabel(weaponClass: TraitTriggerWeaponClass): string {
+  switch (weaponClass) {
+    case "beam":
+      return "Beam weapon";
+    case "cannon":
+      return "Cannon weapon";
+    case "energy":
+      return "Energy weapon";
+    case "torpedo":
+      return "Torpedo";
+  }
+}
+
 function formatWeaponClassDisplay(
   classes: readonly TraitTriggerWeaponClass[],
 ): string {
-  if (classes.length === 0) return "";
-  if (classes.length === 1) {
-    return classes[0] === "beam" ? "Beam weapon" : "Cannon weapon";
-  }
-  return "Beam or cannon weapon";
+  const labels = classes.map(weaponClassLabel);
+  if (labels.length === 0) return "";
+  if (labels.length === 1) return labels[0] ?? "";
+  if (labels.length === 2) return `${labels[0]} or ${labels[1]}`;
+  return `${labels.slice(0, -1).join(", ")}, or ${labels[labels.length - 1]}`;
 }
 
 /**
@@ -622,11 +666,50 @@ export function extractTraitTriggers(
     });
   }
   triggers.push(...functionals);
+
+  const combined = [resolved.basic, resolved.detailed, resolved.short]
+    .filter((field) => field?.trim())
+    .map((field) => cleanMarkupFragment(flattenWikiLabels(field ?? "")))
+    .join("\n");
+
+  if (textMentionsEmergencyPowerFamily(combined)) {
+    triggers.push({
+      kind: "abilityFamily",
+      family: "eptx",
+      display: "Emergency Power",
+    });
+  }
+
   if (weaponClasses.length > 0) {
     triggers.push({
       kind: "weaponClass",
       classes: [...weaponClasses],
       display: formatWeaponClassDisplay(weaponClasses),
+    });
+  }
+
+  // Separate triggers so both must be seated. One OR trigger would accept either.
+  if (requiresEnergyWeaponAndTorpedo(combined)) {
+    triggers.push(
+      {
+        kind: "weaponClass",
+        classes: ["energy"],
+        display: "Energy weapon",
+      },
+      {
+        kind: "weaponClass",
+        classes: ["torpedo"],
+        display: "Torpedo",
+      },
+    );
+  }
+
+  const damageTypes = damageTypesRequiredByTrait(combined);
+  if (damageTypes && damageTypes.length > 0) {
+    triggers.push({
+      kind: "damageType",
+      damageTypes,
+      display: formatDamageTypeList(damageTypes),
     });
   }
 
