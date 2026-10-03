@@ -151,6 +151,7 @@ watch(
     <div class="ship-card__collect">
       <CollectToggle
         compact
+        account-wide
         kind="ship"
         :catalog-id="ship.id"
         :bind="collectBind"

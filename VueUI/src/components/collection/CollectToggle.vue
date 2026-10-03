@@ -4,6 +4,7 @@ import { storeToRefs } from "pinia";
 import { useCollectionStore } from "@/stores/collection";
 import type { BindScope, CatalogKind } from "@/logic/collection/types";
 import { bindScopeChoiceCaption, bindScopeLabel } from "@/logic/collection/bind";
+import { listedForActiveCharacter } from "@/logic/collection/state";
 import {
   bindChoiceFromCost,
   FALLBACK_BIND_CHOICE_PROMPT,
@@ -30,6 +31,12 @@ const props = defineProps<{
   bindChoicePrompt?: string;
   /** Icon-sized control for cards and list rows; hides bind caption. */
   compact?: boolean;
+  /**
+   * Treat a bound-to-account copy on another captain of this STO account as
+   * collected. Ship surfaces use this so every captain matches Collection.
+   * Collection keeps the button on this captain's own copy.
+   */
+  accountWide?: boolean;
 }>();
 
 const store = useCollectionStore();
@@ -52,10 +59,23 @@ const status = computed(() =>
   store.statusFor(props.kind, props.catalogId, effectiveBind.value),
 );
 
+const showsCollected = computed(() =>
+  props.accountWide
+    ? listedForActiveCharacter(status.value)
+    : status.value.ownedByActive,
+);
+
 const otherLabel = computed(() => {
   const names = status.value.otherAccountCopies.map((copy) => copy.characterName);
   if (names.length === 0) return "";
   return `On ${names.join(", ")}`;
+});
+
+const accountUnlockTitle = computed(() => {
+  if (!props.accountWide || status.value.ownedByActive || !otherLabel.value) {
+    return undefined;
+  }
+  return `Collected. Unlocked for account. ${otherLabel.value}`;
 });
 
 const createError = computed(() => {
@@ -82,6 +102,9 @@ function toggle() {
   }
   if (status.value.ownedByActive) {
     store.uncollect(props.kind, props.catalogId);
+    return;
+  }
+  if (props.accountWide && status.value.otherAccountCopies.length > 0) {
     return;
   }
   if (props.allowAccountUnlock) {
@@ -146,12 +169,14 @@ const dialogPrompt = computed(() => {
   >
     <v-btn
       :size="compact ? 'x-small' : 'small'"
-      :variant="status.ownedByActive ? 'flat' : 'outlined'"
-      :color="status.ownedByActive ? 'primary' : undefined"
-      :prepend-icon="status.ownedByActive ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+      :variant="showsCollected ? 'flat' : 'outlined'"
+      :color="showsCollected ? 'primary' : undefined"
+      :prepend-icon="showsCollected ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+      :title="accountUnlockTitle"
+      :aria-label="accountUnlockTitle"
       @click="toggle"
     >
-      {{ status.ownedByActive ? "Collected" : "Collect" }}
+      {{ showsCollected ? "Collected" : "Collect" }}
     </v-btn>
     <div v-if="!compact" class="collect-toggle__meta">
       <button
