@@ -1,5 +1,5 @@
 /**
- * Merge Cargo Traits rows with a committed supplement (#69).
+ * Merge Cargo Traits rows with CatalogSupplement payloads (#69).
  *
  * Rules:
  * - Match on name + type + environment (same identity as the Prisma unique key).
