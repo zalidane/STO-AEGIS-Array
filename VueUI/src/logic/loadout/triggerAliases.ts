@@ -366,6 +366,22 @@ export function abilitiesForFunctionalCategory(
   return TRIGGER_FUNCTIONAL_CATEGORIES[category];
 }
 
+/**
+ * Generic Emergency Power family, not one named EPtX power.
+ * "Emergency Power to Weapons" stays a named ability. "Emergency Power
+ * bridge officer ability" / "Emergency Power BOff Ability" is the family.
+ * A trailing "the Emergency Power" (the buff just granted) does not match.
+ */
+const EMERGENCY_POWER_FAMILY_RE =
+  /\b(?:any\s+)?emergency\s+power\s+(?:bridge\s+officer|boff|abilities|ability|use)\b/i;
+
+export function textMentionsEmergencyPowerFamily(
+  text: string | null | undefined,
+): boolean {
+  if (!text?.trim()) return false;
+  return EMERGENCY_POWER_FAMILY_RE.test(text);
+}
+
 /** True when `value` resolves to a member of the given family. */
 export function isAbilityInFamily(
   value: string | null | undefined,

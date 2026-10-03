@@ -432,4 +432,36 @@ describe("pickerCandidates", () => {
       }).map((item) => item.id),
     ).toEqual([14]);
   });
+
+  it("offers Improved Critical Systems beside the base rank", () => {
+    const slot = defined(
+      buildCaptainTraitSlots({}).find((candidate) => candidate.group === "starship"),
+    );
+    const base: LoadoutItem = {
+      id: 40,
+      name: "Critical Systems",
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+    };
+    const improved: LoadoutItem = {
+      id: 41,
+      name: "Improved Critical Systems",
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+    };
+    expect(
+      pickerCandidatesFor({
+        query: "critical systems",
+        captainSlot: slot,
+        catalog: [base, improved],
+        stations: [],
+        hullSlots: [],
+        hullFills: [],
+        seated: [],
+        collectedOnly: false,
+        ownedKeys: new Set(),
+        identity: {},
+      }).map((item) => item.name),
+    ).toEqual(["Critical Systems", "Improved Critical Systems"]);
+  });
 });
