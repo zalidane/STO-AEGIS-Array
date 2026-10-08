@@ -1,6 +1,7 @@
-export const FALLBACK_TRAIT_IMAGE = "/images/traits/trait-placeholder.png";
+/** Shipped with the app. Not part of the wiki image tree synced to object storage. */
+export const FALLBACK_TRAIT_IMAGE = "/placeholders/trait-placeholder.png";
 export const FALLBACK_STARSHIP_TRAIT_IMAGE =
-  "/images/starship-traits/starship-trait-placeholder.png";
+  "/placeholders/starship-trait-placeholder.png";
 
 /** Native STO wiki trait icon size. Scale only by integers to avoid blur. */
 export const TRAIT_ICON_NATIVE_WIDTH = 49;

@@ -21,7 +21,7 @@ export type AttributionSection = {
 };
 
 export const FOOTER_SUMMARY =
-  "Game data and text from STOWiki (CC BY-NC-SA 3.0). Images © Cryptic / DECA / Paramount via STOWiki.";
+  "Game data and text from STOWiki (CC BY-NC-SA 3.0). Images © Cryptic / Arc Games / DECA / Paramount via STOWiki.";
 
 export const DISCLAIMER =
   "STO-AEGIS Array is an unofficial fan project and is not affiliated with, endorsed by, or sponsored by Paramount, Cryptic Studios, DECA Games, or related rights holders.";
@@ -52,8 +52,8 @@ export const ATTRIBUTION_SECTIONS: AttributionSection[] = [
     id: "images",
     title: "Images",
     paragraphs: [
-      "Icons and ship renders are downloaded from STOWiki, primarily from Category:Official images (files tagged as STO official images).",
-      "Those assets are Star Trek Online game artwork and icons created or released by Cryptic Studios / DECA Games and related rights holders. They are not licensed as MIT project code and are generally not covered by the wiki’s CC BY-NC-SA grant for community-authored text.",
+      "Game artwork and icons shown on the hosted site are © Cryptic Studios / Arc Games / DECA / Paramount; sourced from STOWiki; not covered by this repo's licenses; unofficial non-commercial fan site; removed on rights-holder request.",
+      "The hosted site loads them at runtime from separate object storage. They come primarily from Category:Official images (files tagged as STO official images). They are not licensed as MIT project code and are generally not covered by the wiki’s CC BY-NC-SA grant for community-authored text.",
     ],
     links: [
       { label: "Category:Official images", href: STOWIKI_OFFICIAL_IMAGES_URL },

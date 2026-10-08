@@ -97,8 +97,32 @@ function encodeWikiFilename(filename: string): string {
   return encodeURIComponent(filename).replace(/'/g, "%27");
 }
 
+/** Local Vite path used when `VITE_IMAGE_BASE_URL` is unset. */
+export const DEFAULT_IMAGE_BASE_URL = "/images";
+
+/**
+ * Public base for wiki images. Vite inlines `VITE_IMAGE_BASE_URL` at build time.
+ * Empty or unset keeps `/images`, so local dev and unit tests stay on disk.
+ */
+export function resolveImageBase(raw: string | null | undefined): string {
+  const trimmed = raw?.trim() ?? "";
+  if (!trimmed) return DEFAULT_IMAGE_BASE_URL;
+  return trimmed.replace(/\/+$/, "");
+}
+
+const imageBase = resolveImageBase(import.meta.env.VITE_IMAGE_BASE_URL);
+
+/** `{base}/{kind}/{filename}` with filename percent-encoding. */
+export function wikiImagePublicUrl(
+  kind: WikiImageKind,
+  filename: string,
+  base: string = imageBase,
+): string {
+  return `${resolveImageBase(base)}/${kind}/${encodeWikiFilename(filename)}`;
+}
+
 function wikiPublicUrl(kind: WikiImageKind, filename: string): string {
-  return `/images/${kind}/${encodeWikiFilename(filename)}`;
+  return wikiImagePublicUrl(kind, filename);
 }
 
 export function getWikiImageUrl(

@@ -6,7 +6,7 @@ Cargo gaps are filled at import, and Cargo stays the source of the committed JSO
 
 **Workflow**
 
-1. **Extract (manual or monthly home check, local)** — fetch wiki → commit `output/*.json` (and optionally images)
+1. **Extract (manual or monthly home check, local)** — fetch wiki → commit `output/*.json`, then sync images to object storage (`npm run images:sync`)
 2. **Import (automatic / deploy)** — read committed JSON, merge `CatalogSupplement` rows → production DB
 
 Production never hits STOWiki; it only imports JSON shipped in git. Run extract from a home/residential IP, not Railway.
@@ -40,7 +40,7 @@ npm run extract:home -- --check-only
 
 What runs when due: `extract --force-refresh` (full **Cargo** refresh; experimental-weapon sidecar and **images stay incremental** — no `--force-images`). `--force-refresh` is required so a fresh clone (JSON mtime = now) cannot skip the wiki via the 24h Cargo cache. After a successful extract, `Extractor/output/last-extract.json` is written (gitignored). If that file is missing, the check falls back to the newest Cargo JSON mtime.
 
-After a real run, review the diff, commit updated `Extractor/output/*.json` (and any new images you want tracked), push, then `npm run import:prod` (or rely on GraphQL `releaseCommand` after push).
+After a real run, review the diff, commit updated `Extractor/output/*.json`, sync images with `npm run images:sync`, push, then `npm run import:prod` (or rely on GraphQL `releaseCommand` after push). Image hosting: [`docs/image-hosting.md`](../docs/image-hosting.md).
 
 ### Schedule examples
 
@@ -122,6 +122,10 @@ npm run extract:home -- --check-only
 # Images only (uses existing output/*.json)
 npm run extract:images
 npm run extract -- --images-only --force-images
+
+# Publish local images to R2 (see docs/image-hosting.md)
+npm run images:sync -- --dry-run
+npm run images:sync
 
 # Cargo only
 npm run extract -- --skip-images
@@ -222,11 +226,11 @@ Catalog rows map to wiki files (`File:{Name} icon.png` for items/traits, Cargo `
 - `VueUI/public/images/ships/`
 - `VueUI/public/images/tray-skills/`
 
-`output/OfficialImages.json` and `output/imageIndex.json` record what was found. After the first full download, incremental extracts skip files already in `VueUI/public/images/` and skip titles already recorded as missing on the wiki. Only catalog rows with no local file (new items, or a previous failed download) hit the wiki. After image extract, resolved filenames are stamped onto `Infobox.json` and `TraySkill.json` as `image`. Re-import (`npm run import`) so GraphQL/UI can look up `/images/items/{filename}` or `/images/tray-skills/{filename}`. Missing wiki files stay as UI placeholders. Use `--force-images` if a previously missing file was later added on the wiki.
+`output/OfficialImages.json` and `output/imageIndex.json` record what was found. After the first full download, incremental extracts skip files already in `VueUI/public/images/` and skip titles already recorded as missing on the wiki. Only catalog rows with no local file (new items, or a previous failed download) hit the wiki. After image extract, resolved filenames are stamped onto `Infobox.json` and `TraySkill.json` as `image`. Re-import (`npm run import`) so the UI can turn that filename into `/images/{kind}/{filename}`, or `{VITE_IMAGE_BASE_URL}/{kind}/{filename}` when the image host is set. Missing wiki files stay as UI placeholders in `VueUI/public/placeholders/`. Use `--force-images` if a previously missing file was later added on the wiki.
 
-Ship renders can be large; files over 8MB are skipped. Item/trait icons are tiny. Commit whichever images you want in git — binaries are not required for the DB import.
+Ship renders can be large; files over 8MB are skipped. Item/trait icons are tiny. The local tree is what extract writes. Publish it with `npm run images:sync` ([`docs/image-hosting.md`](../docs/image-hosting.md)). Those binaries are not required for the DB import. They remain in git until the bucket cutover; do not delete them in the same change as the URL switch.
 
-Third-party licensing for extracted text and images is documented in
+Game artwork and icons are © Cryptic Studios / Arc Games / DECA / Paramount; sourced from STOWiki; not covered by this repo's licenses; unofficial non-commercial fan site; removed on rights-holder request. See
 [`ATTRIBUTION.md`](../ATTRIBUTION.md) and [`VueUI/public/images/NOTICE`](../VueUI/public/images/NOTICE).
 
 ## Output in git
