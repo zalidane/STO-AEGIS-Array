@@ -1,6 +1,7 @@
 import { getWikiImageUrl } from "@/utils/wikiImage";
 
-const FALLBACK_SHIP_IMAGE = "/images/ships/ship-placeholder.png";
+/** Shipped with the app. Not part of the wiki image tree synced to object storage. */
+const FALLBACK_SHIP_IMAGE = "/placeholders/ship-placeholder.png";
 
 export function getShipImageUrl(
   imageField: string | null | undefined,

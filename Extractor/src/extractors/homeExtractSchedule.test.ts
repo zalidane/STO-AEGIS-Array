@@ -7,6 +7,7 @@ import { describe, it } from "node:test";
 import {
   ONE_MONTH_MS,
   formatAge,
+  homeExtractReminder,
   isExtractDue,
   parseLastExtractState,
   resolveLastExtractAt,
@@ -93,5 +94,13 @@ describe("formatAge", () => {
   it("formats days and hours", () => {
     assert.equal(formatAge(2 * 24 * 60 * 60 * 1000), "2d");
     assert.equal(formatAge(5 * 60 * 60 * 1000), "5h");
+  });
+});
+
+describe("homeExtractReminder", () => {
+  it("tells the operator to sync images instead of committing them", () => {
+    const text = homeExtractReminder();
+    assert.match(text, /npm run images:sync/);
+    assert.doesNotMatch(text, /commit[^\n]*images/i);
   });
 });

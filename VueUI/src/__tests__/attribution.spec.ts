@@ -41,5 +41,9 @@ describe("attribution", () => {
     expect(images?.links.some((link) => link.href === STOWIKI_HOME_URL)).toBe(
       true,
     );
+    expect(images?.paragraphs.join(" ")).toMatch(/object storage/);
+    expect(images?.paragraphs.join(" ")).toMatch(
+      /removed on rights-holder request/,
+    );
   });
 });

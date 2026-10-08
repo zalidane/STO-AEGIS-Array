@@ -40,35 +40,35 @@ describe("wikiImage", () => {
       getWikiImageUrl(
         "ships",
         "File:Amarie Smuggler&#039;s Heavy Escort.jpg",
-        "/images/ships/ship-placeholder.png",
+        "/placeholders/ship-placeholder.png",
       ),
     ).toBe("/images/ships/Amarie_Smugglers_Heavy_Escort.jpg");
     expect(
       getWikiImageUrl(
         "ships",
         "File:Rom Ship T'liss Temporal.png",
-        "/images/ships/ship-placeholder.png",
+        "/placeholders/ship-placeholder.png",
       ),
     ).toBe("/images/ships/Rom_Ship_Tliss_Temporal.png");
     expect(
       getWikiImageUrl(
         "ships",
         "File:Son'a Collector Science Dreadnought.jpg",
-        "/images/ships/ship-placeholder.png",
+        "/placeholders/ship-placeholder.png",
       ),
     ).toBe("/images/ships/Sona_Collector_Science_Dreadnought.jpg");
     expect(
       getWikiImageUrl(
         "traits",
         "File:Fresh From R&R icon.png",
-        "/images/traits/trait-placeholder.png",
+        "/placeholders/trait-placeholder.png",
       ),
     ).toBe("/images/traits/Fresh_From_RR_icon.png");
     expect(
       getWikiImageUrl(
         "ships",
         "File:obeliskcarrier.jpg",
-        "/images/ships/ship-placeholder.png",
+        "/placeholders/ship-placeholder.png",
       ),
     ).toBe("/images/ships/obeliskcarrier.jpg");
   });
