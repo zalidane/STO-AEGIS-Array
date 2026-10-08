@@ -159,9 +159,10 @@ export function formatAge(ms: number): string {
 export function homeExtractReminder(): string {
   return [
     "Next steps (home machine only):",
-    "  1. Review git diff under Extractor/output/ and VueUI/public/images/",
-    "  2. Commit updated JSON (and any new images you want in git)",
-    "  3. Push, then run: npm run import:prod",
+    "  1. Review git diff under Extractor/output/",
+    "  2. Commit updated JSON",
+    "  3. Sync new or changed images to object storage: npm run images:sync",
+    "  4. Push, then run: npm run import:prod",
     "Production/Railway must never hit stowiki.net — only import committed JSON.",
   ].join("\n");
 }

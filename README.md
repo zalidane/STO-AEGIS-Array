@@ -58,6 +58,7 @@ Set `VITE_GRAPHQL_URL` only when the API is not at `http://localhost:4000/graphq
 | `npm run extract` / `extract:force` | Manual STOWiki extract → `Extractor/output/*.json` + images |
 | `npm run extract:home` | Home-only monthly check: extract if last run was > ~1 month ago |
 | `npm run extract:images` | Download wiki images only (uses existing Cargo JSON) |
+| `npm run images:sync` | Sync local wiki images to Cloudflare R2 (`--dry-run`, `--delete`) |
 | `npm run import` / `import:force` | Import committed JSON into local DB |
 | `npm run import:prod` | Import committed JSON into production DB |
 | `npm run db:generate` | Generate Prisma client in `packages/database` |
@@ -87,7 +88,7 @@ npm run import -- --force-import
 npm run import:prod
 ```
 
-Schedule `npm run extract:home` weekly on a home machine (cron / Task Scheduler / systemd / launchd). The script itself enforces the ~1-month gate, refreshes stale Cargo when due, keeps images incremental, and reminds you to commit JSON then `import:prod`. Details: [Extractor/README.md](Extractor/README.md#monthly-home-extract-scheduled-check). Production must only import committed JSON — never extract on Railway.
+Schedule `npm run extract:home` weekly on a home machine (cron / Task Scheduler / systemd / launchd). The script itself enforces the ~1-month gate, refreshes stale Cargo when due, keeps images incremental, and reminds you to commit JSON, sync images (`npm run images:sync`), then `import:prod`. Details: [Extractor/README.md](Extractor/README.md#monthly-home-extract-scheduled-check) and [docs/image-hosting.md](docs/image-hosting.md). Production must only import committed JSON — never extract on Railway.
 
 After changing `GraphQL/src/schema/**/*.graphql` or `VueUI/src/graphql/queries/*.graphql`, run `npm run codegen` so the Vue client types stay in sync.
 
@@ -137,6 +138,7 @@ Rename the service to `GraphQL` if you want.
 4. Config as Code: `/VueUI/railway.toml`
 5. Variables (available at **build** time):
    - `VITE_GRAPHQL_URL` = `https://${{GraphQL.RAILWAY_PUBLIC_DOMAIN}}/graphql`
+   - `VITE_IMAGE_BASE_URL` = `https://img.aegisarray.com` (optional; leave unset until R2 is verified. Inlined at build time. See [docs/image-hosting.md](docs/image-hosting.md))
 6. Generate domain → Deploy
 
 ### Add Extractor import (optional Cron / one-shot)
@@ -158,6 +160,6 @@ Original project source code is MIT — see [`LICENSE`](LICENSE).
 
 Wiki-derived text and Cargo data are used under STOWiki’s
 [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) terms where
-the wiki may lawfully license them. Game images under `VueUI/public/images/` are
-Cryptic / DECA / Paramount assets obtained via STOWiki and are **not** MIT.
-Full details: [`ATTRIBUTION.md`](ATTRIBUTION.md).
+the wiki may lawfully license them. Game images are served at runtime from
+separate object storage and are © Cryptic Studios / Arc Games / DECA / Paramount; sourced from STOWiki; not covered by this repo's licenses; unofficial non-commercial fan site; removed on rights-holder request.
+Full details: [`ATTRIBUTION.md`](ATTRIBUTION.md). Hosting: [`docs/image-hosting.md`](docs/image-hosting.md).

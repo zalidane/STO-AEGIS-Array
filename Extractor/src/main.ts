@@ -144,6 +144,9 @@ async function runExtract(options: {
     console.log(
       "Image extract complete. Files land in VueUI/public/images/{items,ships,traits,starship-traits,tray-skills}/.",
     );
+    console.log(
+      "Sync changed files to object storage with: npm run images:sync",
+    );
   }
 
   // Local-only stamp for the monthly home check (gitignored).

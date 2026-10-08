@@ -30,18 +30,24 @@ and inherits those terms for wiki-authored text fields.
 
 ## Images
 
-Image files under `VueUI/public/images/` are downloaded from STOWiki, primarily
-from [Category:Official images](https://stowiki.net/wiki/Category:Official_images)
-(files tagged with `{{STO official image}}`).
+Game artwork and icons shown on the hosted site are © Cryptic Studios / Arc Games / DECA / Paramount; sourced from STOWiki; not covered by this repo's licenses; unofficial non-commercial fan site; removed on rights-holder request.
 
-Those assets are game artwork and icons created or released by Cryptic Studios /
-DECA Games (and related rights holders). Identifying them as official *Star Trek
-Online* images is the attribution used on STOWiki; they are **not** licensed as
-MIT project code and are generally **not** covered by the wiki’s CC BY-NC-SA
-grant for community-authored text.
+They were sourced from [STOWiki](https://stowiki.net/), primarily
+[Category:Official images](https://stowiki.net/wiki/Category:Official_images)
+(files tagged with `{{STO official image}}`). The hosted site loads them at
+runtime from separate object storage (layout `<kind>/<filename>`; manifests in
+`Extractor/output/OfficialImages.json` and `imageIndex.json`). They are **not**
+covered by this project's MIT License or by STOWiki's CC BY-NC-SA license for
+community text.
+
+The same files still live under `VueUI/public/images/` until the bucket cutover.
+Local development serves that tree when `VITE_IMAGE_BASE_URL` is unset.
+Placeholder art the UI needs stays in `VueUI/public/placeholders/` and is not
+part of the object-storage tree. Hosting steps: [`docs/image-hosting.md`](docs/image-hosting.md).
 
 - Source wiki: [stowiki.net](https://stowiki.net/)
-- Local layout: `items/`, `ships/`, `traits/`, `starship-traits/`, `tray-skills/`
+- Object key layout: `items/`, `ships/`, `traits/`, `starship-traits/`, `tray-skills/`
+- Local extract (not the production URL): `VueUI/public/images/`
 - Manifests: `Extractor/output/OfficialImages.json`, `Extractor/output/imageIndex.json`
 
 See also [`VueUI/public/images/NOTICE`](VueUI/public/images/NOTICE).
@@ -49,7 +55,7 @@ See also [`VueUI/public/images/NOTICE`](VueUI/public/images/NOTICE).
 ## How this project uses the material
 
 - Cargo extracts and committed JSON power the GraphQL API and Vue UI.
-- The UI shows wiki-derived text and local copies of wiki images for catalog browsing.
+- The UI shows wiki-derived text and game images loaded from object storage at runtime (local `/images` when `VITE_IMAGE_BASE_URL` is unset).
 - Production deploys import committed JSON; they do not scrape the live wiki.
 
 ## Further reading

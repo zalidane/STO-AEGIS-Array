@@ -12,6 +12,7 @@
     "extract:images": "tsx src/main.ts extract --images-only",
     "extract:home": "tsx src/scripts/homeExtract.ts",
     "align-images": "tsx src/alignLocalImages.ts",
+    "images:sync": "tsx src/scripts/syncImages.ts",
     "import": "tsx src/main.ts import",
     "import:force": "tsx src/main.ts import --force-import",
     "import:prod": "tsx src/main.ts import --prod --force-import",
@@ -21,6 +22,7 @@
     "start": "node dist/main.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1147.0",
     "@sto-aegis/database": "*",
     "dotenv": "^17.4.2",
     "tsx": "^4.23.1"

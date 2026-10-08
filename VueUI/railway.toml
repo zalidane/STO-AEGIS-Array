@@ -3,6 +3,9 @@
 #
 # Set at build time:
 #   VITE_GRAPHQL_URL=https://${{GraphQL.RAILWAY_PUBLIC_DOMAIN}}/graphql
+#   VITE_IMAGE_BASE_URL=https://img.aegisarray.com
+# Leave VITE_IMAGE_BASE_URL unset until the R2 bucket is verified.
+# It is inlined into the client. See docs/image-hosting.md.
 
 [build]
 builder = "RAILPACK"

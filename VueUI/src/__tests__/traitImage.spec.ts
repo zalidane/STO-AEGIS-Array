@@ -8,6 +8,12 @@ import {
   resolveTraitArtSrc,
 } from "@/utils/traitImage";
 
+describe("trait placeholders", () => {
+  it("lives outside the wiki image folders", () => {
+    expect(FALLBACK_TRAIT_IMAGE).toBe("/placeholders/trait-placeholder.png");
+  });
+});
+
 describe("trait icon featured size", () => {
   it("is an integer 2x of the native 49x64 wiki icon", () => {
     expect(TRAIT_ICON_NATIVE_WIDTH).toBe(49);
