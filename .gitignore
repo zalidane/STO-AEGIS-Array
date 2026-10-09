@@ -11,3 +11,7 @@ Extractor/output/last-extract.json
 Extractor/output/.wiki-session.json
 **/src/generated/prisma/
 .DS_Store
+
+# STO images are hosted on Cloudflare R2 (img.aegisarray.com); keep local copies out of git
+VueUI/public/images/*
+!VueUI/public/images/NOTICE

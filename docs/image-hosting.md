@@ -5,9 +5,9 @@ The Vue app builds those URLs from `VITE_IMAGE_BASE_URL`. When that variable is
 unset, URLs stay on the local Vite path `/images/...`, so local dev, unit
 tests, and the current Railway deploy keep working before the bucket exists.
 
-This change does **not** delete `VueUI/public/images/` or gitignore it. Cut
-those files over only after the bucket is live and the pages have been checked.
-Do not rewrite git history as part of this setup.
+**Status (Oct 9, 2026):** the cutover is done. `VueUI/public/images/` was removed
+from git and scrubbed from history, and it is now gitignored (except `NOTICE`).
+Keep local copies on the machine that runs the Extractor and `images:sync`.
 
 Planned public origin: `https://img.aegisarray.com`.
 
@@ -287,5 +287,4 @@ curl -sI "https://img.aegisarray.com/ships/Fed_Ship_Achilles.png" | grep -i x-im
 5. Check a few object URLs (`content-type`, `cache-control`, `cf-cache-status`).
 6. Set `VITE_IMAGE_BASE_URL` on VueUI and redeploy. Check the catalog pages.
 7. Add the WAF custom rule and the response header rule above.
-8. Later, and only after that check: remove `VueUI/public/images/` from git.
-   History rewrite is a separate decision and is not part of this change.
+8. Done Oct 9, 2026: `VueUI/public/images/` removed from git and history, now gitignored.

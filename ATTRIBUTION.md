@@ -40,7 +40,7 @@ runtime from separate object storage (layout `<kind>/<filename>`; manifests in
 covered by this project's MIT License or by STOWiki's CC BY-NC-SA license for
 community text.
 
-The same files still live under `VueUI/public/images/` until the bucket cutover.
+The image files are no longer stored in git; they are served from Cloudflare R2 at `img.aegisarray.com`.
 Local development serves that tree when `VITE_IMAGE_BASE_URL` is unset.
 Placeholder art the UI needs stays in `VueUI/public/placeholders/` and is not
 part of the object-storage tree. Hosting steps: [`docs/image-hosting.md`](docs/image-hosting.md).
