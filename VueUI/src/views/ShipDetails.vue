@@ -179,7 +179,12 @@ watch(
                     linear-gradient(135deg,#102338,#162e4c,#0d1625)`,
                 }"
               >
-                <v-img :src="imageUrl" @error="() => (imageFailed = true)" />
+                <v-img
+                  class="hero-image__photo"
+                  :src="imageUrl"
+                  position="center center"
+                  @error="() => (imageFailed = true)"
+                />
               </div>
             </v-card-text>
           </v-card>
@@ -679,13 +684,24 @@ watch(
 }
 
 .hero-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: min(500px, 42vh);
   max-width: 75%;
   margin: 0 auto;
   position: relative;
 }
 
+.hero-image__photo {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
 .hero-image :deep(img) {
+  object-fit: contain;
+  object-position: center center;
   filter: drop-shadow(0 0 30px rgba(80, 180, 255, 0.25))
     drop-shadow(0 0 80px rgba(80, 180, 255, 0.1));
 }
