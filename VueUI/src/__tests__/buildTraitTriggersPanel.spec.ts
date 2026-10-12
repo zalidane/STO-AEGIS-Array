@@ -388,6 +388,148 @@ describe("buildTraitTriggersPanel", () => {
     expect(boimlerRow?.satisfied).toBe(true);
     expect(boimlerRow?.statusLine).toContain("Jam Targeting Sensors");
   });
+
+  it("Aetherian Beam Enhancements checks a seated energy weapon", () => {
+    const trait: LoadoutItem = {
+      id: 930,
+      type: "char",
+      catalogKind: "trait",
+      ...MOCK_TRAIT_SOURCES.aetherianBeamEnhancements,
+    };
+    const traitFill = {
+      slotId: "personalSpace-0",
+      itemId: trait.id,
+      catalogKind: "trait" as const,
+    };
+    const hullSlots = [{ id: "foreWeapon-0", kind: "foreWeapon" as const }];
+
+    const missing = buildTraitTriggersPanel({
+      slots: [traitFill],
+      catalog: mockCatalog(trait),
+      hullSlots,
+    });
+    expect(missing[0]).toMatchObject({
+      satisfied: false,
+      hasCheckableTriggers: true,
+      statusLine: "Unsatisfied: needs Energy weapon",
+    });
+    expect(missing[0]?.statusLine).not.toContain("stack of Aetherian");
+
+    const withBeam = buildTraitTriggersPanel({
+      slots: [traitFill, mockWeaponFill(MOCK_WEAPONS.phaserBeamArray)],
+      catalog: mockCatalog(trait, MOCK_WEAPONS.phaserBeamArray),
+      hullSlots,
+    });
+    expect(withBeam[0]).toMatchObject({
+      satisfied: true,
+      statusLine: "Satisfied by: Phaser Beam Array",
+    });
+
+    const withCannon = buildTraitTriggersPanel({
+      slots: [traitFill, mockWeaponFill(MOCK_WEAPONS.dualCannons)],
+      catalog: mockCatalog(trait, MOCK_WEAPONS.dualCannons),
+      hullSlots,
+    });
+    expect(withCannon[0]?.satisfied).toBe(true);
+
+    const withTorpedo = buildTraitTriggersPanel({
+      slots: [traitFill, mockWeaponFill(MOCK_WEAPONS.quantumTorpedo)],
+      catalog: mockCatalog(trait, MOCK_WEAPONS.quantumTorpedo),
+      hullSlots,
+    });
+    expect(withTorpedo[0]?.satisfied).toBe(false);
+  });
+
+  it("Quantum Singularity Manipulation has nothing to check", () => {
+    const trait: LoadoutItem = {
+      id: 931,
+      type: "activereputation",
+      catalogKind: "trait",
+      ...MOCK_TRAIT_SOURCES.quantumSingularityManipulation,
+    };
+    const rows = buildTraitTriggersPanel({
+      slots: [
+        {
+          slotId: "personalSpace-0",
+          itemId: trait.id,
+          catalogKind: "trait",
+        },
+        mockTrayFill(MOCK_TRAY_SKILLS.scienceTeam),
+      ],
+      catalog: mockCatalog(trait, MOCK_TRAY_SKILLS.scienceTeam),
+    });
+    expect(rows[0]).toMatchObject({
+      satisfied: null,
+      hasCheckableTriggers: false,
+      triggers: [],
+      statusLine: "No activation trigger to check",
+    });
+  });
+
+  it("Broadside Beam Support is satisfied by Fire at Will or Beam Overload", () => {
+    const trait: LoadoutItem = {
+      id: 932,
+      type: "starship trait",
+      catalogKind: "starshipTrait",
+      ...MOCK_TRAIT_SOURCES.broadsideBeamSupport,
+    };
+    const traitFill = {
+      slotId: "starshipTrait-0",
+      itemId: trait.id,
+      catalogKind: "starshipTrait" as const,
+    };
+    const hullSlots = [{ id: "foreWeapon-0", kind: "foreWeapon" as const }];
+    const beam = mockWeaponFill(MOCK_WEAPONS.phaserBeamArray);
+
+    const fireAtWill = buildTraitTriggersPanel({
+      slots: [traitFill, mockTrayFill(MOCK_TRAY_SKILLS.faw), beam],
+      catalog: mockCatalog(trait, MOCK_TRAY_SKILLS.faw, MOCK_WEAPONS.phaserBeamArray),
+      hullSlots,
+    });
+    expect(fireAtWill[0]?.satisfied).toBe(true);
+    expect(fireAtWill[0]?.statusLine).toBe(
+      "Satisfied by: Beams: Fire at Will, Phaser Beam Array",
+    );
+
+    const overload = buildTraitTriggersPanel({
+      slots: [
+        traitFill,
+        mockTrayFill(MOCK_TRAY_SKILLS.beamOverload),
+        beam,
+      ],
+      catalog: mockCatalog(
+        trait,
+        MOCK_TRAY_SKILLS.beamOverload,
+        MOCK_WEAPONS.phaserBeamArray,
+      ),
+      hullSlots,
+    });
+    expect(overload[0]?.satisfied).toBe(true);
+    expect(overload[0]?.statusLine).toBe(
+      "Satisfied by: Beams: Overload, Phaser Beam Array",
+    );
+
+    const modeWithoutBeam = buildTraitTriggersPanel({
+      slots: [traitFill, mockTrayFill(MOCK_TRAY_SKILLS.faw)],
+      catalog: mockCatalog(trait, MOCK_TRAY_SKILLS.faw),
+      hullSlots,
+    });
+    expect(modeWithoutBeam[0]).toMatchObject({
+      satisfied: false,
+      statusLine: "Unsatisfied: needs Beam weapon",
+    });
+
+    const beamWithoutMode = buildTraitTriggersPanel({
+      slots: [traitFill, beam],
+      catalog: mockCatalog(trait, MOCK_WEAPONS.phaserBeamArray),
+      hullSlots,
+    });
+    expect(beamWithoutMode[0]).toMatchObject({
+      satisfied: false,
+      statusLine:
+        "Unsatisfied: needs Beams: Fire at Will or Beams: Overload",
+    });
+  });
 });
 
 describe("formatTraitTriggerStatusLine / aggregate", () => {

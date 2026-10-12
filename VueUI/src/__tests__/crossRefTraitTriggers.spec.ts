@@ -123,28 +123,37 @@ describe("crossRefTraitTriggers — readiness examples", () => {
     const triggers = extractTraitTriggers(
       MOCK_TRAIT_SOURCES.broadsideBeamSupport,
     );
-    expect(triggers.map((t) => t.kind)).toEqual([
-      "namedAbility",
-      "namedAbility",
-      "weaponClass",
-    ]);
+    expect(triggers.map((t) => t.kind)).toEqual(["namedAbility", "weaponClass"]);
+    expect(triggers[0]).toMatchObject({
+      anyOf: ["Beams: Fire at Will", "Beams: Overload"],
+    });
 
     const withFaw = crossRefTraitTriggers(triggers, [
       mockSeatedTray(MOCK_TRAY_SKILLS.faw),
     ]);
-    expect(withFaw.map((r) => r.satisfied)).toEqual([true, false, false]);
+    expect(withFaw.map((r) => r.satisfied)).toEqual([true, false]);
     expect(withFaw[0]?.matchedItems[0]?.name).toBe("Beams: Fire at Will");
 
     const withOverload = crossRefTraitTriggers(triggers, [
       mockSeatedTray(MOCK_TRAY_SKILLS.beamOverload),
     ]);
-    expect(withOverload.map((r) => r.satisfied)).toEqual([false, true, false]);
+    expect(withOverload.map((r) => r.satisfied)).toEqual([true, false]);
+    expect(withOverload[0]?.matchedItems[0]?.name).toBe("Beams: Overload");
 
     const withBoth = crossRefTraitTriggers(triggers, [
       mockSeatedTray(MOCK_TRAY_SKILLS.faw, "boff-0-ensign"),
       mockSeatedTray(MOCK_TRAY_SKILLS.beamOverload, "boff-0-lieutenant"),
     ]);
-    expect(withBoth.map((r) => r.satisfied)).toEqual([true, true, false]);
+    expect(withBoth.map((r) => r.satisfied)).toEqual([true, false]);
+    expect(withBoth[0]?.matchedItems.map((item) => item.name)).toEqual([
+      "Beams: Fire at Will",
+      "Beams: Overload",
+    ]);
+
+    const withNeither = crossRefTraitTriggers(triggers, [
+      mockSeatedTray(MOCK_TRAY_SKILLS.tacticalTeam),
+    ]);
+    expect(withNeither.map((r) => r.satisfied)).toEqual([false, false]);
   });
 
   it("Directed Energy Flux: Temporal OR DEM (either leg)", () => {
