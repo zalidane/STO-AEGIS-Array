@@ -3,14 +3,18 @@ import {
   ABOUT_LEDE,
   ABOUT_SECTIONS,
   aboutPageTitle,
+  DEFAULT_DISCORD_URL,
   DISCORD_LABEL,
   DISCORD_URL,
   GITHUB_BUG_REPORT_URL,
   GITHUB_URL,
+  RAILWAY_REFERRAL_URL,
   SITE_URL,
   isInternalHref,
   KOFI_LABEL,
   KOFI_URL,
+  resolveDiscordUrl,
+  resolveRailwayReferralUrl,
 } from "@/logic/about";
 import { DISCLAIMER } from "@/logic/attribution";
 
@@ -20,7 +24,9 @@ describe("about page copy", () => {
     expect(ABOUT_LEDE).toMatch(/loadout builder/i);
     expect(KOFI_URL).toBe("https://ko-fi.com/zalidane");
     expect(KOFI_LABEL).toBe("ko-fi.com/zalidane");
+    expect(DISCORD_URL).toBe(DEFAULT_DISCORD_URL);
     expect(DISCORD_URL).toBe("https://discord.gg/2jTgb9HnY");
+    expect(RAILWAY_REFERRAL_URL).toBeNull();
     expect(DISCORD_LABEL).toBe("Join Discord");
 
     const ids = ABOUT_SECTIONS.map((section) => section.id);
@@ -66,5 +72,41 @@ describe("about page copy", () => {
     ]);
     expect(isInternalHref("/attributions")).toBe(true);
     expect(isInternalHref(KOFI_URL)).toBe(false);
+  });
+});
+
+describe("resolveDiscordUrl", () => {
+  it("keeps the current invite when unset, blank, or whitespace", () => {
+    expect(resolveDiscordUrl(undefined)).toBe(DEFAULT_DISCORD_URL);
+    expect(resolveDiscordUrl(null)).toBe("https://discord.gg/2jTgb9HnY");
+    expect(resolveDiscordUrl("")).toBe(DEFAULT_DISCORD_URL);
+    expect(resolveDiscordUrl("   ")).toBe(DEFAULT_DISCORD_URL);
+  });
+
+  it("uses a trimmed configured invite", () => {
+    expect(resolveDiscordUrl("  https://discord.gg/newInvite  ")).toBe(
+      "https://discord.gg/newInvite",
+    );
+  });
+});
+
+describe("resolveRailwayReferralUrl", () => {
+  it("returns null when the code is unset, blank, or whitespace", () => {
+    expect(resolveRailwayReferralUrl(undefined)).toBeNull();
+    expect(resolveRailwayReferralUrl(null)).toBeNull();
+    expect(resolveRailwayReferralUrl("")).toBeNull();
+    expect(resolveRailwayReferralUrl("   ")).toBeNull();
+  });
+
+  it("builds https://railway.com?referralCode=<code>", () => {
+    expect(resolveRailwayReferralUrl("aegis")).toBe(
+      "https://railway.com?referralCode=aegis",
+    );
+    expect(resolveRailwayReferralUrl("  aegis  ")).toBe(
+      "https://railway.com?referralCode=aegis",
+    );
+    expect(resolveRailwayReferralUrl("a b&c")).toBe(
+      "https://railway.com?referralCode=a%20b%26c",
+    );
   });
 });

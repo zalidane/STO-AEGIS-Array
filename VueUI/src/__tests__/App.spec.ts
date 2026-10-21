@@ -39,5 +39,7 @@ describe("AppFooter", () => {
         .exists(),
     ).toBe(true);
     expect(wrapper.find('a[href="/attributions"]').exists()).toBe(true);
+    expect(wrapper.find(".app-footer__host").exists()).toBe(false);
+    expect(wrapper.text()).not.toContain("Hosted on Railway");
   });
 });

@@ -2,8 +2,40 @@ import { DISCLAIMER } from "@/logic/attribution";
 
 export const KOFI_URL = "https://ko-fi.com/zalidane";
 export const KOFI_LABEL = "ko-fi.com/zalidane";
-export const DISCORD_URL = "https://discord.gg/2jTgb9HnY";
+
+/** Invite used when `VITE_DISCORD_URL` is unset or blank. */
+export const DEFAULT_DISCORD_URL = "https://discord.gg/2jTgb9HnY";
+
+/**
+ * Discord invite. Vite inlines `VITE_DISCORD_URL` at VueUI build time.
+ * Blank or unset keeps {@link DEFAULT_DISCORD_URL}.
+ */
+export function resolveDiscordUrl(raw: string | null | undefined): string {
+  const trimmed = raw?.trim() ?? "";
+  return trimmed || DEFAULT_DISCORD_URL;
+}
+
+export const DISCORD_URL = resolveDiscordUrl(import.meta.env.VITE_DISCORD_URL);
 export const DISCORD_LABEL = "Join Discord";
+
+export const RAILWAY_HOST_LABEL = "Hosted on Railway";
+
+/**
+ * Railway affiliate link. Vite inlines `VITE_RAILWAY_REFERRAL_CODE` at VueUI
+ * build time. Unset or blank returns null so the footer credit is omitted.
+ * Format: `https://railway.com?referralCode=<code>`.
+ */
+export function resolveRailwayReferralUrl(
+  code: string | null | undefined,
+): string | null {
+  const trimmed = code?.trim() ?? "";
+  if (!trimmed) return null;
+  return `https://railway.com?referralCode=${encodeURIComponent(trimmed)}`;
+}
+
+export const RAILWAY_REFERRAL_URL = resolveRailwayReferralUrl(
+  import.meta.env.VITE_RAILWAY_REFERRAL_CODE,
+);
 export const GITHUB_URL = "https://github.com/zalidane/STO-AEGIS-Array";
 export const GITHUB_BUG_REPORT_URL = `${GITHUB_URL}/issues/new?template=bug.yml`;
 export const GITHUB_BUG_REPORT_LABEL = "Report a bug";

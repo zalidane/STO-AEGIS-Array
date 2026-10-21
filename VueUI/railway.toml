@@ -1,11 +1,16 @@
 # Shared npm-workspaces monorepo — keep Railway Root Directory at `/`.
 # In Railway: Settings → Config-as-code path = `/VueUI/railway.toml`
 #
-# Set at build time:
+# Set at build time on the VueUI service (Vite inlines VITE_* into the client):
 #   VITE_GRAPHQL_URL=https://${{GraphQL.RAILWAY_PUBLIC_DOMAIN}}/graphql
 #   VITE_IMAGE_BASE_URL=https://img.aegisarray.com
+#   VITE_DISCORD_URL=https://discord.gg/2jTgb9HnY
+#   VITE_RAILWAY_REFERRAL_CODE=<affiliate code>
 # Leave VITE_IMAGE_BASE_URL unset until the R2 bucket is verified.
-# It is inlined into the client. See docs/image-hosting.md.
+# Leave VITE_DISCORD_URL unset to keep https://discord.gg/2jTgb9HnY.
+# Leave VITE_RAILWAY_REFERRAL_CODE unset to hide the "Hosted on Railway" footer link.
+# When set, that link is https://railway.com?referralCode=<VITE_RAILWAY_REFERRAL_CODE>.
+# A change applies on the next VueUI deploy. See docs/image-hosting.md for images.
 
 [build]
 builder = "RAILPACK"

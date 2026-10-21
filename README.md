@@ -51,6 +51,8 @@ npm run dev:vue              # http://localhost:5173
 
 Set `VITE_GRAPHQL_URL` only when the API is not at `http://localhost:4000/graphql`.
 
+`VITE_DISCORD_URL` and `VITE_RAILWAY_REFERRAL_CODE` are optional VueUI build-time variables (same `VITE_` inlining as the API URL). Leave the Discord variable unset to keep `https://discord.gg/2jTgb9HnY`. Leave the referral code unset to hide the footer "Hosted on Railway" link. When the code is set, that link is `https://railway.com?referralCode=<code>`. On Railway, set both on the **VueUI** service. See [`.env.example`](.env.example).
+
 ## Scripts
 
 | Command | Description |
@@ -136,9 +138,11 @@ Rename the service to `GraphQL` if you want.
 2. Settings → connect the **same** GitHub repo / branch
 3. Root Directory: `/`
 4. Config as Code: `/VueUI/railway.toml`
-5. Variables (available at **build** time):
+5. Variables (available at **build** time on the **VueUI** service; Vite inlines them, so a change applies on the next VueUI deploy):
    - `VITE_GRAPHQL_URL` = `https://${{GraphQL.RAILWAY_PUBLIC_DOMAIN}}/graphql`
    - `VITE_IMAGE_BASE_URL` = `https://img.aegisarray.com` (optional; leave unset until R2 is verified. Inlined at build time. See [docs/image-hosting.md](docs/image-hosting.md))
+   - `VITE_DISCORD_URL` = full Discord invite (optional). Unset keeps `https://discord.gg/2jTgb9HnY`.
+   - `VITE_RAILWAY_REFERRAL_CODE` = Railway affiliate code only, not a full URL (optional). Unset or empty hides the footer credit. When set, the footer links "Hosted on Railway" to `https://railway.com?referralCode=<VITE_RAILWAY_REFERRAL_CODE>`.
 6. Generate domain → Deploy
 
 ### Add Extractor import (optional Cron / one-shot)
