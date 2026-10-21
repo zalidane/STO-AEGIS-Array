@@ -6,10 +6,12 @@ import { ShipsDocument, type ShipsQuery } from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import AdvancedShipSearchFilters from "@/components/ships/AdvancedShipSearchFilters.vue";
+import { useCollectionStore } from "@/stores/collection";
 import {
   compareWeaponLayouts,
   createDefaultAdvancedShipSearchFilters,
   filterAdvancedShipSearchRows,
+  formatCollectedHullCell,
   indexAdvancedShipSearchRows,
   type AdvancedShipSearchFilters as ShipSearchFilters,
   type AdvancedShipSearchRow,
@@ -26,8 +28,18 @@ const ships = computed<Ship[]>(() => result.value?.ships ?? []);
 const filters = ref<ShipSearchFilters>(
   createDefaultAdvancedShipSearchFilters(),
 );
+const collection = useCollectionStore();
 
 const indexedRows = computed(() => indexAdvancedShipSearchRows(ships.value));
+
+const collectedByShipId = computed(() => {
+  const labels = new Map<number, string>();
+  for (const ship of ships.value) {
+    const label = formatCollectedHullCell(collection.state, ship);
+    if (label) labels.set(ship.id, label);
+  }
+  return labels;
+});
 
 const filteredRows = computed(() =>
   filterAdvancedShipSearchRows(indexedRows.value, filters.value),
@@ -38,6 +50,7 @@ type TableRow = AdvancedShipSearchRow & {
   secondaryDeflectorLabel: string;
   dualCannonsLabel: string;
   fleetAvailableLabel: string;
+  collectedLabel: string;
 };
 
 function yesNo(value: boolean): string {
@@ -55,11 +68,13 @@ const tableItems = computed<TableRow[]>(() =>
     secondaryDeflectorLabel: yesNo(row.secondaryDeflector),
     dualCannonsLabel: yesNo(row.dualCannons),
     fleetAvailableLabel: yesNo(row.fleetAvailable),
+    collectedLabel: collectedByShipId.value.get(row.id) ?? "",
   })),
 );
 
 const headers = [
   { title: "Ship", key: "name" },
+  { title: "Collected", key: "collectedLabel" },
   {
     title: "Fore/Aft/Exp",
     key: "weaponsLabel",
@@ -147,6 +162,11 @@ function onRowClick(_event: Event, row: { item: TableRow }) {
         <template #item.name="{ item }">
           <span class="adv-table__name">{{ item.name }}</span>
         </template>
+        <template #item.collectedLabel="{ item }">
+          <span v-if="item.collectedLabel" class="adv-table__collected">
+            {{ item.collectedLabel }}
+          </span>
+        </template>
       </v-data-table>
     </template>
   </v-container>
@@ -219,6 +239,11 @@ function onRowClick(_event: Event, row: { item: TableRow }) {
 .adv-table__name {
   color: #e8f4ff;
   font-weight: 600;
+}
+
+.adv-table__collected {
+  color: #7dd3fc;
+  font-size: 0.82rem;
 }
 
 .adv-table :deep(.adv-table__scan) {

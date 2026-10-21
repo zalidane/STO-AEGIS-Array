@@ -4,6 +4,7 @@ import {
   classifyAcquisitionPrimary,
   createDefaultAdvancedShipSearchFilters,
   compareWeaponLayouts,
+  cloakTypesFromAbilities,
   deriveAdvancedShipSearchRow,
   extractFullSpecs,
   filterAdvancedShipSearchRows,
@@ -434,6 +435,96 @@ describe("matchesAdvancedShipSearchFilters", () => {
     filters.experimental = ["yes"];
     expect(matchesAdvancedShipSearchFilters(rows[0]!, filters)).toBe(true);
     expect(matchesAdvancedShipSearchFilters(rows[1]!, filters)).toBe(false);
+  });
+
+  it("filters cloak tokens most specific first and ORs the choices", () => {
+    expect(cloakTypesFromAbilities("Enhanced Battle Cloak")).toEqual([
+      "Enhanced Battle Cloak",
+    ]);
+    expect(cloakTypesFromAbilities("Battle Cloak")).toEqual(["Battle Cloak"]);
+    expect(cloakTypesFromAbilities("Cloak")).toEqual(["Cloak"]);
+    expect(cloakTypesFromAbilities("Cloaking Device")).toEqual([]);
+    expect(cloakTypesFromAbilities("  enhanced   battle cloak ")).toEqual([
+      "Enhanced Battle Cloak",
+    ]);
+
+    const cloaked = indexAdvancedShipSearchRows([
+      ship({ id: 1, name: "Plain", abilities: "Cloak,Raider Flanking" }),
+      ship({ id: 2, name: "Battle", abilities: "Battle Cloak" }),
+      ship({
+        id: 3,
+        name: "Enhanced",
+        abilities: "Enhanced Battle Cloak,Raider Flanking",
+      }),
+      ship({
+        id: 4,
+        name: "Romulan",
+        abilities: "Romulan Battle Cloak,Singularity Core abilities",
+      }),
+      ship({
+        id: 5,
+        name: "Romulan Enhanced",
+        abilities: "Romulan Enhanced Battle Cloak",
+      }),
+      ship({ id: 6, name: "None", abilities: "Sensor Analysis" }),
+      ship({ id: 7, name: "Both", abilities: "Cloak, Battle Cloak" }),
+      ship({
+        id: 8,
+        name: "Thirty two",
+        abilities: "Federation Battle Cloak (32c.)",
+      }),
+    ]);
+
+    expect(cloaked.find((row) => row.name === "Enhanced")?.cloakTypes).toEqual([
+      "Enhanced Battle Cloak",
+    ]);
+    expect(cloaked.find((row) => row.name === "Both")?.cloakTypes).toEqual([
+      "Cloak",
+      "Battle Cloak",
+    ]);
+    expect(
+      cloaked.find((row) => row.name === "Romulan Enhanced")?.cloakTypes,
+    ).toEqual(["Enhanced Battle Cloak"]);
+
+    const enhanced = createDefaultAdvancedShipSearchFilters();
+    enhanced.cloaks = ["Enhanced Battle Cloak"];
+    expect(
+      filterAdvancedShipSearchRows(cloaked, enhanced).map((row) => row.name),
+    ).toEqual(["Enhanced", "Romulan Enhanced"]);
+
+    const battle = createDefaultAdvancedShipSearchFilters();
+    battle.cloaks = ["Battle Cloak"];
+    expect(
+      filterAdvancedShipSearchRows(cloaked, battle).map((row) => row.name),
+    ).toEqual(["Battle", "Romulan", "Both", "Thirty two"]);
+
+    const cloak = createDefaultAdvancedShipSearchFilters();
+    cloak.cloaks = ["Cloak"];
+    expect(
+      filterAdvancedShipSearchRows(cloaked, cloak).map((row) => row.name),
+    ).toEqual(["Plain", "Both"]);
+
+    const either = createDefaultAdvancedShipSearchFilters();
+    either.cloaks = ["Cloak", "Battle Cloak"];
+    const eitherNames = filterAdvancedShipSearchRows(cloaked, either).map(
+      (row) => row.name,
+    );
+    expect(eitherNames).toEqual([
+      "Plain",
+      "Battle",
+      "Romulan",
+      "Both",
+      "Thirty two",
+    ]);
+    expect(eitherNames).not.toContain("Enhanced");
+    expect(eitherNames).not.toContain("None");
+
+    expect(
+      filterAdvancedShipSearchRows(
+        cloaked,
+        createDefaultAdvancedShipSearchFilters(),
+      ),
+    ).toHaveLength(cloaked.length);
   });
 });
 

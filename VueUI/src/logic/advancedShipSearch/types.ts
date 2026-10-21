@@ -11,6 +11,18 @@ export const FULL_SPEC_OPTIONS = [
 
 export type FullSpecOption = (typeof FULL_SPEC_OPTIONS)[number];
 
+/**
+ * Cloak filter chips, least specific first.
+ * Matching classifies each ability token most-specific-first.
+ */
+export const CLOAK_FILTER_OPTIONS = [
+  "Cloak",
+  "Battle Cloak",
+  "Enhanced Battle Cloak",
+] as const;
+
+export type CloakFilterOption = (typeof CLOAK_FILTER_OPTIONS)[number];
+
 /** Tri-state yes/no filter; empty selection means “any”. */
 export type YesNoChoice = "yes" | "no";
 
@@ -45,6 +57,11 @@ export type AdvancedShipSearchFilters = {
   /** Faction lede labels (OR within; excludes non-matches). */
   factions: string[];
   fleetAvailable: YesNoChoice[];
+  /**
+   * Cloak ability class (OR within). A token is one class only:
+   * Enhanced Battle Cloak, else Battle Cloak, else Cloak.
+   */
+  cloaks: CloakFilterOption[];
   /** Free-text name filter (AND with structured filters). */
   search: string;
 };
@@ -91,6 +108,8 @@ export type AdvancedShipSearchSource = {
   faction?: string | null;
   factionLede?: string | null;
   facSort?: string | null;
+  /** Comma-separated wiki ability tokens. Cloak is classified from these. */
+  abilities?: string | null;
 };
 
 /** Derived row used for filtering, sorting, and the results table. */
@@ -117,6 +136,8 @@ export type AdvancedShipSearchRow = {
   faction: string;
   fleetAvailable: boolean;
   isFleet: boolean;
+  /** Cloak classes present on this hull. Empty when it has no cloak token. */
+  cloakTypes: CloakFilterOption[];
 };
 
 export function createDefaultAdvancedShipSearchFilters(): AdvancedShipSearchFilters {
@@ -136,6 +157,7 @@ export function createDefaultAdvancedShipSearchFilters(): AdvancedShipSearchFilt
     acquisition: [],
     factions: [],
     fleetAvailable: [],
+    cloaks: [],
     search: "",
   };
 }

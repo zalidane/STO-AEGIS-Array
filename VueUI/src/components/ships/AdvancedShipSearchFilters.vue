@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import {
   advancedShipSearchFiltersAreActive,
   buildAcquisitionSelectItems,
+  CLOAK_FILTER_OPTIONS,
   collectAcquisitionCodes,
   createDefaultAdvancedShipSearchFilters,
   FULL_SPEC_OPTIONS,
@@ -11,6 +12,7 @@ import {
   uniqueSortedNumbers,
   type AdvancedShipSearchFilters,
   type AdvancedShipSearchRow,
+  type CloakFilterOption,
   type FullSpecOption,
   type YesNoChoice,
 } from "@/logic/advancedShipSearch";
@@ -128,6 +130,10 @@ function onAcquisitionUpdate(value: unknown) {
 
 function toggleFaction(faction: string) {
   patch({ factions: toggleInclusiveValue(filters.value.factions, faction) });
+}
+
+function toggleCloak(value: CloakFilterOption) {
+  patch({ cloaks: toggleInclusiveValue(filters.value.cloaks, value) });
 }
 
 function clearFilters() {
@@ -372,6 +378,23 @@ function toggleFiltersExpanded() {
                     @click="toggleYesNo('dualCannons', choice)"
                   >
                     {{ yesNoLabel(choice) }}
+                  </button>
+                </div>
+              </div>
+              <div class="adv-meta__block">
+                <span class="adv-meta__label">Cloak</span>
+                <div class="adv-group__row adv-group__row--tight">
+                  <button
+                    v-for="cloak in CLOAK_FILTER_OPTIONS"
+                    :key="`cloak-${cloak}`"
+                    type="button"
+                    class="adv-chip"
+                    :class="{
+                      'adv-chip--active': filters.cloaks.includes(cloak),
+                    }"
+                    @click="toggleCloak(cloak)"
+                  >
+                    {{ cloak }}
                   </button>
                 </div>
               </div>

@@ -55,6 +55,14 @@ function matchesFaction(
   );
 }
 
+function matchesCloaks(
+  row: AdvancedShipSearchRow,
+  selected: AdvancedShipSearchFilters["cloaks"],
+): boolean {
+  if (selected.length === 0) return true;
+  return selected.some((choice) => row.cloakTypes.includes(choice));
+}
+
 function matchesSearch(row: AdvancedShipSearchRow, search: string): boolean {
   const needle = normalizeCatalogSearchText(search);
   if (!needle) return true;
@@ -91,6 +99,7 @@ export function matchesAdvancedShipSearchFilters(
   if (!matchesAcquisition(row, filters.acquisition)) return false;
   if (!matchesFaction(row, filters.factions)) return false;
   if (!matchesYesNo(row.fleetAvailable, filters.fleetAvailable)) return false;
+  if (!matchesCloaks(row, filters.cloaks)) return false;
   if (!matchesSearch(row, filters.search)) return false;
   return true;
 }
@@ -123,6 +132,7 @@ export function advancedShipSearchFiltersAreActive(
     filters.acquisition.length > 0 ||
     filters.factions.length > 0 ||
     filters.fleetAvailable.length > 0 ||
+    filters.cloaks.length > 0 ||
     JSON.stringify(filters) !== JSON.stringify(defaults)
   );
 }
