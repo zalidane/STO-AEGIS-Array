@@ -15,6 +15,11 @@ function matchesYesNo(
   return selected.includes(asChoice);
 }
 
+/** Off keeps every hull. On keeps only hulls that have the feature. */
+function matchesPresence(value: boolean, required: boolean): boolean {
+  return !required || value;
+}
+
 function matchesNumberMulti(
   value: number,
   selected: readonly number[],
@@ -79,7 +84,7 @@ export function matchesAdvancedShipSearchFilters(
   if (!matchesYesNo(row.experimental, filters.experimental)) return false;
   if (!matchesNumberMulti(row.totalWeapons, filters.totalWeapons)) return false;
   if (!matchesFullSpecs(row, filters.fullSpecs)) return false;
-  if (!matchesYesNo(row.secondaryDeflector, filters.secondaryDeflector)) {
+  if (!matchesPresence(row.secondaryDeflector, filters.secondaryDeflector)) {
     return false;
   }
   if (!matchesNumberMulti(row.hangars, filters.hangars)) return false;
@@ -95,10 +100,10 @@ export function matchesAdvancedShipSearchFilters(
   if (!matchesNumberMulti(row.consoles.universal, filters.uniConsoles)) {
     return false;
   }
-  if (!matchesYesNo(row.dualCannons, filters.dualCannons)) return false;
+  if (!matchesPresence(row.dualCannons, filters.dualCannons)) return false;
   if (!matchesAcquisition(row, filters.acquisition)) return false;
   if (!matchesFaction(row, filters.factions)) return false;
-  if (!matchesYesNo(row.fleetAvailable, filters.fleetAvailable)) return false;
+  if (!matchesPresence(row.fleetAvailable, filters.fleetAvailable)) return false;
   if (!matchesCloaks(row, filters.cloaks)) return false;
   if (!matchesSearch(row, filters.search)) return false;
   return true;
@@ -122,16 +127,16 @@ export function advancedShipSearchFiltersAreActive(
     filters.experimental.length > 0 ||
     filters.totalWeapons.length > 0 ||
     filters.fullSpecs.length > 0 ||
-    filters.secondaryDeflector.length > 0 ||
+    filters.secondaryDeflector ||
     filters.hangars.length > 0 ||
     filters.engConsoles.length > 0 ||
     filters.sciConsoles.length > 0 ||
     filters.tacConsoles.length > 0 ||
     filters.uniConsoles.length > 0 ||
-    filters.dualCannons.length > 0 ||
+    filters.dualCannons ||
     filters.acquisition.length > 0 ||
     filters.factions.length > 0 ||
-    filters.fleetAvailable.length > 0 ||
+    filters.fleetAvailable ||
     filters.cloaks.length > 0 ||
     JSON.stringify(filters) !== JSON.stringify(defaults)
   );

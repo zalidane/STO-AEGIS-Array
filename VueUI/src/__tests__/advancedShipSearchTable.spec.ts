@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 
 class ResizeObserverStub {
   observe() {}
@@ -89,6 +90,13 @@ async function mountSearch() {
   });
 }
 
+async function clickSwitch(node: { element: Element }) {
+  node.element.dispatchEvent(
+    new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1 }),
+  );
+  await nextTick();
+}
+
 describe("Advanced Ship Search results table", () => {
   it("shows one fore/aft/experimental column and short console labels", async () => {
     const wrapper = await mountSearch();
@@ -135,6 +143,55 @@ describe("Advanced Ship Search results table", () => {
       return row.find(".adv-table__name").text();
     });
     expect(names).toEqual(["Standard Hull", "Experimental Hull"]);
+  });
+
+  it("toggles presence filters without excluding hulls while off", async () => {
+    const wrapper = await mountSearch();
+    const names = () =>
+      wrapper.findAll(".adv-table__name").map((node) => node.text());
+    const switches = wrapper.findAll(".adv-switch");
+    expect(switches.map((node) => node.text())).toEqual([
+      "Secondary deflector",
+      "Dual cannons",
+      "Fleet version available",
+    ]);
+    for (const node of switches) {
+      expect(node.attributes("role")).toBe("switch");
+      expect(node.attributes("type")).toBe("button");
+      expect(node.attributes("aria-checked")).toBe("false");
+    }
+    expect(names().sort()).toEqual(["Experimental Hull", "Standard Hull"]);
+
+    const secondary = switches[0]!;
+    await clickSwitch(secondary);
+    expect(secondary.attributes("aria-checked")).toBe("true");
+    expect(names()).toEqual(["Standard Hull"]);
+
+    await secondary.trigger("keydown", { key: "Enter" });
+    expect(secondary.attributes("aria-checked")).toBe("false");
+    expect(names().sort()).toEqual(["Experimental Hull", "Standard Hull"]);
+
+    await secondary.trigger("keydown", { key: " " });
+    expect(secondary.attributes("aria-checked")).toBe("true");
+    expect(names()).toEqual(["Standard Hull"]);
+
+    await secondary.trigger("keydown", { key: "Tab" });
+    expect(secondary.attributes("aria-checked")).toBe("true");
+    await clickSwitch(secondary);
+    expect(names().sort()).toEqual(["Experimental Hull", "Standard Hull"]);
+
+    const cannons = wrapper
+      .findAll(".adv-switch")
+      .find((node) => node.text() === "Dual cannons");
+    expect(cannons).toBeTruthy();
+    await clickSwitch(cannons!);
+    expect(cannons!.attributes("aria-checked")).toBe("true");
+    expect(names()).toEqual(["Experimental Hull"]);
+
+    const cloak = wrapper
+      .findAll(".adv-chip")
+      .find((node) => node.text() === "Battle Cloak");
+    expect(cloak).toBeTruthy();
   });
 
   it("filters the table by cloak type", async () => {

@@ -335,8 +335,12 @@ describe("matchesAdvancedShipSearchFilters", () => {
   });
 
   it("filters secondary deflector and hangars (null hangars as 0)", () => {
+    const off = createDefaultAdvancedShipSearchFilters();
+    expect(off.secondaryDeflector).toBe(false);
+    expect(filterAdvancedShipSearchRows(rows, off)).toHaveLength(rows.length);
+
     const sec = createDefaultAdvancedShipSearchFilters();
-    sec.secondaryDeflector = ["yes"];
+    sec.secondaryDeflector = true;
     expect(
       filterAdvancedShipSearchRows(rows, sec).map((row) => row.name),
     ).toEqual(["Caitian Atrox Carrier (T6)"]);
@@ -372,12 +376,22 @@ describe("matchesAdvancedShipSearchFilters", () => {
     );
   });
 
-  it("filters dual cannons", () => {
-    const no = createDefaultAdvancedShipSearchFilters();
-    no.dualCannons = ["no"];
+  it("keeps every hull when dual cannons is off and only cannon hulls when on", () => {
+    const off = createDefaultAdvancedShipSearchFilters();
+    expect(off.dualCannons).toBe(false);
+    expect(filterAdvancedShipSearchRows(rows, off)).toHaveLength(rows.length);
+
+    const on = createDefaultAdvancedShipSearchFilters();
+    on.dualCannons = true;
     expect(
-      filterAdvancedShipSearchRows(rows, no).map((row) => row.name),
-    ).toEqual(["Caitian Atrox Carrier (T6)", "B'rel Bird-of-Prey"]);
+      filterAdvancedShipSearchRows(rows, on).map((row) => row.name).sort(),
+    ).toEqual(
+      [
+        "Achilles Miracle Worker Heavy Destroyer",
+        "Advanced Escort",
+        "Fleet Advanced Escort",
+      ].sort(),
+    );
   });
 
   it("ORs acquisition currency codes", () => {
@@ -404,27 +418,25 @@ describe("matchesAdvancedShipSearchFilters", () => {
     ).toEqual(["B'rel Bird-of-Prey"]);
   });
 
-  it("filters fleet-available yes/no using class+tier pairing", () => {
-    const yes = createDefaultAdvancedShipSearchFilters();
-    yes.fleetAvailable = ["yes"];
-    expect(
-      filterAdvancedShipSearchRows(rows, yes).map((row) => row.name).sort(),
-    ).toEqual(
-      ["Fleet Advanced Escort", "Advanced Escort"].sort(),
-    );
+  it("filters fleet-available only while the presence toggle is on", () => {
+    const off = createDefaultAdvancedShipSearchFilters();
+    expect(off.fleetAvailable).toBe(false);
+    const offHits = filterAdvancedShipSearchRows(rows, off).map((row) => row.name);
+    expect(offHits).toContain("Achilles Miracle Worker Heavy Destroyer");
+    expect(offHits).toContain("Advanced Escort");
+    expect(offHits).toContain("B'rel Bird-of-Prey");
 
-    const no = createDefaultAdvancedShipSearchFilters();
-    no.fleetAvailable = ["no"];
-    const noHits = filterAdvancedShipSearchRows(rows, no).map((row) => row.name);
-    expect(noHits).toContain("Achilles Miracle Worker Heavy Destroyer");
-    expect(noHits).not.toContain("Advanced Escort");
-    expect(noHits).not.toContain("Fleet Advanced Escort");
+    const on = createDefaultAdvancedShipSearchFilters();
+    on.fleetAvailable = true;
+    expect(
+      filterAdvancedShipSearchRows(rows, on).map((row) => row.name).sort(),
+    ).toEqual(["Fleet Advanced Escort", "Advanced Escort"].sort());
   });
 
   it("ANDs name search with structured filters", () => {
     const filters = createDefaultAdvancedShipSearchFilters();
     filters.search = "escort";
-    filters.dualCannons = ["yes"];
+    filters.dualCannons = true;
     expect(
       filterAdvancedShipSearchRows(rows, filters).map((row) => row.name).sort(),
     ).toEqual(["Advanced Escort", "Fleet Advanced Escort"].sort());

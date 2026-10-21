@@ -43,7 +43,11 @@ export type AdvancedShipSearchFilters = {
    * OR within. Includes `"None"` for hulls with no CMDR specialization.
    */
   fullSpecs: Array<FullSpecOption | "None">;
-  secondaryDeflector: YesNoChoice[];
+  /**
+   * Presence toggle. False applies no filter. True keeps only hulls that
+   * have a secondary deflector.
+   */
+  secondaryDeflector: boolean;
   /** Hangar bay counts; null/missing hangars count as 0. */
   hangars: number[];
   /** Console counts per career (OR within each career; AND across careers). */
@@ -51,12 +55,17 @@ export type AdvancedShipSearchFilters = {
   sciConsoles: number[];
   tacConsoles: number[];
   uniConsoles: number[];
-  dualCannons: YesNoChoice[];
+  /** Presence toggle. False applies no filter. True keeps only cannon hulls. */
+  dualCannons: boolean;
   /** Acquisition currency codes from wiki `cost` (OR within). */
   acquisition: string[];
   /** Faction lede labels (OR within; excludes non-matches). */
   factions: string[];
-  fleetAvailable: YesNoChoice[];
+  /**
+   * Presence toggle. False applies no filter. True keeps only hulls that
+   * have a fleet version. Hulls without one stay in the list while this is off.
+   */
+  fleetAvailable: boolean;
   /**
    * Cloak ability class (OR within). A token is one class only:
    * Enhanced Battle Cloak, else Battle Cloak, else Cloak.
@@ -147,16 +156,16 @@ export function createDefaultAdvancedShipSearchFilters(): AdvancedShipSearchFilt
     experimental: [],
     totalWeapons: [],
     fullSpecs: [],
-    secondaryDeflector: [],
+    secondaryDeflector: false,
     hangars: [],
     engConsoles: [],
     sciConsoles: [],
     tacConsoles: [],
     uniConsoles: [],
-    dualCannons: [],
+    dualCannons: false,
     acquisition: [],
     factions: [],
-    fleetAvailable: [],
+    fleetAvailable: false,
     cloaks: [],
     search: "",
   };
