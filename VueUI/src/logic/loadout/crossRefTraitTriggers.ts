@@ -253,12 +253,12 @@ export function collectSeatedTriggerFills(
 }
 
 function matchNamedAbility(
-  abilityName: string,
+  abilityNames: readonly string[],
   seated: ReadonlyArray<SeatedTriggerFill>,
 ): SeatedTriggerFill[] {
   return seated.filter((fill) => {
     if (!isTraySkillFill(fill) && !isCaptainPowerFill(fill)) return false;
-    return abilitiesMatch(fill.name, abilityName);
+    return abilityNames.some((name) => abilitiesMatch(fill.name, name));
   });
 }
 
@@ -402,7 +402,11 @@ function satisfyOne(
 
   let matches: SeatedTriggerFill[] = [];
   if (trigger.kind === "namedAbility") {
-    matches = matchNamedAbility(trigger.abilityName, seated);
+    const names =
+      trigger.anyOf && trigger.anyOf.length > 0
+        ? trigger.anyOf
+        : [trigger.abilityName];
+    matches = matchNamedAbility(names, seated);
   } else if (trigger.kind === "professionCategory") {
     matches = matchProfessionCategory(trigger.professions, seated);
   } else if (trigger.kind === "functionalCategory") {

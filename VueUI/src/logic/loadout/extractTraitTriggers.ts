@@ -53,6 +53,11 @@ export type NamedAbilityTrigger = {
   kind: "namedAbility";
   /** Catalog TraySkill / captain ability name when resolved. */
   abilityName: string;
+  /**
+   * Seating any one of these catalog names satisfies the trigger.
+   * Set for "either Fire at Will or Beam Overload". Includes `abilityName`.
+   */
+  anyOf?: readonly string[];
   display: string;
 };
 
@@ -128,9 +133,20 @@ export type WikiLinkRef = {
 const WIKI_LINK_RE =
   /\[\[(?!File:|Image:)([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]+))?\]\]/gi;
 
-/** Leading trigger display clause: On / When / While / After / Upon / During … */
+/**
+ * Leading trigger display clause: On / When / While / After / Upon / During …
+ * Stops at a colon or the end of the line. A multi-sentence match is body
+ * copy (no colon), not a status label — see {@link extractLeadingTriggerClause}.
+ */
 const LEADING_CLAUSE_RE =
   /^(?:\*+|:+)?\s*((?:On|When|While|After|Upon|During)\b[^:\n]*?)(?:\s*:|\s*$)/im;
+
+/**
+ * "either Fire at Will or Beam Overload" — the two names are alternatives.
+ * Lookahead stops before the effect ("firing a Beam weapon", "is active").
+ */
+const EITHER_OR_ABILITY_RE =
+  /\beither\s+(.+?)\s+or\s+(.+?)(?=\s+(?:firing|is|will|when|to|and)\b|[,.:;]|$)/gi;
 
 /**
  * Split activation phrasing from effect phrasing so buffed abilities after
@@ -275,6 +291,12 @@ const WEAPON_CLASS_PATTERNS: ReadonlyArray<{
     pattern:
       /\b(?:cannon\s+weapons?|per\s+cannon\s+weapon|cannon\s+weapon\s+activation|beam\s+or\s+cannon\s+weapon)/i,
   },
+  {
+    // "attacking foes with energy weapons" — a seated weapon, not a damage buff.
+    weaponClass: "energy",
+    pattern:
+      /\battack(?:ing)?(?:\s+\w+){0,6}\s+with\s+(?:directed\s+)?energy\s+weapons?\b/i,
+  },
 ];
 
 function weaponClassLabel(weaponClass: TraitTriggerWeaponClass): string {
@@ -376,8 +398,18 @@ export function extractWikiLinkRefs(
 }
 
 /**
+ * True when a colon-less clause continues into another sentence.
+ * Decimals ("425.5") and abbreviations ("vs.") are not sentence breaks.
+ */
+function clauseContinuesIntoAnotherSentence(clause: string): boolean {
+  return /[.!?](?=\s+[A-Z])/.test(clause);
+}
+
+/**
  * Leading `On` / `When` / `While` / `After` … clause for panel display.
  * Prefers `short`, then `detailed`, then `basic`.
+ * A colon-less match that spans more than one sentence is the description
+ * itself, so it is not used as a Satisfied line.
  */
 export function extractLeadingTriggerClause(
   source: TraitTriggerTextSource,
@@ -386,10 +418,95 @@ export function extractLeadingTriggerClause(
     if (!field?.trim()) continue;
     const prepared = cleanMarkupFragment(flattenWikiLabels(field));
     const match = prepared.match(LEADING_CLAUSE_RE);
-    const clause = match?.[1]?.trim();
-    if (clause) return clause.replace(/\s+/g, " ");
+    const clause = match?.[1]?.trim().replace(/\s+/g, " ");
+    if (!match || !clause) continue;
+    const endedAtColon = match[0].trimEnd().endsWith(":");
+    if (!endedAtColon && clauseContinuesIntoAnotherSentence(clause)) continue;
+    return clause;
   }
   return null;
+}
+
+function resolveAlternativeAbility(fragment: string): string | null {
+  const cleaned = fragment
+    .replace(/^(?:a|an|the)\s+/i, "")
+    .replace(/[,.:;]+$/g, "")
+    .trim();
+  if (!cleaned) return null;
+  const direct = resolveTriggerAbilityAlias(cleaned);
+  if (direct) return direct;
+  const words = cleaned.split(/\s+/);
+  for (let length = words.length - 1; length >= 1; length -= 1) {
+    const phrase = words.slice(0, length).join(" ");
+    if (phrase.length < 3) continue;
+    const resolved = resolveTriggerAbilityAlias(phrase);
+    if (resolved) return resolved;
+  }
+  return null;
+}
+
+/** Named-ability pairs joined by "either … or …" (alternatives, not both). */
+function findEitherOrAbilityGroups(
+  fields: ReadonlyArray<string | null | undefined>,
+): string[][] {
+  const groups: string[][] = [];
+  const seen = new Set<string>();
+  for (const field of fields) {
+    if (!field?.trim()) continue;
+    const flat = cleanMarkupFragment(flattenWikiLabels(field));
+    for (const match of flat.matchAll(EITHER_OR_ABILITY_RE)) {
+      const left = resolveAlternativeAbility(match[1] ?? "");
+      const right = resolveAlternativeAbility(match[2] ?? "");
+      if (!left || !right || left.toLowerCase() === right.toLowerCase()) {
+        continue;
+      }
+      const key = `${left.toLowerCase()}|${right.toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      groups.push([left, right]);
+    }
+  }
+  return groups;
+}
+
+/**
+ * Collapse an either/or pair into one trigger satisfied by any listed ability.
+ * Leaves the list unchanged when a side was not actually extracted.
+ */
+function collapseNamedAbilityOrGroups(
+  named: readonly NamedAbilityTrigger[],
+  groups: readonly string[][],
+): NamedAbilityTrigger[] {
+  const grouped = new Map<string, NamedAbilityTrigger>();
+  for (const group of groups) {
+    const keys = group.map((name) => name.toLowerCase());
+    const extracted = keys.every((key) =>
+      named.some((trigger) => trigger.abilityName.toLowerCase() === key),
+    );
+    if (!extracted) continue;
+    const orTrigger: NamedAbilityTrigger = {
+      kind: "namedAbility",
+      abilityName: group[0] ?? "",
+      anyOf: [...group],
+      display: group.join(" or "),
+    };
+    for (const key of keys) grouped.set(key, orTrigger);
+  }
+  if (grouped.size === 0) return [...named];
+
+  const emitted = new Set<NamedAbilityTrigger>();
+  const out: NamedAbilityTrigger[] = [];
+  for (const trigger of named) {
+    const orTrigger = grouped.get(trigger.abilityName.toLowerCase());
+    if (!orTrigger) {
+      out.push(trigger);
+      continue;
+    }
+    if (emitted.has(orTrigger)) continue;
+    emitted.add(orTrigger);
+    out.push(orTrigger);
+  }
+  return out;
 }
 
 /**
@@ -426,7 +543,11 @@ function matchProfessionAt(
       startIndex === 0 || !/[a-z0-9]/i.test(text.charAt(startIndex - 1));
     const afterOk =
       end >= slice.length || !/[a-z0-9]/i.test(slice.charAt(end));
-    if (beforeOk && afterOk) return { profession, length: end };
+    if (beforeOk && afterOk) {
+      // "Science Stats" is the buff the power grants, not a Science ability.
+      if (/^\s+stats?\b/i.test(slice.slice(end))) return null;
+      return { profession, length: end };
+    }
   }
   return null;
 }
@@ -656,8 +777,17 @@ export function extractTraitTriggers(
     }
   }
 
+  const namedTriggers = collapseNamedAbilityOrGroups(
+    named,
+    findEitherOrAbilityGroups([
+      resolved.basic,
+      resolved.detailed,
+      resolved.short,
+    ]),
+  );
+
   const triggers: ExtractedTraitTrigger[] = [];
-  triggers.push(...named);
+  triggers.push(...namedTriggers);
   if (professions.length > 0) {
     triggers.push({
       kind: "professionCategory",

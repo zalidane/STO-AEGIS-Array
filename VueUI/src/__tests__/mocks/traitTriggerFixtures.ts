@@ -359,6 +359,20 @@ export const MOCK_TRAIT_SOURCES = {
     detailed:
       "When dealing Damage with any of the Five Magicks (Fire, Cold, Electrical, Radiation and Psionic), apply the following for 15 sec:\n* +5 Current Engine Power per sec\n* +15% Bonus Damage to the Five Magicks and Disruptor (15% + 0.15% per Engine Power)",
   },
+  aetherianBeamEnhancements: {
+    name: "Aetherian Beam Enhancements",
+    short: null,
+    basic:
+      "While this trait is slotted, attacking foes with energy weapons grants you a stack of Aetherian Beam Enhancements (max 1 per 2 seconds). Each stack provides you with a 1% Energy Damage Bonus. At 15 stacks, your next attack detonates a Proton Release at your target's location, dealing Proton Damage and Holding up to 3 nearby foes in a 5km radius for 5 seconds, while also removing all stacks of Aetherian Proton Enhancements. Proton Release has a 2.5% chance of causing a Protonic Crush which becomes stronger based on the number of targets around you which are affected.",
+    detailed: null,
+  },
+  quantumSingularityManipulation: {
+    name: "Quantum Singularity Manipulation",
+    short: null,
+    basic:
+      "Drastically increases all space Science Stats for a short time. After a few seconds, your ship will also be cloaked for the remaining duration of the power. You may fire your weapons and use abilities normally without breaking the cloak. This cloak does not bring your shields offline.",
+    detailed: null,
+  },
   checkmate: {
     name: "Checkmate",
     short:

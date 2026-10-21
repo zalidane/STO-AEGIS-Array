@@ -50,6 +50,11 @@ describe("findProfessionKeywords", () => {
       "Tactical",
       "Command",
     ]);
+    expect(
+      findProfessionKeywords(
+        "Drastically increases all space Science Stats for a short time.",
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -67,6 +72,33 @@ describe("extractLeadingTriggerClause", () => {
     expect(
       extractLeadingTriggerClause({
         short: "Additional Broadside Beams during Beam Modes",
+      }),
+    ).toBeNull();
+  });
+
+  it("keeps a one-line combat label and drops a multi-sentence description", () => {
+    expect(
+      extractLeadingTriggerClause({ short: "While in Combat" }),
+    ).toBe("While in Combat");
+    expect(
+      extractLeadingTriggerClause({
+        short:
+          "On incoming Critical hits, gain +425.5 Temporary hit Points for 15 seconds",
+      }),
+    ).toBe(
+      "On incoming Critical hits, gain +425.5 Temporary hit Points for 15 seconds",
+    );
+    expect(
+      extractLeadingTriggerClause({
+        short:
+          "When your hull drops below 20%, Placate foes (Threat vs. all nearby NPCs)",
+      }),
+    ).toBe(
+      "When your hull drops below 20%, Placate foes (Threat vs. all nearby NPCs)",
+    );
+    expect(
+      extractLeadingTriggerClause({
+        basic: MOCK_TRAIT_SOURCES.aetherianBeamEnhancements.basic,
       }),
     ).toBeNull();
   });
@@ -181,8 +213,13 @@ describe("extractTraitTriggers — readiness examples", () => {
     });
 
     expect(triggers.map((t) => ("abilityName" in t ? t.abilityName : t.kind))).toEqual(
-      ["Beams: Fire at Will", "Beams: Overload", "weaponClass"],
+      ["Beams: Fire at Will", "weaponClass"],
     );
+    expect(triggers[0]).toMatchObject({
+      kind: "namedAbility",
+      anyOf: ["Beams: Fire at Will", "Beams: Overload"],
+      display: "Beams: Fire at Will or Beams: Overload",
+    });
     expect(triggers.some((t) => t.kind === "weaponClass")).toBe(true);
     const weapon = triggers.find((t) => t.kind === "weaponClass");
     expect(weapon).toMatchObject({
@@ -324,6 +361,24 @@ describe("extractTraitTriggers — readiness examples", () => {
           "Fire, Cold, Electrical, Radiation, Psionic, or Disruptor",
       },
     ]);
+  });
+
+  it("Aetherian Beam Enhancements → seated energy weapon, not the description", () => {
+    expect(
+      extractTraitTriggers(MOCK_TRAIT_SOURCES.aetherianBeamEnhancements),
+    ).toEqual([
+      {
+        kind: "weaponClass",
+        classes: ["energy"],
+        display: "Energy weapon",
+      },
+    ]);
+  });
+
+  it("Quantum Singularity Manipulation → no Science seating requirement", () => {
+    expect(
+      extractTraitTriggers(MOCK_TRAIT_SOURCES.quantumSingularityManipulation),
+    ).toEqual([]);
   });
 
   it("Checkmate → control functional category", () => {

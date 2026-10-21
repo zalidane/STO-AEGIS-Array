@@ -34,6 +34,48 @@ function personalTraits(): CargoTrait[] {
   }));
 }
 
+describe("reported trait hover cargo cases", () => {
+  const personal = personalTraits();
+  const starship = cargoTraits();
+
+  it("Aetherian Beam Enhancements checks an energy weapon", () => {
+    const trait = personal.find(
+      (row) => row.name === "Aetherian Beam Enhancements",
+    );
+    expect(extractTraitTriggers(trait)).toEqual([
+      {
+        kind: "weaponClass",
+        classes: ["energy"],
+        display: "Energy weapon",
+      },
+    ]);
+  });
+
+  it("Quantum Singularity Manipulation does not require Science", () => {
+    const trait = personal.find(
+      (row) => row.name === "Quantum Singularity Manipulation",
+    );
+    expect(extractTraitTriggers(trait)).toEqual([]);
+  });
+
+  it("Broadside Beam Support treats Fire at Will and Beam Overload as alternatives", () => {
+    const trait = starship.find((row) => row.name === "Broadside Beam Support");
+    const triggers = extractTraitTriggers(trait);
+    expect(triggers.map((trigger) => trigger.kind)).toEqual([
+      "namedAbility",
+      "weaponClass",
+    ]);
+    expect(triggers[0]).toMatchObject({
+      kind: "namedAbility",
+      anyOf: ["Beams: Fire at Will", "Beams: Overload"],
+    });
+    expect(triggers[1]).toMatchObject({
+      kind: "weaponClass",
+      classes: ["beam"],
+    });
+  });
+});
+
 describe("personal trait cargo trigger scan", () => {
   const traits = personalTraits();
 
