@@ -12,12 +12,15 @@ import {
 } from "@/logic/compare/rows";
 import {
   canOpenCompare,
+  COMPARE_HULL_LIMIT,
   comparePath,
   compareToggleLabel,
   normalizeCompareIds,
   parseCompareQuery,
+  quickCompareHullIds,
   toggleCompareId,
 } from "@/logic/compare/selection";
+import { buildMultiCompareSections } from "@/logic/compare/multi";
 
 const escort: CompareHull = {
   id: 1,
@@ -76,23 +79,42 @@ const cruiser: CompareHull = {
 };
 
 describe("compare selection", () => {
-  it("keeps at most two unique hull ids", () => {
-    expect(normalizeCompareIds([2, 2, 1, 3])).toEqual([2, 1]);
+  it("keeps at most four unique hull ids and opens from two", () => {
+    expect(COMPARE_HULL_LIMIT).toBe(4);
+    expect(normalizeCompareIds([2, 2, 1, 3, 8, 5])).toEqual([2, 1, 3, 8]);
     expect(toggleCompareId([], 4)).toEqual([4]);
     expect(toggleCompareId([4], 4)).toEqual([]);
     expect(toggleCompareId([4], 9)).toEqual([4, 9]);
-    expect(toggleCompareId([4, 9], 11)).toEqual([4, 11]);
-    expect(canOpenCompare([4, 9])).toBe(true);
+    expect(toggleCompareId([4, 9], 11)).toEqual([4, 9, 11]);
+    expect(toggleCompareId([4, 9, 11, 2], 7)).toEqual([4, 9, 11, 7]);
     expect(canOpenCompare([4])).toBe(false);
+    expect(canOpenCompare([4, 9])).toBe(true);
+    expect(canOpenCompare([4, 9, 11])).toBe(true);
+    expect(canOpenCompare([4, 9, 11, 2])).toBe(true);
   });
 
   it("builds a compare path and reads query ids", () => {
     expect(comparePath([])).toBe("/ships/compare");
     expect(comparePath([4])).toBe("/ships/compare?a=4");
     expect(comparePath([4, 9])).toBe("/ships/compare?a=4&b=9");
+    expect(comparePath([4, 9, 11, 2])).toBe(
+      "/ships/compare?a=4&b=9&c=11&d=2",
+    );
     expect(parseCompareQuery({ a: "4", b: "9" })).toEqual([4, 9]);
-    expect(compareToggleLabel([4, 9], 11)).toBe("Replace compared hull");
+    expect(parseCompareQuery({ a: "4", b: "9", c: "11", d: "2" })).toEqual([
+      4, 9, 11, 2,
+    ]);
+    expect(parseCompareQuery({ a: "4", b: "9", c: "nope" })).toEqual([4, 9]);
+    expect(compareToggleLabel([4, 9], 11)).toBe("Select for compare");
+    expect(compareToggleLabel([4, 9, 11, 2], 8)).toBe("Replace compared hull");
     expect(compareToggleLabel([4, 9], 4)).toBe("Remove from compare");
+  });
+
+  it("puts the ship on screen first and does not repeat it", () => {
+    expect(quickCompareHullIds(1, [1, 2, 3])).toEqual([1, 2, 3]);
+    expect(quickCompareHullIds(9, [1, 2])).toEqual([9, 1, 2]);
+    expect(quickCompareHullIds(9, [9])).toEqual([9]);
+    expect(quickCompareHullIds(0, [1, 2, 1])).toEqual([1, 2]);
   });
 });
 
@@ -260,5 +282,58 @@ describe("compare rows", () => {
       "accessories",
       "costs",
     ]);
+  });
+
+  it("lines up more than two hulls on the same rows as a pair", () => {
+    const raider: CompareHull = {
+      ...escort,
+      id: 3,
+      name: "Raider",
+      hull: "28000",
+      foreWeapons: 5,
+      aftWeapons: 1,
+      boffs: "Commander Tactical",
+      abilities: "Enhanced Battle Cloak",
+      cost: "900;LC",
+    };
+    const pair = buildCompareSections(escort, cruiser);
+    const multi = buildMultiCompareSections([escort, cruiser, raider]);
+    expect(multi.map((section) => section.id)).toEqual(
+      pair.map((section) => section.id),
+    );
+    const weapons = multi.find((section) => section.id === "weapons");
+    const fore = weapons?.rows.find((row) => row.key === "fore");
+    expect(fore?.cells.map((cell) => cell.text)).toEqual(["4", "4", "5"]);
+    expect(fore?.cells[1]?.tone).toBeNull();
+    expect(fore?.cells[2]?.tone).toBe("improve");
+
+    const boffs = multi.find((section) => section.id === "boffs");
+    expect(boffs?.rows).toHaveLength(2);
+    expect(boffs?.rows[1]?.cells.map((cell) => cell.text)).toEqual([
+      "LtCmdr ENG",
+      "LtCmdr TAC",
+      "—",
+    ]);
+
+    const costs = multi.find((section) => section.id === "costs");
+    expect(costs?.rows.map((row) => row.key)).toEqual([
+      "cost-Zen",
+      "cost-LB",
+      "cost-LC",
+    ]);
+    const lobi = costs?.rows.find((row) => row.key === "cost-LC");
+    expect(lobi?.cells.map((cell) => cell.text)).toEqual([
+      "—",
+      "—",
+      "900 Lobi Crystal",
+    ]);
+
+    const two = buildMultiCompareSections([escort, cruiser]);
+    expect(two.map((section) => section.rows.map((row) => row.key))).toEqual(
+      pair.map((section) => section.rows.map((row) => row.key)),
+    );
+    expect(
+      two.map((section) => section.rows.map((row) => row.cells[1]?.tone)),
+    ).toEqual(pair.map((section) => section.rows.map((row) => row.rightTone)));
   });
 });
