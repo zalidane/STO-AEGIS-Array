@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
+import { COMPARE_HULL_LIMIT } from "@/logic/compare/selection";
 import { useCompareStore } from "@/stores/compare";
 
 const router = useRouter();
@@ -25,7 +26,7 @@ function launch() {
       @click="launch"
     >
       Compare hulls
-      <span class="compare-launch__count">{{ count }}/2</span>
+      <span class="compare-launch__count">{{ count }}/{{ COMPARE_HULL_LIMIT }}</span>
     </v-btn>
     <v-btn
       v-if="count > 0"

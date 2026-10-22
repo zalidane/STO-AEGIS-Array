@@ -12,6 +12,7 @@ import {
   buildFleetAvailabilityIndex,
   shipHasFleetVersion,
 } from "./fleetAvailable";
+import { cloakTypesFromAbilities } from "./cloak";
 import type {
   AdvancedShipSearchRow,
   AdvancedShipSearchSource,
@@ -121,6 +122,7 @@ export function deriveAdvancedShipSearchRow(
     faction: resolvePrimaryFaction(ship) || "—",
     fleetAvailable: shipHasFleetVersion(ship, fleetKeys),
     isFleet: isFleetShip(ship),
+    cloakTypes: cloakTypesFromAbilities(ship.abilities),
   };
 }
 

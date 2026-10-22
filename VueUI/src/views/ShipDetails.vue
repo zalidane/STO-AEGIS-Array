@@ -16,6 +16,7 @@ import { FALLBACK_SHIP_IMAGE, getShipImageUrl } from "@/utils/shipImage";
 import CollectToggle from "@/components/collection/CollectToggle.vue";
 import CompareToggle from "@/components/compare/CompareToggle.vue";
 import CompareLaunch from "@/components/compare/CompareLaunch.vue";
+import QuickCompareDrawer from "@/components/compare/QuickCompareDrawer.vue";
 import BoffSeatChips from "@/components/ships/BoffSeatChips.vue";
 import {
   allowsAccountUnlockFromCost,
@@ -90,6 +91,7 @@ const powerDisplay = computed(() => {
   };
 });
 
+const quickCompareOpen = ref(false);
 const imageFailed = ref(false);
 const imageUrl = computed(() => {
   if (imageFailed.value || !ship.value?.image) {
@@ -138,6 +140,19 @@ watch(
                     </v-btn>
                     <CompareToggle :ship-id="ship.id" />
                     <CompareLaunch />
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      prepend-icon="mdi-dock-right"
+                      @click="quickCompareOpen = true"
+                    >
+                      Quick compare
+                    </v-btn>
+                    <QuickCompareDrawer
+                      v-if="quickCompareOpen"
+                      v-model="quickCompareOpen"
+                      :ship="ship"
+                    />
                   </div>
                 </v-col>
 

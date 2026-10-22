@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import {
   advancedShipSearchFiltersAreActive,
   buildAcquisitionSelectItems,
+  CLOAK_FILTER_OPTIONS,
   collectAcquisitionCodes,
   createDefaultAdvancedShipSearchFilters,
   FULL_SPEC_OPTIONS,
@@ -11,6 +12,7 @@ import {
   uniqueSortedNumbers,
   type AdvancedShipSearchFilters,
   type AdvancedShipSearchRow,
+  type CloakFilterOption,
   type FullSpecOption,
   type YesNoChoice,
 } from "@/logic/advancedShipSearch";
@@ -99,11 +101,38 @@ function toggleNumber(
   patch({ [key]: toggleInclusiveValue(filters.value[key], value) });
 }
 
-function toggleYesNo(
-  key: "experimental" | "secondaryDeflector" | "dualCannons" | "fleetAvailable",
-  value: YesNoChoice,
-) {
+function toggleYesNo(key: "experimental", value: YesNoChoice) {
   patch({ [key]: toggleInclusiveValue(filters.value[key], value) });
+}
+
+type PresenceFilterKey =
+  | "secondaryDeflector"
+  | "dualCannons"
+  | "fleetAvailable";
+
+const PRESENCE_TOGGLES: ReadonlyArray<{
+  key: PresenceFilterKey;
+  label: string;
+}> = [
+  { key: "secondaryDeflector", label: "Secondary deflector" },
+  { key: "dualCannons", label: "Dual cannons" },
+  { key: "fleetAvailable", label: "Fleet version available" },
+];
+
+function togglePresence(key: PresenceFilterKey) {
+  patch({ [key]: !filters.value[key] });
+}
+
+function onPresenceClick(event: MouseEvent, key: PresenceFilterKey) {
+  // Keyboard activation synthesizes a click with detail 0 after keydown.
+  if (event.detail === 0) return;
+  togglePresence(key);
+}
+
+function onPresenceKeydown(event: KeyboardEvent, key: PresenceFilterKey) {
+  if (event.key !== " " && event.key !== "Enter") return;
+  event.preventDefault();
+  togglePresence(key);
 }
 
 function onFullSpecUpdate(value: unknown) {
@@ -128,6 +157,10 @@ function onAcquisitionUpdate(value: unknown) {
 
 function toggleFaction(faction: string) {
   patch({ factions: toggleInclusiveValue(filters.value.factions, faction) });
+}
+
+function toggleCloak(value: CloakFilterOption) {
+  patch({ cloaks: toggleInclusiveValue(filters.value.cloaks, value) });
 }
 
 function clearFilters() {
@@ -197,7 +230,7 @@ function toggleFiltersExpanded() {
 
       <!--
         Single row: Weapons | Consoles | Hull options & faction | Full-spec + Acquisition.
-        No second row; narrow viewports may scroll horizontally.
+        Viewports under 700px wrap the row so the presence toggles stay on screen.
       -->
       <div class="adv-filters__grid" data-layout="one-row">
         <section class="adv-group adv-group--weapons" aria-labelledby="adv-weapons-title">
@@ -325,23 +358,22 @@ function toggleFiltersExpanded() {
           </h3>
           <div class="adv-meta">
             <div class="adv-meta__row">
-              <div class="adv-meta__block">
-                <span class="adv-meta__label">Secondary deflector</span>
-                <div class="adv-group__row adv-group__row--tight">
-                  <button
-                    v-for="choice in ['yes', 'no'] as YesNoChoice[]"
-                    :key="`sec-${choice}`"
-                    type="button"
-                    class="adv-chip"
-                    :class="{
-                      'adv-chip--active':
-                        filters.secondaryDeflector.includes(choice),
-                    }"
-                    @click="toggleYesNo('secondaryDeflector', choice)"
-                  >
-                    {{ yesNoLabel(choice) }}
-                  </button>
-                </div>
+              <div class="adv-presence" role="group" aria-label="Hull features">
+                <button
+                  v-for="toggle in PRESENCE_TOGGLES"
+                  :key="toggle.key"
+                  type="button"
+                  class="adv-switch"
+                  role="switch"
+                  :aria-checked="filters[toggle.key]"
+                  @click="onPresenceClick($event, toggle.key)"
+                  @keydown="onPresenceKeydown($event, toggle.key)"
+                >
+                  <span class="adv-switch__control" aria-hidden="true">
+                    <span class="adv-switch__thumb" />
+                  </span>
+                  <span class="adv-switch__label">{{ toggle.label }}</span>
+                </button>
               </div>
               <div class="adv-meta__block">
                 <span class="adv-meta__label">Hangar bay</span>
@@ -359,37 +391,19 @@ function toggleFiltersExpanded() {
                 </div>
               </div>
               <div class="adv-meta__block">
-                <span class="adv-meta__label">Dual cannons</span>
+                <span class="adv-meta__label">Cloak</span>
                 <div class="adv-group__row adv-group__row--tight">
                   <button
-                    v-for="choice in ['yes', 'no'] as YesNoChoice[]"
-                    :key="`dc-${choice}`"
+                    v-for="cloak in CLOAK_FILTER_OPTIONS"
+                    :key="`cloak-${cloak}`"
                     type="button"
                     class="adv-chip"
                     :class="{
-                      'adv-chip--active': filters.dualCannons.includes(choice),
+                      'adv-chip--active': filters.cloaks.includes(cloak),
                     }"
-                    @click="toggleYesNo('dualCannons', choice)"
+                    @click="toggleCloak(cloak)"
                   >
-                    {{ yesNoLabel(choice) }}
-                  </button>
-                </div>
-              </div>
-              <div class="adv-meta__block">
-                <span class="adv-meta__label">Fleet version available</span>
-                <div class="adv-group__row adv-group__row--tight">
-                  <button
-                    v-for="choice in ['yes', 'no'] as YesNoChoice[]"
-                    :key="`fleet-${choice}`"
-                    type="button"
-                    class="adv-chip"
-                    :class="{
-                      'adv-chip--active':
-                        filters.fleetAvailable.includes(choice),
-                    }"
-                    @click="toggleYesNo('fleetAvailable', choice)"
-                  >
-                    {{ yesNoLabel(choice) }}
+                    {{ cloak }}
                   </button>
                 </div>
               </div>
@@ -650,6 +664,72 @@ function toggleFiltersExpanded() {
   text-transform: uppercase;
 }
 
+.adv-presence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  max-width: 100%;
+}
+
+.adv-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.82);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  cursor: pointer;
+  text-align: left;
+}
+
+.adv-switch:focus-visible {
+  outline: 2px solid #7dd3fc;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.adv-switch__control {
+  position: relative;
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: 32px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.adv-switch__thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.75);
+  transition: transform 0.15s ease;
+}
+
+.adv-switch[aria-checked="true"] .adv-switch__control {
+  background: rgba(125, 211, 252, 0.35);
+  border-color: rgba(125, 211, 252, 0.8);
+}
+
+.adv-switch[aria-checked="true"] .adv-switch__thumb {
+  transform: translateX(14px);
+  background: #e8f7ff;
+}
+
+.adv-switch__label {
+  letter-spacing: 0.02em;
+}
+
 .adv-group--selects {
   min-width: 16rem;
   max-width: 20rem;
@@ -695,5 +775,23 @@ function toggleFiltersExpanded() {
   background: rgba(125, 211, 252, 0.18);
   border-color: rgba(125, 211, 252, 0.7);
   color: #e8f7ff;
+}
+
+@media (max-width: 700px) {
+  .adv-filters__grid {
+    flex-wrap: wrap;
+  }
+
+  .adv-group--meta,
+  .adv-meta,
+  .adv-meta__row,
+  .adv-presence {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .adv-switch {
+    min-height: 44px;
+  }
 }
 </style>

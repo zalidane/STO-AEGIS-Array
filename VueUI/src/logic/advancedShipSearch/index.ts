@@ -4,13 +4,20 @@ export type {
   AdvancedShipSearchSort,
   AdvancedShipSearchSortKey,
   AdvancedShipSearchSource,
+  CloakFilterOption,
   FullSpecOption,
   YesNoChoice,
 } from "./types";
 export {
+  CLOAK_FILTER_OPTIONS,
   FULL_SPEC_OPTIONS,
   createDefaultAdvancedShipSearchFilters,
 } from "./types";
+export {
+  cloakTypeForAbilityToken,
+  cloakTypesFromAbilities,
+} from "./cloak";
+export { formatCollectedHullCell } from "./collected";
 export {
   buildFleetAvailabilityIndex,
   shipHasFleetVersion,

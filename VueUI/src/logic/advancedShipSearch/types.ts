@@ -11,6 +11,18 @@ export const FULL_SPEC_OPTIONS = [
 
 export type FullSpecOption = (typeof FULL_SPEC_OPTIONS)[number];
 
+/**
+ * Cloak filter chips, least specific first.
+ * Matching classifies each ability token most-specific-first.
+ */
+export const CLOAK_FILTER_OPTIONS = [
+  "Cloak",
+  "Battle Cloak",
+  "Enhanced Battle Cloak",
+] as const;
+
+export type CloakFilterOption = (typeof CLOAK_FILTER_OPTIONS)[number];
+
 /** Tri-state yes/no filter; empty selection means “any”. */
 export type YesNoChoice = "yes" | "no";
 
@@ -31,7 +43,11 @@ export type AdvancedShipSearchFilters = {
    * OR within. Includes `"None"` for hulls with no CMDR specialization.
    */
   fullSpecs: Array<FullSpecOption | "None">;
-  secondaryDeflector: YesNoChoice[];
+  /**
+   * Presence toggle. False applies no filter. True keeps only hulls that
+   * have a secondary deflector.
+   */
+  secondaryDeflector: boolean;
   /** Hangar bay counts; null/missing hangars count as 0. */
   hangars: number[];
   /** Console counts per career (OR within each career; AND across careers). */
@@ -39,12 +55,22 @@ export type AdvancedShipSearchFilters = {
   sciConsoles: number[];
   tacConsoles: number[];
   uniConsoles: number[];
-  dualCannons: YesNoChoice[];
+  /** Presence toggle. False applies no filter. True keeps only cannon hulls. */
+  dualCannons: boolean;
   /** Acquisition currency codes from wiki `cost` (OR within). */
   acquisition: string[];
   /** Faction lede labels (OR within; excludes non-matches). */
   factions: string[];
-  fleetAvailable: YesNoChoice[];
+  /**
+   * Presence toggle. False applies no filter. True keeps only hulls that
+   * have a fleet version. Hulls without one stay in the list while this is off.
+   */
+  fleetAvailable: boolean;
+  /**
+   * Cloak ability class (OR within). A token is one class only:
+   * Enhanced Battle Cloak, else Battle Cloak, else Cloak.
+   */
+  cloaks: CloakFilterOption[];
   /** Free-text name filter (AND with structured filters). */
   search: string;
 };
@@ -91,6 +117,8 @@ export type AdvancedShipSearchSource = {
   faction?: string | null;
   factionLede?: string | null;
   facSort?: string | null;
+  /** Comma-separated wiki ability tokens. Cloak is classified from these. */
+  abilities?: string | null;
 };
 
 /** Derived row used for filtering, sorting, and the results table. */
@@ -117,6 +145,8 @@ export type AdvancedShipSearchRow = {
   faction: string;
   fleetAvailable: boolean;
   isFleet: boolean;
+  /** Cloak classes present on this hull. Empty when it has no cloak token. */
+  cloakTypes: CloakFilterOption[];
 };
 
 export function createDefaultAdvancedShipSearchFilters(): AdvancedShipSearchFilters {
@@ -126,16 +156,17 @@ export function createDefaultAdvancedShipSearchFilters(): AdvancedShipSearchFilt
     experimental: [],
     totalWeapons: [],
     fullSpecs: [],
-    secondaryDeflector: [],
+    secondaryDeflector: false,
     hangars: [],
     engConsoles: [],
     sciConsoles: [],
     tacConsoles: [],
     uniConsoles: [],
-    dualCannons: [],
+    dualCannons: false,
     acquisition: [],
     factions: [],
-    fleetAvailable: [],
+    fleetAvailable: false,
+    cloaks: [],
     search: "",
   };
 }
