@@ -1,11 +1,31 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { RouterLink } from "vue-router";
-import { DISCORD_URL } from "@/logic/about";
+import {
+  DISCORD_URL,
+  RAILWAY_HOST_LABEL,
+  RAILWAY_REFERRAL_URL,
+  resolveRailwayReferralUrl,
+} from "@/logic/about";
 import {
   CC_BY_NC_SA_30_URL,
   FOOTER_SUMMARY,
   STOWIKI_HOME_URL,
 } from "@/logic/attribution";
+
+const props = defineProps<{
+  /**
+   * Affiliate code override. Omit to use the build-time
+   * `VITE_RAILWAY_REFERRAL_CODE` value.
+   */
+  railwayReferralCode?: string | null;
+}>();
+
+const railwayReferralUrl = computed(() =>
+  props.railwayReferralCode === undefined
+    ? RAILWAY_REFERRAL_URL
+    : resolveRailwayReferralUrl(props.railwayReferralCode),
+);
 </script>
 
 <template>
@@ -27,6 +47,11 @@ import {
       >
       <span class="app-footer__sep" aria-hidden="true">·</span>
       <RouterLink to="/attributions">Full attributions</RouterLink>
+    </p>
+    <p v-if="railwayReferralUrl" class="app-footer__links app-footer__host">
+      <a :href="railwayReferralUrl" target="_blank" rel="noopener noreferrer"
+        >{{ RAILWAY_HOST_LABEL }}</a
+      >
     </p>
   </footer>
 </template>

@@ -19,6 +19,8 @@ The API URL defaults to `http://localhost:4000/graphql`. Override with `VITE_GRA
 
 Wiki image URLs default to `/images/...`. Set `VITE_IMAGE_BASE_URL` (for example `https://img.aegisarray.com`, no trailing slash) to load them from object storage. It is inlined at **build** time. Leave it unset for local dev. See [`docs/image-hosting.md`](../docs/image-hosting.md).
 
+The Discord invite defaults to `https://discord.gg/2jTgb9HnY`. Set `VITE_DISCORD_URL` to replace it. `VITE_RAILWAY_REFERRAL_CODE` is the affiliate code only. When it is set, the footer shows "Hosted on Railway" linking to `https://railway.com?referralCode=<code>`. When it is unset or blank, that line is not rendered. Both are inlined at **build** time on the **VueUI** service.
+
 ## Stack
 
 - Vue 3 + Vue Router + Pinia
@@ -74,4 +76,4 @@ They are © Cryptic Studios / Arc Games / DECA / Paramount; sourced from STOWiki
 
 ## Deploy
 
-Railway config: [`railway.toml`](railway.toml). Set `VITE_GRAPHQL_URL` on the VueUI service at build time. Set `VITE_IMAGE_BASE_URL` only after the image bucket is verified. See the [monorepo README](../README.md#railway-shared-monorepo).
+Railway config: [`railway.toml`](railway.toml). On the **VueUI** service, at build time, set `VITE_GRAPHQL_URL`. Set `VITE_IMAGE_BASE_URL` only after the image bucket is verified. Optionally set `VITE_DISCORD_URL` (unset keeps `https://discord.gg/2jTgb9HnY`) and `VITE_RAILWAY_REFERRAL_CODE` (unset hides the footer credit; the link format is `https://railway.com?referralCode=<code>`). See the [monorepo README](../README.md#railway-shared-monorepo).
