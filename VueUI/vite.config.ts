@@ -5,9 +5,11 @@ import vue from "@vitejs/plugin-vue";
 import vuetify from "vite-plugin-vuetify";
 import vueDevTools from "vite-plugin-vue-devtools";
 
+import { staticHostPlugin } from "./server/staticHostPlugin";
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue(), vuetify(), vueDevTools()],
+  plugins: [staticHostPlugin(), vue(), vuetify(), vueDevTools()],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

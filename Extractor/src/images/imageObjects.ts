@@ -43,6 +43,16 @@ export function isSkippedImageName(filename: string): boolean {
   return SKIPPED_FILE_NAMES.has(filename.toLowerCase());
 }
 
+/** Dotfiles and path tricks must never become public object keys. */
+export function isHiddenImageFilename(filename: string): boolean {
+  return (
+    filename.startsWith(".") ||
+    filename.includes("/") ||
+    filename.includes("\\") ||
+    filename.includes("\0")
+  );
+}
+
 export function objectKeyFor(kind: string, filename: string): string {
   return `${kind}/${filename}`;
 }

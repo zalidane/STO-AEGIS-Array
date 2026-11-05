@@ -7,6 +7,7 @@ import { describe, it } from "node:test";
 import {
   IMAGE_CACHE_CONTROL,
   contentTypeForFilename,
+  isHiddenImageFilename,
   etagMatchesMd5,
   extraneousKeys,
   md5Hex,
@@ -16,6 +17,15 @@ import {
   type PutInput,
 } from "./imageObjects.js";
 import { syncWikiImages } from "./syncWikiImages.js";
+
+describe("isHiddenImageFilename", () => {
+  it("rejects dotfiles and path separators", () => {
+    assert.equal(isHiddenImageFilename(".env"), true);
+    assert.equal(isHiddenImageFilename(".hidden.png"), true);
+    assert.equal(isHiddenImageFilename("nested/icon.png"), true);
+    assert.equal(isHiddenImageFilename("Icon.PNG"), false);
+  });
+});
 
 describe("contentTypeForFilename", () => {
   it("maps jfif to jpeg and avif to image/avif, ignoring case", () => {
@@ -244,6 +254,37 @@ describe("syncWikiImages", () => {
     assert.deepEqual(report.uploaded, ["traits/A.png"]);
     assert.equal(report.comparedRemote, false);
     assert.equal(report.deleted.length, 0);
+  });
+
+  it("skips dotfiles instead of uploading them", async () => {
+    const root = await mkdtemp(join(tmpdir(), "image-sync-dot-"));
+    await mkdir(join(root, "ships"), { recursive: true });
+    await writeFile(join(root, "ships", ".hidden.png"), Buffer.from("png"));
+    await writeFile(join(root, "ships", ".env"), Buffer.from("not-an-image"));
+    await writeFile(join(root, "ships", "Visible.png"), Buffer.from("png"));
+    const store = memoryStore([]);
+
+    const report = await syncWikiImages({
+      imagesDir: root,
+      store,
+      dryRun: false,
+      deleteExtraneous: false,
+    });
+
+    assert.deepEqual(
+      store.puts.map((put) => put.key),
+      ["ships/Visible.png"],
+    );
+    assert.equal(
+      report.skipped.some((skip) => skip.path === "ships/.env" && skip.reason === "dotfile"),
+      true,
+    );
+    assert.equal(
+      report.skipped.some(
+        (skip) => skip.path === "ships/.hidden.png" && skip.reason === "dotfile",
+      ),
+      true,
+    );
   });
 
   it("refuses to upload when the image directory is missing", async () => {
