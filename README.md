@@ -166,4 +166,4 @@ Wiki-derived text and Cargo data are used under STOWiki’s
 [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/) terms where
 the wiki may lawfully license them. Game images are served at runtime from
 separate object storage and are © Cryptic Studios / Arc Games / DECA / Paramount; sourced from STOWiki; not covered by this repo's licenses; unofficial non-commercial fan site; removed on rights-holder request.
-Full details: [`ATTRIBUTION.md`](ATTRIBUTION.md). Hosting: [`docs/image-hosting.md`](docs/image-hosting.md).
+Full details: [`ATTRIBUTION.md`](ATTRIBUTION.md). Hosting: [`docs/image-hosting.md`](docs/image-hosting.md). Cloudflare cache and probe rules: [`docs/cloudflare-hardening.md`](docs/cloudflare-hardening.md).

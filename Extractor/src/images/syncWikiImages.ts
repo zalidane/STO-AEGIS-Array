@@ -6,6 +6,7 @@ import {
   WIKI_IMAGE_KINDS,
   contentTypeForFilename,
   extraneousKeys,
+  isHiddenImageFilename,
   isSkippedImageName,
   md5Hex,
   needsUpload,
@@ -203,6 +204,10 @@ async function scanImages(imagesDir: string): Promise<{
       }
       if (isSkippedImageName(entry.name)) {
         skipped.push({ path, reason: "excluded from object storage" });
+        continue;
+      }
+      if (isHiddenImageFilename(entry.name)) {
+        skipped.push({ path, reason: "dotfile" });
         continue;
       }
       const contentType = contentTypeForFilename(entry.name);

@@ -112,7 +112,8 @@ public, max-age=2592000, stale-while-revalidate=86400
 ```
 
 Do not use `immutable`. Filenames are stable wiki titles, and a later extract
-can replace the bytes at the same key.
+can replace the bytes at the same key. Edge cache rules for this host are in
+[cloudflare-hardening.md](cloudflare-hardening.md).
 
 ## 3. Sync
 
