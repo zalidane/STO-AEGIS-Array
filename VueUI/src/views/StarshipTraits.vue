@@ -40,6 +40,7 @@ function collectBindFor(item: TraitBrowserItem): BindScope {
   return bindScopeForKind({
     kind: "starshipTrait",
     grantingShipCosts: trait?.ships.map((ship) => ship.cost) ?? [],
+    obtained: trait?.obtained,
   });
 }
 
