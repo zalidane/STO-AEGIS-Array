@@ -90,6 +90,49 @@ describe("bindChoice conditions", () => {
     ]);
   });
 
+  it("offers a choice when Zen and a single-character unlock are different sources", () => {
+    const weaponsHot = bindChoiceFromGrantingShips([
+      { cost: "1;R&D", name: "Inquiry Battlecruiser" },
+      {
+        cost: "12000;Zen",
+        displayPrefix: "Legendary",
+        name: "Legendary Avenger Miracle Worker Battlecruiser",
+      },
+    ]);
+    expect(weaponsHot.requiresChoice).toBe(true);
+    expect(weaponsHot.conditionIds).toEqual(["split-zen-and-character"]);
+    expect(weaponsHot.prompt).toContain("Legendary");
+    expect(weaponsHot.prompt).toContain("R&D");
+
+    const patchedInquiry = bindChoiceFromGrantingShips([
+      "1;R&D / 29500;Zen",
+      {
+        cost: "12000;Zen",
+        displayPrefix: "Legendary",
+        name: "Legendary Avenger Miracle Worker Battlecruiser",
+      },
+    ]);
+    expect(patchedInquiry.requiresChoice).toBe(true);
+    expect(patchedInquiry.conditionIds).toEqual([
+      "non-zen-path",
+      "expensive-zen",
+    ]);
+
+    expect(
+      bindChoiceFromGrantingShips(["3000;Zen", "3000;Zen", "3000;Zen"])
+        .requiresChoice,
+    ).toBe(false);
+    expect(bindChoiceFromCost("1;R&D").requiresChoice).toBe(false);
+    expect(
+      bindChoiceFromCost("12000;Zen", { displayPrefix: "Legendary" })
+        .requiresChoice,
+    ).toBe(false);
+    expect(bindChoiceFromCost("1;R&D / 29500;Zen").conditionIds).toEqual([
+      "non-zen-path",
+      "expensive-zen",
+    ]);
+  });
+
   it("exposes conditions as an append-only list", () => {
     const ids = SHIP_BIND_CHOICE_CONDITIONS.map((condition) => condition.id);
     expect(ids).toEqual([
@@ -97,6 +140,7 @@ describe("bindChoice conditions", () => {
       "non-zen-path",
       "expensive-zen",
       "shipyard-dil-requisition",
+      "split-zen-and-character",
     ]);
     expect(matchingBindChoiceConditions(null)).toEqual([]);
   });

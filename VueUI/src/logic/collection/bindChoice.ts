@@ -106,7 +106,42 @@ export const SHIP_BIND_CHOICE_CONDITIONS: BindChoiceCondition[] = [
     matches: ({ codes }) =>
       codes.includes("dil") && codes.some((code) => code.startsWith("sr")),
   },
+  {
+    id: "split-zen-and-character",
+    prompt:
+      "One source is a Zen Store unlock, including a Legendary hull, and another source is a single-character unlock such as an R&D promotion pack.",
+    // A single hull never matches. bindChoiceFromGrantingShips applies this
+    // when the Zen path and the character path are different sources.
+    matches: () => false,
+  },
 ];
+
+/** Currencies that bind a hull to the captain who opens the pack or box. */
+const CHARACTER_UNLOCK_CODES = new Set(["r&d", "lb", "lc", "mr"]);
+
+function sourceHasZen(snapshot: BindChoiceSnapshot): boolean {
+  return snapshot.codes.some((code) => isZenCode(code));
+}
+
+function sourceHasCharacterUnlock(snapshot: BindChoiceSnapshot): boolean {
+  return snapshot.codes.some((code) => CHARACTER_UNLOCK_CODES.has(code));
+}
+
+/**
+ * Zen on one granting source and a single-character unlock on a different
+ * source. All-Zen C-store faction variants do not match. A hull that already
+ * lists both paths is left to `non-zen-path`.
+ */
+export function grantingSourcesSpanZenAndCharacterUnlock(
+  inputs: BindChoiceInput[],
+): boolean {
+  const snapshots = inputs.map((input) => snapshotFromHull(toHull(input)));
+  const characterOnly = snapshots.some(
+    (snapshot) => sourceHasCharacterUnlock(snapshot) && !sourceHasZen(snapshot),
+  );
+  const hasZen = snapshots.some((snapshot) => sourceHasZen(snapshot));
+  return characterOnly && hasZen;
+}
 
 export function matchingBindChoiceConditions(
   input: BindChoiceInput,
@@ -158,9 +193,21 @@ export function bindChoiceFromHull(hull: BindChoiceHull): BindChoice {
 export function bindChoiceFromGrantingShips(
   inputs: BindChoiceInput[],
 ): BindChoice {
-  return toBindChoice(matchingBindChoiceConditionsFromCosts(inputs));
+  const matched = matchingBindChoiceConditionsFromCosts(inputs);
+  if (
+    matched.length === 0 &&
+    grantingSourcesSpanZenAndCharacterUnlock(inputs)
+  ) {
+    const split = SHIP_BIND_CHOICE_CONDITIONS.find(
+      (condition) => condition.id === "split-zen-and-character",
+    );
+    if (split) matched.push(split);
+  }
+  return toBindChoice(matched);
 }
 
 export const FALLBACK_BIND_CHOICE_PROMPT = composePrompt(
-  SHIP_BIND_CHOICE_CONDITIONS,
+  SHIP_BIND_CHOICE_CONDITIONS.filter(
+    (condition) => condition.id !== "split-zen-and-character",
+  ),
 );

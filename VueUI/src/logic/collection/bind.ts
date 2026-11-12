@@ -1,3 +1,4 @@
+import { decodeHtmlEntities } from "@/utils/decodeHtmlEntities";
 import {
   shipCostCurrencyCodes,
 } from "@/utils/parsers/shipCost";
@@ -103,6 +104,24 @@ export function inheritBindFromGrantingShips(
 }
 
 /**
+ * Reward starship traits are not granted by a hull. Specialization points
+ * unlock the trait on one captain. Recruitment lines that say "account-wide"
+ * unlock it for the account, including a superior rank whose objective is
+ * "after spending N points".
+ */
+export function bindScopeFromObtained(
+  obtained: string | null | undefined,
+): BindScope {
+  if (!obtained?.trim()) return "unknown";
+  const text = decodeHtmlEntities(obtained).toLowerCase();
+  if (text.includes("account-wide")) return "account";
+  if (/\bpoints?\s+spent\b/.test(text) || /\bspecialization\b/.test(text)) {
+    return "character";
+  }
+  return "unknown";
+}
+
+/**
  * Fallback when acquisition data is missing.
  * Personal traits are per captain; ships and grants must be resolved from cost.
  */
@@ -116,13 +135,18 @@ export function bindScopeForKind(options: {
   boundto?: string | null;
   shipCost?: string | null;
   grantingShipCosts?: Array<string | null | undefined>;
+  obtained?: string | null;
 }): BindScope {
   if (options.kind === "trait") return "character";
   if (options.kind === "ship") {
     return bindScopeFromShipCost(options.shipCost);
   }
   if (options.kind === "starshipTrait") {
-    return inheritBindFromGrantingShips(options.grantingShipCosts ?? []);
+    const fromShips = inheritBindFromGrantingShips(
+      options.grantingShipCosts ?? [],
+    );
+    if (fromShips !== "unknown") return fromShips;
+    return bindScopeFromObtained(options.obtained);
   }
   const fromShips = inheritBindFromGrantingShips(
     options.grantingShipCosts ?? [],
@@ -136,6 +160,7 @@ export function resolveBindScope(options: {
   boundto?: string | null;
   shipCost?: string | null;
   grantingShipCosts?: Array<string | null | undefined>;
+  obtained?: string | null;
 }): BindScope {
   return bindScopeForKind(options);
 }

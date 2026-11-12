@@ -128,6 +128,7 @@ function featuredStarshipBind(): BindScope {
     kind: "starshipTrait",
     grantingShipCosts:
       featuredStarshipTraitSource.value?.ships.map((ship) => ship.cost) ?? [],
+    obtained: featuredStarshipTraitSource.value?.obtained,
   });
 }
 
