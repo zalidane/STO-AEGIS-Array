@@ -57,42 +57,59 @@ Set `VITE_GRAPHQL_URL` only when the API is not at `http://localhost:4000/graphq
 
 | Command | Description |
 |---------|-------------|
-| `npm run extract` / `extract:force` | Manual STOWiki extract → `Extractor/output/*.json` + images |
-| `npm run extract:home` | Home-only monthly check: extract if last run was > ~1 month ago |
-| `npm run extract:images` | Download wiki images only (uses existing Cargo JSON) |
-| `npm run images:sync` | Sync local wiki images to Cloudflare R2 (`--dry-run`, `--delete`) |
-| `npm run import` / `import:force` | Import committed JSON into local DB |
-| `npm run import:prod` | Import committed JSON into production DB |
-| `npm run db:generate` | Generate Prisma client in `packages/database` |
-| `npm run db:migrate` | Apply migrations (deploy) |
-| `npm run db:migrate:dev` | Create/apply migrations (Prisma migrate dev) |
-| `npm run db:migrate:prod` | Apply migrations (production) |
-| `npm run db:studio` / `db:studio:prod` | Open Prisma Studio (local / production) |
-| `npm run codegen` | Generate Vue GraphQL client types from schema + operations |
-| `npm run build` | Prisma generate + build all workspaces |
-| `npm run build:database` / `build:extractor` / `build:graphql` / `build:vue` | Build one package |
-| `npm run dev:graphql` / `dev:vue` / `dev:extractor` | Start a package in watch mode |
-| `npm run start` | Run GraphQL (`tsx src/server.ts`) |
-| `npm run start:vue` | Preview the built Vue app |
-| `npm run type-check` | Type-check all workspaces |
-| `npm run test` | GraphQL + Extractor + Vue unit tests |
-| `npm run test:graphql` / `test:extractor` / `test:unit` | Tests for one package |
+| `npm run dev:extractor` | `tsx watch` re-runs `Extractor/src/main.ts extract` when files change. Same run as `extract`. |
+| `npm run dev:graphql` | `tsx watch` on `GraphQL/src/server.ts`. Yoga listens on `0.0.0.0`, port `PORT` or **4000**, path `/graphql`. A browser GET there renders GraphiQL. |
+| `npm run dev:vue` | Vite dev server with HMR. Default port **5173**. |
+| `npm run extract` | Fetches STOWiki Cargo into `Extractor/output/*.json`. A non-empty table file no older than 24 hours is left in place; a stale, empty, or missing table is replaced in full. New experimental hulls are added to `ShipExperimentalWeapons.json` (that step logs into the wiki even when every Cargo file is fresh). Images already on disk, and titles already marked missing or skipped in `imageIndex.json`, stay put; other catalog images are downloaded to `VueUI/public/images/{items,ships,traits,starship-traits,tray-skills}/`. Rewrites `imageIndex.json`, stamps image filenames into `Infobox.json` and `TraySkill.json`, and writes gitignored `output/last-extract.json`. |
+| `npm run extract:force` | `extract --force-refresh`. Every Cargo table is fetched again. The experimental-weapon file and images stay incremental. |
+| `npm run extract:images` | `extract --images-only`. Reads Cargo JSON already in `Extractor/output/` and runs the image download, `imageIndex.json` rewrite, and Infobox/TraySkill stamp. Also writes `last-extract.json`. |
+| `npm run images:sync` | Uploads those image folders to Cloudflare R2. Credentials are `R2_ENDPOINT`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY` from the environment or the root `.env` (`R2_REGION` optional). Extra arguments are forwarded: `--dry-run` prints the plan, `--delete` removes remote keys under those prefixes that are absent on disk. |
+| `npm run extract:home` | Home-machine gate. Reads `Extractor/output/last-extract.json`, or the newest Cargo JSON mtime when that file is missing. When the last extract is absent or older than 30 days, runs `extract --force-refresh` (images and the experimental-weapon sidecar stay incremental) and stamps `last-extract.json` with source `home-extract`. A newer stamp exits with no wiki call. `--force` runs the extract anyway. `--check-only` (alias `--dry-run`) never calls the wiki. |
+| `npm run import` | Loads the root `.env` with override and imports `Extractor/output/*.json` into that `DATABASE_URL`. A table whose hash matches `output/importState.json` is left unchanged. The hash includes the CatalogSupplement fingerprint, so a supplement edit is imported on the next run. Relations are re-linked when a table was imported or `ShipExperimentalWeapons.json` changed. |
+| `npm run import:force` | Same import with `--force-import`: every mapped table is written again, then relations are re-linked. |
+| `npm run import:prod` | `--prod --force-import`. Sets `PRISMA_ENV=production`, loads the root `.env.production` over the environment when that file exists, and force-imports into that database. |
+| `npm run db:generate` | `prisma generate` from `packages/database/prisma/schema.prisma` into `packages/database/src/generated/prisma`. With `DATABASE_URL` unset, generate still runs against a dummy localhost URL. |
+| `npm run db:migrate` | `prisma migrate deploy` using `.env`. Applies pending migrations. |
+| `npm run db:migrate:dev` | `prisma migrate dev`. Creates a migration and applies it to the development database. |
+| `npm run db:migrate:prod` | Sets `PRISMA_ENV=production` (and `NODE_ENV` when it is unset), then `prisma migrate deploy`. Prisma reads `.env.production` when that file exists. |
+| `npm run db:studio` | Prisma Studio against `.env`. |
+| `npm run db:studio:prod` | Prisma Studio with `PRISMA_ENV=production` (`.env.production` when present). |
+| `npm run codegen` | GraphQL Codegen client preset. Schema is `GraphQL/src/schema/**/*.graphql`, documents are `VueUI/src/graphql/**/*.graphql`, output is `VueUI/src/graphql/generated/`. |
+| `npm run build` | Runs `db:generate`, then `build` in each workspace that defines it (database, Extractor, GraphQL, VueUI). |
+| `npm run build:database` / `build:extractor` / `build:graphql` | `tsc` into that package’s `dist/`. `npm run start` and the database package exports still run TypeScript from `src/`. `start:extractor` is the command that executes compiled JavaScript. |
+| `npm run build:vue` | `vue-tsc --build` and `vite build` in parallel. Vite writes `VueUI/dist`. The script fails if either command fails. |
+| `npm run type-check` | `type-check` in each workspace that defines it. |
+| `npm run type-check:database` / `type-check:extractor` / `type-check:graphql` | `tsc --noEmit`. |
+| `npm run type-check:vue` | `vue-tsc --build` using VueUI’s TypeScript 6 install. Type-check only. |
+| `npm run test` | GraphQL `node:test`, then Extractor `node:test`, then Vue Vitest. Stops at the first failure. The database package has no test script on this command. |
+| `npm run test:graphql` | `tsx --test` on `GraphQL/src/logic/**/*.test.ts`. |
+| `npm run test:extractor` | `tsx --test` on `Extractor/src/**/*.test.ts`. |
+| `npm run test:unit` | VueUI Vitest in jsdom (`src/**/__tests__`, `e2e/**` excluded). Watches when stdin is a TTY and `CI` is unset; otherwise one run. |
+| `npm run start` | GraphQL server once: `tsx src/server.ts`. Same bind as `dev:graphql`. File watching stays on `dev:graphql`; migrations stay on `db:migrate`. |
+| `npm run start:extractor` | `node dist/main.js` in Extractor, which defaults to the `extract` command. Run `build:extractor` first so `dist/main.js` exists. |
+| `npm run start:vue` / `preview:vue` | Both run `vite preview` of `VueUI/dist`. Binds all interfaces; port is `PORT` or **4173**. |
 
-Extract/import flags (pass after `--`):
+`extract` and `import` at the repo root do not forward extra arguments, so `npm run extract -- --skip-images` never reaches the CLI. `extract:home` and `images:sync` do forward them. Pass other flags on the workspace script, or use the root script that already includes them:
 
 ```bash
-npm run extract -- --force-refresh
-npm run extract -- --skip-images
-npm run extract -- --images-only
+npm run extract:force          # --force-refresh (Cargo only)
+npm run extract:images         # --images-only
+npm run extract -w @sto-aegis/extractor -- --skip-images
+npm run extract -w @sto-aegis/extractor -- --force-images
 npm run extract:home -- --force
 npm run extract:home -- --check-only
-npm run import -- --force-import
-npm run import:prod
+npm run import:force           # --force-import
+npm run import -w @sto-aegis/extractor -- --force-import
+npm run import:prod            # .env.production + --force-import
+npm run images:sync -- --dry-run
+npm run images:sync -- --delete
 ```
 
-Schedule `npm run extract:home` weekly on a home machine (cron / Task Scheduler / systemd / launchd). The script itself enforces the ~1-month gate, refreshes stale Cargo when due, keeps images incremental, and reminds you to commit JSON, sync images (`npm run images:sync`), then `import:prod`. Details: [Extractor/README.md](Extractor/README.md#monthly-home-extract-scheduled-check) and [docs/image-hosting.md](docs/image-hosting.md). Production must only import committed JSON — never extract on Railway.
+`npm run extract -w @sto-aegis/extractor -- --prod` only chooses `.env.production` for env loading. The wiki fetch ignores it, and the script says so.
 
-After changing `GraphQL/src/schema/**/*.graphql` or `VueUI/src/graphql/queries/*.graphql`, run `npm run codegen` so the Vue client types stay in sync.
+Schedule `npm run extract:home` weekly on a home machine (cron / Task Scheduler / systemd / launchd). The script itself enforces the 30-day gate, re-fetches every Cargo table when an extract is due, keeps images incremental, and reminds you to commit JSON, sync images (`npm run images:sync`), then `import:prod`. Details: [Extractor/README.md](Extractor/README.md#monthly-home-extract-scheduled-check) and [docs/image-hosting.md](docs/image-hosting.md). Production must only import committed JSON — never extract on Railway.
+
+After changing `GraphQL/src/schema/**/*.graphql` or `VueUI/src/graphql/**/*.graphql`, run `npm run codegen` so the Vue client types stay in sync.
 
 ## Shared database
 
