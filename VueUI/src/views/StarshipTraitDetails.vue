@@ -31,6 +31,7 @@ const collectBind = computed(() =>
   bindScopeForKind({
     kind: "starshipTrait",
     grantingShipCosts: trait.value?.ships.map((ship) => ship.cost) ?? [],
+    obtained: trait.value?.obtained,
   }),
 );
 const allowAccountUnlock = computed(() =>

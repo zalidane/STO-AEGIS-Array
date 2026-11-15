@@ -31,6 +31,7 @@ import {
   type TraitCargoRow,
   type TraitSupplementRow,
 } from "./mergeTraits.js";
+import { applyMuddPromoZenCosts } from "./applyMuddPromoZenCosts.js";
 import { expandStarshipTraitRanks } from "./expandStarshipTraitRanks.js";
 
 function mergeModifiersSupplement(
@@ -131,6 +132,7 @@ export const importMappings = {
     model: "ship",
     uniqueFields: ["name"],
     mapper: mapShip,
+    prepareRows: applyMuddPromoZenCosts,
   },
   StarshipTraits: {
     model: "starshipTrait",

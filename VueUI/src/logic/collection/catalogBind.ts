@@ -20,6 +20,7 @@ export type CatalogBindShip = {
 
 export type CatalogBindStarshipTrait = {
   id: number;
+  obtained?: string | null;
   ships?: Array<{
     cost?: string | null;
     name?: string | null;
@@ -82,9 +83,11 @@ export function bindScopeFromCatalog(
   }
 
   if (kind === "starshipTrait") {
+    const trait = sources.starshipTraits.find((row) => row.id === catalogId);
     return bindScopeForKind({
       kind: "starshipTrait",
       grantingShipCosts: grantingShipCosts(sources, kind, catalogId),
+      obtained: trait?.obtained,
     });
   }
 

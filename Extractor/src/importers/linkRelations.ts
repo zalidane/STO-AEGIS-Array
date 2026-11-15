@@ -8,7 +8,10 @@ import {
   decodeHtmlEntities,
   decodeHtmlEntitiesOrNull,
 } from "../utils/decodeHtmlEntities";
-import { buildShipNameIdMap } from "../utils/shipNameLookup";
+import {
+  buildShipNameIndex,
+  lookupShipId,
+} from "../utils/shipNameLookup";
 import { loadExperimentalWeaponMap } from "../extractors/extractShipExperimentalWeapons";
 import {
   dedupeShipsByDecodedName,
@@ -55,7 +58,7 @@ export async function linkRelations(prisma: PrismaClient) {
   const swRows = await prisma.swObtain.findMany();
   const experimentalByShip = await loadExperimentalWeaponMap();
 
-  const shipByName = buildShipNameIdMap(ships);
+  const shipNames = buildShipNameIndex(ships);
   const traitByName = nameIdMap(traits);
   const infoboxByName = nameIdMap(infoboxes);
   const infoboxByNormalized = new Map(
@@ -123,7 +126,7 @@ export async function linkRelations(prisma: PrismaClient) {
   const traitShipRows: { starshipTraitId: number; shipId: number }[] = [];
   for (const trait of traits) {
     for (const target of extractWikiTargets(trait.obtained)) {
-      const shipId = shipByName.get(target);
+      const shipId = lookupShipId(shipNames, target);
       if (shipId) {
         traitShipRows.push({ starshipTraitId: trait.id, shipId });
       }

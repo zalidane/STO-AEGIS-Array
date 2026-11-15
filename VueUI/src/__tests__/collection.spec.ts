@@ -3,6 +3,7 @@ import {
   allowsAccountUnlockFromCost,
   bindScopeChoiceCaption,
   bindScopeFromBoundTo,
+  bindScopeFromObtained,
   bindScopeFromShipCost,
   bindScopeForKind,
   bindScopeLabel,
@@ -193,6 +194,61 @@ describe("bindScope", () => {
     expect(bindScopeFromCatalog(sources, "ship", 1)).toBe("account");
     expect(bindScopeFromCatalog(sources, "ship", 2)).toBe("character");
     expect(bindScopeFromCatalog(sources, "starshipTrait", 5)).toBe("character");
+    expect(
+      bindScopeFromCatalog(
+        {
+          ...sources,
+          starshipTraits: [
+            {
+              id: 8,
+              obtained:
+                "<u>Improved Pedal to the Metal</u>: 30 points spent into the Pilot specialization.",
+              ships: [],
+            },
+          ],
+        },
+        "starshipTrait",
+        8,
+      ),
+    ).toBe("character");
+    expect(
+      bindScopeFromCatalog(
+        {
+          ...sources,
+          starshipTraits: [
+            {
+              id: 9,
+              obtained:
+                "<u>Improved Arrest</u>: Gamma Recruitment account-wide reward after spending 45 points in any specializations.",
+              ships: [],
+            },
+            {
+              id: 10,
+              obtained:
+                "<u>Superior Pedal to the Metal</u>: Temporal Agent account-wide reward after spending 30 points in 3 primary specializations.",
+              ships: [],
+            },
+          ],
+        },
+        "starshipTrait",
+        9,
+      ),
+    ).toBe("account");
+    expect(bindScopeFromObtained("15 points spent into the Pilot specialization.")).toBe(
+      "character",
+    );
+    expect(
+      bindScopeFromObtained(
+        "account-wide unlock after completing all Story Arcs as a Delta Recruit.",
+      ),
+    ).toBe("account");
+    expect(
+      bindScopeForKind({
+        kind: "starshipTrait",
+        grantingShipCosts: ["3000;Zen"],
+        obtained: "account-wide reward",
+      }),
+    ).toBe("account");
     expect(bindScopeFromCatalog(sources, "item", 10)).toBe("account");
     expect(bindScopeFromCatalog(sources, "item", 11)).toBe("character");
     expect(bindScopeFromCatalog(sources, "item", 12)).toBe("character");
