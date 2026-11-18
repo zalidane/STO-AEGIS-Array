@@ -633,6 +633,79 @@ describe("acquisition option grouping", () => {
   });
 });
 
+describe("Nov 2026 wiki hulls in Ship Search", () => {
+  const nov2026Hulls = indexAdvancedShipSearchRows([
+    ship({
+      id: 3196,
+      name: "Yeager Miracle Worker Escort",
+      displayClass: "Yeager",
+      foreWeapons: 5,
+      aftWeapons: 2,
+      experimental: true,
+      equipCannons: true,
+      boffs:
+        "Commander Tactical-Miracle Worker,Ensign Tactical,Lieutenant Engineering,Lieutenant Commander Science-Intelligence,Lieutenant Commander Universal",
+      cost: "3000;Zen",
+      faction: "United Federation of Planets,Romulan Republic,Dominion",
+      factionLede: "Federation",
+    }),
+    ship({
+      id: 2502,
+      name: "Curry Temporal Multi-Mission Science Vessel",
+      displayClass: "Curry",
+      secondaryDeflector: true,
+      boffs: "Commander Science-Temporal Operative",
+      cost: "3000;Zen",
+      faction: "United Federation of Planets,Romulan Republic,Dominion",
+      factionLede: "Federation",
+    }),
+    ship({
+      id: 2901,
+      name: "Midway Command Flight Deck Carrier",
+      displayClass: "Midway",
+      hangars: 2,
+      boffs: "Commander Tactical-Command",
+      cost: "3000;Zen",
+      faction: "United Federation of Planets,Romulan Republic,Dominion",
+      factionLede: "Federation",
+    }),
+    ship({
+      id: 3164,
+      name: "Vidiian Science Warship",
+      displayClass: null,
+      displayPrefix: "Vidiian",
+      secondaryDeflector: true,
+      cost: "1;LB",
+      faction:
+        "United Federation of Planets,Klingon Empire,Romulan Republic,Dominion",
+      factionLede: "Cross-Faction",
+    }),
+  ]);
+
+  it("keeps the new hulls in the unfiltered results", () => {
+    const hits = filterAdvancedShipSearchRows(
+      nov2026Hulls,
+      createDefaultAdvancedShipSearchFilters(),
+    );
+    expect(hits.map((row) => row.name).sort()).toEqual([
+      "Curry Temporal Multi-Mission Science Vessel",
+      "Midway Command Flight Deck Carrier",
+      "Vidiian Science Warship",
+      "Yeager Miracle Worker Escort",
+    ]);
+  });
+
+  it("finds each hull by the same name a user types in Filter by ship name", () => {
+    for (const needle of ["Yeager", "Curry", "Midway", "Vidiian"]) {
+      const filters = createDefaultAdvancedShipSearchFilters();
+      filters.search = needle;
+      const hits = filterAdvancedShipSearchRows(nov2026Hulls, filters);
+      expect(hits, needle).toHaveLength(1);
+      expect(hits[0]?.name).toContain(needle);
+    }
+  });
+});
+
 describe("filter panel prefs", () => {
   it("defaults expanded and persists collapse preference", () => {
     const memory = new Map<string, string>();
