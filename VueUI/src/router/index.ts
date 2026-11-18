@@ -4,6 +4,7 @@ import Home from "@/views/Home.vue";
 import Search from "@/views/Search.vue";
 import Collection from "@/views/Collection.vue";
 import Loadouts from "@/views/Loadouts.vue";
+import PublicBuilds from "@/views/PublicBuilds.vue";
 import SharedBuild from "@/views/SharedBuild.vue";
 import Ships from "@/views/Ships.vue";
 import AdvancedShipSearch from "@/views/AdvancedShipSearch.vue";
@@ -52,6 +53,12 @@ const router = createRouter({
       name: "loadouts",
       component: Loadouts,
       meta: { breadcrumb: "Loadouts" },
+    },
+    {
+      path: "/builds",
+      name: "published-builds",
+      component: PublicBuilds,
+      meta: { breadcrumb: "Published Builds" },
     },
     {
       path: "/b/:code",

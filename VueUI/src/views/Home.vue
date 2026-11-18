@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { RouterLink, useRouter } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
 import {
   BuildOfTheDayDocument,
@@ -191,15 +191,20 @@ const queryError = computed(
     </v-alert>
 
     <section class="home-board" aria-label="Featured catalog">
-      <FeaturedBuildCard
-        v-if="buildOfTheDay"
-        class="home-botd"
-        :public-code="buildOfTheDay.publicCode"
-        :title="buildOfTheDay.title"
-        :ship-name="buildOfTheDay.shipName"
-        :fill-count="buildOfTheDay.fillCount"
-        :ship="buildOfTheDay.ship"
-      />
+      <div class="home-builds">
+        <FeaturedBuildCard
+          v-if="buildOfTheDay"
+          class="home-botd"
+          :public-code="buildOfTheDay.publicCode"
+          :title="buildOfTheDay.title"
+          :ship-name="buildOfTheDay.shipName"
+          :fill-count="buildOfTheDay.fillCount"
+          :ship="buildOfTheDay.ship"
+        />
+        <RouterLink to="/builds" class="home-builds__link">
+          Browse published builds
+        </RouterLink>
+      </div>
 
       <div class="featured-block">
         <loading-panel
@@ -366,6 +371,7 @@ const queryError = computed(
   align-items: stretch;
 }
 
+.home-builds,
 .home-botd {
   grid-column: 1 / -1;
 }
@@ -426,6 +432,7 @@ const queryError = computed(
     grid-template-columns: 1fr;
   }
 
+  .home-builds,
   .home-botd,
   .featured-block,
   .featured-traits,

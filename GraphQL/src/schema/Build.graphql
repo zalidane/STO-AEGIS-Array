@@ -16,9 +16,52 @@ type PublishBuildResult {
   listingError: String
 }
 
+
+enum PublicBuildSort {
+  NEWEST
+  UPDATED
+  NAME
+  FEATURED
+}
+
+type PublicBuild {
+  publicCode: String!
+  title: String!
+  shipName: String!
+  ship: Ship
+  fillCount: Int!
+  featuredCount: Int!
+  listedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type PublicBuildFacets {
+  factions: [String!]!
+  tiers: [Int!]!
+  shipNames: [String!]!
+}
+
+type PublicBuildConnection {
+  items: [PublicBuild!]!
+  totalCount: Int!
+  offset: Int!
+  limit: Int!
+  facets: PublicBuildFacets!
+}
+
 extend type Query {
   sharedBuild(code: String!): SharedBuild
   buildOfTheDay: SharedBuild
+  publicBuilds(
+    search: String
+    shipName: String
+    faction: String
+    tier: Int
+    sort: PublicBuildSort
+    offset: Int
+    limit: Int
+  ): PublicBuildConnection!
   catalogUsage(catalogKind: String!, name: String!, type: String): Int!
 }
 
