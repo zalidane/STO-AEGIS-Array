@@ -138,6 +138,8 @@ npm run import -- --force-import
 npm run import:prod
 ```
 
+While each table is written, import prints a progress line with the table name, a bar, done/total rows, percent, and elapsed time. The timer keeps updating even if no rows advance (for example a database lock). After the bar finishes, the existing summary lines still print (`imported N records`, and the JSON-vs-database count warning when it applies). `Resolving relationships...` starts with a spinner, then a bar once the work is counted. In a terminal the line rewrites in place; in CI or redirected logs it prints a plain line about every 10%, plus a heartbeat if a table stalls.
+
 ## Cargo tables
 
 Written to `output/{Name}.json`:
@@ -214,7 +216,7 @@ From the monorepo root:
 npm run test:extractor
 ```
 
-Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier / reputation / set-bonus / traits supplement merge, the `CatalogSupplement` loader, import name dedupe, and the monthly home-extract schedule gate.
+Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier / reputation / set-bonus / traits supplement merge, the `CatalogSupplement` loader, import name dedupe, import progress formatting and throttling, and the monthly home-extract schedule gate.
 
 ## Images
 
