@@ -852,6 +852,18 @@
     "tag3": null
   },
   {
+    "name": "Department Cross-Training",
+    "short": "Sci &amp; Eng Skills Buff",
+    "basic": "*Activating a Science or Engineering Hull Heal or Shield Heal Bridge Officer Ability will buff your Science and Engineering skills for 15 seconds. No Stacks. Refreshes. +150 Max Bonus.",
+    "detailed": "Activating a Science or Engineering Hull Heal or Shield Heal, for 15 sec:\n* Scales with Hull Repair:\n** +__ Starship Control Expertise &#039;&#039;(Improves Control Effects / Resistance to Same)&#039;&#039;\n** +__ Starship Drain Expertise &#039;&#039;(Improves Energy &amp; Shield Drains / Resistance to Same)&#039;&#039;\n** +__ Starship Shield Regeneration &#039;&#039;(Improves Passive Shield Regeneration)&#039;&#039;\n** +__ Starship Shield Hardness &#039;&#039;(Reduces Damage Taken by Shields)&#039;&#039;\n* Scales with EPG:\n** +__ Starship Energized Hull Plating &#039;&#039;(Improves Energy Damage Resistance Rating)&#039;&#039;\n** +__ Starship Ablative Hull Plating &#039;&#039;(Improves Kinetic and Physical Damage Resistance Rating)&#039;&#039;\n** +__ Starship Damage Control &#039;&#039;(Improves Passive Hull Regeneration)&#039;&#039;",
+    "type": "faction-specific",
+    "obtained": "*&lt;span title=&quot;Federation only&quot;&gt;[[File:Faction Federation.png|16px|link=Starfleet-only]]&lt;/span&gt; [[Curry Temporal Multi-Mission Science Vessel]]",
+    "icon name": null,
+    "tag": null,
+    "tag2": null,
+    "tag3": null
+  },
+  {
     "name": "Designated Target",
     "short": "Killing Focused Assault target grants +Damage Buff and Heal.",
     "basic": "* When you kill a target affected by your [[Focused Assault (ability)|Focused Assault]] ability, allies within 5km of the defeated target will gain a moderate hull heal and damage boost.",
@@ -2484,6 +2496,18 @@
     "tag3": null
   },
   {
+    "name": "Pike&#039;s Pressure",
+    "short": "Dealing damage to an enemy ship of Cruiser-rank or higher will grant your ship offensive benefits depending upon the rank of enemy damaged. Once these bonuses are triggered, they are effective against all enemy targets for the duration, and subsequent damage will refresh the buff, or replace it if the newly-damaged enemy is of a higher rank.",
+    "basic": null,
+    "detailed": "* When damaging a Cruiser, gain:\n:* +2% Critical Chance\n* When damaging a Battleship, gain:\n:* +3% Critical Chance\n:* +10% Starship Hull Penetration\n* When damaging a Dreadnought, gain:\n:* +5% Critical Chance\n:* +15% Critical Severity\n:* +15% Starship Hull Penetration\n:* +15% Starship Shield Penetration\nEach buff lasts 10sec and is refreshed or replaced by subsequent attacks. When this bonus triggers, it is effective against all enemy targets for the duration. Each higher tier of buff replaces the lower tier(s). Lower tiers will not refresh or replace the higher tier buffs.",
+    "type": "faction-specific",
+    "obtained": "*&lt;span title=&quot;Federation only&quot;&gt;[[File:Faction Federation.png|16px|link=Starfleet-only]]&lt;/span&gt; [[Constitution Pilot Multi-Mission Cruiser]]",
+    "icon name": null,
+    "tag": null,
+    "tag2": null,
+    "tag3": null
+  },
+  {
     "name": "Pilfered Power",
     "short": "Enemy Weapon and Aux Power lvls are drained to enhance your own. + Weapon Firing Speed.",
     "basic": "* Activating a Control Bridge Officer ability will reduce your target&#039;s Auxiliary and Weapon Power Levels, while enhancing your own Weapons and Auxiliary Power Levels and Weapon Firing Speed for a short duration.",
@@ -2892,6 +2916,18 @@
     "tag3": null
   },
   {
+    "name": "Reprehensible Responsibility",
+    "short": "Defeated foes grant Maximum Hull Hit Points and Passive Regeneration",
+    "basic": "* &#039;&#039;&quot;He is my Honatta... his task is to find the organs I need for survival.&quot;&#039;&#039;  \n* While this trait is slotted, defeating an enemy will grant you maximum hull points and regenerates your hull hit points. This heal stacks up to 5 times and may be triggered once every 5 seconds.",
+    "detailed": "Upon Defeating an enemy while in combat (max 5 stacks):\n* +5% Max Hull Capacity\n* +_____ Hull Healing (2% of Max Hull) every 2 sec for 15 sec",
+    "type": "crossfaction",
+    "obtained": "* &lt;span title=&quot;Khitomer&quot;&gt;[[File:Faction Khitomer.png|16px|link=Cross-Faction Content]]&lt;/span&gt; [[Vidiian Science Warship]]",
+    "icon name": null,
+    "tag": null,
+    "tag2": null,
+    "tag3": null
+  },
+  {
     "name": "Repulsive",
     "short": "Repel+PhysDmg from Eng/Command Boff Abilities",
     "basic": "*While this trait is slotted, activating any Engineering or Command Bridge Officer Ability will cause your ship to initiate a massive repel wave targeting the nearest enemy starship within 3km. This causes some Physical Damage (ignores shields) and will push that foe and up to 2 other nearby enemy ships a good distance away from your vessel. Once triggered, there is a 10 second lockout. If there are no valid foes within 3km, it will not trigger the lockout.",
@@ -3090,6 +3126,18 @@
     "detailed": "When activating any Hull Heal or Intel Bridge Officer Ability:\n* Apply &#039;&#039;Revenge&#039;&#039; to Self for 30 sec, or increase stack size by 1 (max 5 stacks)\n* While &#039;&#039;Revenge&#039;&#039; is active, Reflect 10%-50% of incoming Energy Weapon Damage (pre-resistances) as Disruptor Damage (scales with stacks of &#039;&#039;Revenge&#039;&#039;, all stacks removed when duration ends)",
     "type": "faction-specific",
     "obtained": "*&lt;span title=&quot;Klingon only&quot;&gt;[[File:Faction Klingon.png|16px|link=Klingon-only]]&lt;/span&gt; [[Legendary D7 Intel Battlecruiser]]",
+    "icon name": null,
+    "tag": null,
+    "tag2": null,
+    "tag3": null
+  },
+  {
+    "name": "Shattering Warcry",
+    "short": "Unshielded Hits Grant Buffs to You and Allies",
+    "basic": "*While this trait is slotted, attacking an unshielded quadrant grants you and up to 5 nearby allies Critical Hit Chance and Starship Hull Penetration for 10 seconds. May only trigger once every 20 seconds.",
+    "detailed": "Once every 20 sec, damaging an unshielded facing grants you and up to 5 nearby allies the following buffs for 10 seconds:\n*+10% Critical Chance\n*+100 Starship Hull Penetration\n:&#039;&#039;(Improves Hull Penetration for Starship Weapons)&#039;&#039;",
+    "type": "faction-specific",
+    "obtained": "*&lt;span title=&quot;Federation only&quot;&gt;[[File:Faction Federation.png|16px|link=Starfleet-only]]&lt;/span&gt; [[Yeager Miracle Worker Escort]]",
     "icon name": null,
     "tag": null,
     "tag2": null,
@@ -3339,6 +3387,18 @@
     "name": "Streak Breaker",
     "short": "Missed Attacks Grant Streak Breaker Counter",
     "basic": "* Grants a Streak Breaker Counter each time you miss an enemy. After receiving 5 Streak Breaker Counters, you&#039;ll gain the Streak Breaker Buff which will provide a boost to Accuracy, Critical Hit Chance and Severity &lt;strike&gt;Defense&lt;/strike&gt;&lt;small&gt;&#039;&quot;`UNIQ--nowiki-00000000-QINU`&quot;&#039;[[w:Sic|&#039;&#039;sic&#039;&#039;]]&#039;&quot;`UNIQ--nowiki-00000001-QINU`&quot;&#039;&lt;/small&gt; for a short time. Once you gain the Streak Breaker Buff, you will be locked out from building any Streak Breaker Counters for awhile.",
+    "detailed": "* When you miss: Gain 1 Streak Breaker counter for 60 sec\n* At 5 counters:\n** +20 Accuracy Rating for 15 sec\n** +50% Critical Severity for 15 sec\n** +10% Critical Chance for 15 sec\n** Prevents gaining Streak Breaker counters for 30 sec",
+    "type": "crossfaction",
+    "obtained": "*&lt;span title=&quot;Khitomer&quot;&gt;[[File:Faction Khitomer.png|16px|link=Cross-Faction Content]]&lt;/span&gt; [[Ferengi Nagus Marauder]]",
+    "icon name": null,
+    "tag": null,
+    "tag2": null,
+    "tag3": null
+  },
+  {
+    "name": "Streak Breaker",
+    "short": "Missed Attacks Grant Streak Breaker Counter",
+    "basic": "* Grants a Streak Breaker Counter each time you miss an enemy. After receiving 5 Streak Breaker Counters, you&#039;ll gain the Streak Breaker Buff which will provide a boost to Accuracy, Critical Hit Chance and Severity &lt;strike&gt;Defense&lt;/strike&gt;&lt;small&gt;&#039;&quot;`UNIQ--nowiki-00000DFE-QINU`&quot;&#039;[[w:Sic|&#039;&#039;sic&#039;&#039;]]&#039;&quot;`UNIQ--nowiki-00000DFF-QINU`&quot;&#039;&lt;/small&gt; for a short time. Once you gain the Streak Breaker Buff, you will be locked out from building any Streak Breaker Counters for awhile.",
     "detailed": "* When you miss: Gain 1 Streak Breaker counter for 60 sec\n* At 5 counters:\n** +20 Accuracy Rating for 15 sec\n** +50% Critical Severity for 15 sec\n** +10% Critical Chance for 15 sec\n** Prevents gaining Streak Breaker counters for 30 sec",
     "type": "crossfaction",
     "obtained": "*&lt;span title=&quot;Khitomer&quot;&gt;[[File:Faction Khitomer.png|16px|link=Cross-Faction Content]]&lt;/span&gt; [[Ferengi Nagus Marauder]]",
@@ -3852,6 +3912,18 @@
     "tag3": null
   },
   {
+    "name": "The Dogs of War",
+    "short": "Command Abilities and Universal Consoles Buff Hangar Pets",
+    "basic": "*Activating any Command Bridge Officer Ability or Universal Console sends commands to up to 20 friendly hangar pets and increases their Critical Severity and Weapon Firing Haste. This effect may only be triggered once every few seconds and will only trigger while in combat.",
+    "detailed": "When activating any Command Bridge Officer Ability or Universal Console, up to 20 nearby hangar pets gain the following for 15 seconds (max 5 stacks) (refreshes on activation):\n*+5% Weapon Firing Haste\n*+5% Critical Severity",
+    "type": "faction-specific",
+    "obtained": "*&lt;span title=&quot;Federation only&quot;&gt;[[File:Faction Federation.png|16px|link=Starfleet-only]]&lt;/span&gt; [[Midway Command Flight Deck Carrier]]",
+    "icon name": null,
+    "tag": null,
+    "tag2": null,
+    "tag3": null
+  },
+  {
     "name": "The Leading Captain",
     "short": "Increase Threat + Gain Incoming Healing or Reduce Threat + Gain Accuracy for Self, +Incoming Healing, +Critical Chance, +Critical Severity depending on nearby Allied Players",
     "basic": "* Benefit from the awareness offered by having coordinated allies nearby, gaining increased Incoming Healing and Critical for each allied player within 10km. Gain additional bonuses depending on the status of your ship’s Threatening Stance.",
@@ -3882,6 +3954,18 @@
     "detailed": "* When you defeat a Foe:\n** +3% Bonus All Damage for 20 sec\n**&#039;&#039;(Effect stacks up to 100x, duration resets on trigger)&#039;&#039;\n* Every fifth defeat:\n** -15% Recharge Time to Bridge Officer Abilities over 5 sec",
     "type": "pack",
     "obtained": "*&lt;span title=&quot;Klingon only&quot;&gt;[[File:Faction Klingon.png|16px|link=Klingon-only]]&lt;/span&gt; [[D7 Miracle Worker Flight Deck Carrier]]\n*&lt;span title=&quot;Federation only&quot;&gt;[[File:Faction Federation.png|16px|link=Starfleet-only]]&lt;/span&gt; &lt;span style=&quot;font-family:&#039;FuturaBody&#039;, Tahoma, Geneva, Arial;&quot; class=&quot;veryrare lht-data&quot;&gt;&amp;#91;[[Cross-Faction Bundle - D7 Miracle Worker Flight Deck Carrier Equipment|&lt;span class=&quot;veryrare&quot;&gt;Cross-Faction Bundle - D7 Miracle Worker Flight Deck Carrier Equipment&lt;/span&gt;]]&amp;#93;&lt;/span&gt; &#039;&#039;(Retired)&#039;&#039;",
+    "icon name": null,
+    "tag": null,
+    "tag2": null,
+    "tag3": null
+  },
+  {
+    "name": "Thermal Inertia",
+    "short": "Build up devastating attack while at or above Medium Throttle OR Reversing",
+    "basic": "* While this trait is slotted, moving at or above 50% Throttle OR Moving in Reverse builds up a Thermal Inertia stack every second. At 25 stacks, your next Weapon attack will launch Cryo Devastation, dealing heavy Cold Damage and Disabling the foe&#039;s shields for 3 seconds.",
+    "detailed": "While at 50% or Higher Throttle OR While in Reverse, once per sec: (max 25 stacks)\n* Gain a Thermal Inertia stack every second, At 25 stacks, your next Weapon attack will launch Cryo Devastation, dealing ______ Cold Damage and Disabling foe&#039;s shields for 3 seconds.",
+    "type": "faction-specific",
+    "obtained": "*&lt;span title=&quot;Khitomer&quot;&gt;[[File:Faction Khitomer.png|16px|link=Cross-Faction Content]]&lt;/span&gt; [[Breen Erigah Pilot Frigate]]",
     "icon name": null,
     "tag": null,
     "tag2": null,
@@ -3962,7 +4046,7 @@
   {
     "name": "To Hell With Our Orders",
     "short": "Captain Abilities Reduce [[Universal Console]] Recharge and Increased Maneuverability",
-    "basic": null,
+    "basic": "* Starship Trait. Using a Captain ability reduces the recharge of Universal Consoles by 5% and increases maneuverability. &#039;&#039;&quot;Captain, I think I speak for everyone here when I say.. to hell with our orders.&quot;&#039;&#039;\n*For a ship&#039;s crew to have total faith in their captain - this rallying call solidifies the bonds that this ship&#039;s crew has with one another as they bravely fly into danger.\n*&#039;&#039;(Cooldown reducing abilities are not impacted by other cooldown reducing abilities)&#039;&#039;",
     "detailed": "Using a Captain ability gives:\n* -5% Recharge Time to Universal Consoles\n* +30% Increased Flight Speed and Turn Rate for 6 sec.",
     "type": "crossfaction",
     "obtained": "* &lt;span title=&quot;Khitomer&quot;&gt;[[File:Faction Khitomer.png|16px|link=Cross-Faction Content]]&lt;/span&gt; [[Noble Intel Battlecruiser]]",
