@@ -105,3 +105,55 @@ mutation UnlistBuild($publicCode: String!, $editToken: String!) {
     visibility
   }
 }
+
+query PublicBuilds(
+  $search: String
+  $shipName: String
+  $faction: String
+  $tier: Int
+  $sort: PublicBuildSort
+  $offset: Int
+  $limit: Int
+) {
+  publicBuilds(
+    search: $search
+    shipName: $shipName
+    faction: $faction
+    tier: $tier
+    sort: $sort
+    offset: $offset
+    limit: $limit
+  ) {
+    totalCount
+    offset
+    limit
+    facets {
+      factions
+      tiers
+      shipNames
+    }
+    items {
+      publicCode
+      title
+      shipName
+      fillCount
+      featuredCount
+      listedAt
+      createdAt
+      updatedAt
+      ship {
+        id
+        name
+        wikiName
+        image
+        type
+        tier
+        faction
+        factionLede
+        displayPrefix
+        displayClass
+        displayType
+      }
+    }
+  }
+}

@@ -16,6 +16,7 @@ import {
   type SharePayload,
   type ShareVisibility,
 } from "../logic/sharePayload.js";
+import { listPublicBuilds } from "../logic/publicBuilds.js";
 import {
   generateEditToken,
   generatePublicCode,
@@ -286,6 +287,18 @@ export function createBuildResolver(prisma: PrismaClient) {
         const row = await ensureBuildOfTheDay(prisma);
         return row ? asSharedBuild(row) : null;
       },
+      publicBuilds: (
+        _parent: unknown,
+        args: {
+          search?: string | null;
+          shipName?: string | null;
+          faction?: string | null;
+          tier?: number | null;
+          sort?: string | null;
+          offset?: number | null;
+          limit?: number | null;
+        },
+      ) => listPublicBuilds(prisma, args),
       catalogUsage: (
         _parent: unknown,
         args: { catalogKind: string; name: string; type?: string | null },
