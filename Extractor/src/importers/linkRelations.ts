@@ -17,6 +17,7 @@ import {
   dedupeShipsByDecodedName,
   dedupeStarshipTraitsByDecodedName,
 } from "./dedupeEncodedNames";
+import { createImportProgress } from "../utils/importProgress.js";
 
 function nameIdMap(rows: { id: number; name: string }[]): Map<string, number> {
   return new Map(
@@ -25,194 +26,219 @@ function nameIdMap(rows: { id: number; name: string }[]): Map<string, number> {
 }
 
 export async function linkRelations(prisma: PrismaClient) {
-  // Collapse Mat&#039;Ha / Mat'Ha style duplicates before linking.
-  const shipDedupe = await dedupeShipsByDecodedName(prisma);
-  const traitDedupe = await dedupeStarshipTraitsByDecodedName(prisma);
-
-  // Sequential reads: concurrent prisma queries on adapter-pg can hit the same
-  // pg Client and trigger DeprecationWarning (hard error in pg@9).
-  const ships = await prisma.ship.findMany({
-    select: {
-      id: true,
-      name: true,
-      type: true,
-      tier: true,
-      uniconsole: true,
-      displayPrefix: true,
-      displayClass: true,
-      displayType: true,
-      rawData: true,
-    },
+  const progress = createImportProgress({
+    label: "Resolving relationships",
+    indeterminate: true,
   });
-  const traits = await prisma.starshipTrait.findMany({
-    select: { id: true, name: true, obtained: true },
-  });
-  const infoboxes = await prisma.infobox.findMany({
-    select: { id: true, name: true },
-  });
-  const modifiers = await prisma.modifier.findMany({
-    select: { id: true, available: true },
-  });
-  const masteries = await prisma.mastery.findMany();
-  const gwRows = await prisma.gwObtain.findMany();
-  const swRows = await prisma.swObtain.findMany();
-  const experimentalByShip = await loadExperimentalWeaponMap();
 
-  const shipNames = buildShipNameIndex(ships);
-  const traitByName = nameIdMap(traits);
-  const infoboxByName = nameIdMap(infoboxes);
-  const infoboxByNormalized = new Map(
-    infoboxes.map(
-      (row) => [normalizeInfoboxName(row.name), row.id] as const,
-    ),
-  );
+  try {
+    // Collapse Mat&#039;Ha / Mat'Ha style duplicates before linking.
+    const shipDedupe = await dedupeShipsByDecodedName(prisma);
+    const traitDedupe = await dedupeStarshipTraitsByDecodedName(prisma);
 
-  // --- ShipType taxonomy (Mastery.masterypackage / Ships.type) ---
-  const typeNames = new Set<string>();
-  for (const s of ships) {
-    if (s.type) typeNames.add(normalizeShipType(s.type));
-  }
-
-  for (const m of masteries) {
-    if (m.masterypackage) typeNames.add(normalizeShipType(m.masterypackage));
-  }
-
-  const shipTypeIdByName = new Map<string, number>();
-  for (const name of typeNames) {
-    const row = await prisma.shipType.upsert({
-      where: { name },
-      create: { name },
-      update: {},
+    // Sequential reads: concurrent prisma queries on adapter-pg can hit the same
+    // pg Client and trigger DeprecationWarning (hard error in pg@9).
+    const ships = await prisma.ship.findMany({
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        tier: true,
+        uniconsole: true,
+        displayPrefix: true,
+        displayClass: true,
+        displayType: true,
+        rawData: true,
+      },
     });
-    shipTypeIdByName.set(name, row.id);
-  }
+    const traits = await prisma.starshipTrait.findMany({
+      select: { id: true, name: true, obtained: true },
+    });
+    const infoboxes = await prisma.infobox.findMany({
+      select: { id: true, name: true },
+    });
+    const modifiers = await prisma.modifier.findMany({
+      select: { id: true, available: true },
+    });
+    const masteries = await prisma.mastery.findMany();
+    const gwRows = await prisma.gwObtain.findMany();
+    const swRows = await prisma.swObtain.findMany();
+    const experimentalByShip = await loadExperimentalWeaponMap();
 
-  for (const ship of ships) {
-    const typeKey = ship.type ? normalizeShipType(ship.type) : null;
-    const shipTypeId = typeKey ? (shipTypeIdByName.get(typeKey) ?? null) : null;
-
-    const raw = ship.rawData as Record<string, unknown> | null;
-    const uniconsoleRaw =
-      ship.uniconsole ??
-      (typeof raw?.uniconsole === "string" ? raw.uniconsole : null);
-    const uniconsole = decodeHtmlEntitiesOrNull(uniconsoleRaw);
-    const uniconsoleId = uniconsole
-      ? (infoboxByName.get(uniconsole) ?? null)
-      : null;
-    const experimentalWeapon = experimentalWeaponName(
-      ship.name,
-      experimentalByShip,
+    const shipNames = buildShipNameIndex(ships);
+    const traitByName = nameIdMap(traits);
+    const infoboxByName = nameIdMap(infoboxes);
+    const infoboxByNormalized = new Map(
+      infoboxes.map(
+        (row) => [normalizeInfoboxName(row.name), row.id] as const,
+      ),
     );
-    const experimentalWeaponId = experimentalWeapon
-      ? (infoboxByName.get(experimentalWeapon) ??
-        infoboxByNormalized.get(normalizeInfoboxName(experimentalWeapon)) ??
-        null)
-      : null;
 
-    await prisma.ship.update({
-      where: { id: ship.id },
-      data: {
-        shipTypeId,
-        uniconsole,
-        uniconsoleId,
-        experimentalWeapon,
-        experimentalWeaponId,
-      },
-    });
-  }
+    // --- ShipType taxonomy (Mastery.masterypackage / Ships.type) ---
+    const typeNames = new Set<string>();
+    for (const s of ships) {
+      if (s.type) typeNames.add(normalizeShipType(s.type));
+    }
 
-  // --- StarshipTrait.obtained -> Ships (M:N) ---
-  await prisma.starshipTraitShip.deleteMany();
-  const traitShipRows: { starshipTraitId: number; shipId: number }[] = [];
-  for (const trait of traits) {
-    for (const target of extractWikiTargets(trait.obtained)) {
-      const shipId = lookupShipId(shipNames, target);
-      if (shipId) {
-        traitShipRows.push({ starshipTraitId: trait.id, shipId });
+    for (const m of masteries) {
+      if (m.masterypackage) typeNames.add(normalizeShipType(m.masterypackage));
+    }
+
+    const shipTypeIdByName = new Map<string, number>();
+    progress.setTotal(
+      typeNames.size +
+        ships.length +
+        masteries.length +
+        gwRows.length +
+        swRows.length +
+        2,
+    );
+    for (const name of typeNames) {
+      const row = await prisma.shipType.upsert({
+        where: { name },
+        create: { name },
+        update: {},
+      });
+      shipTypeIdByName.set(name, row.id);
+      progress.tick();
+    }
+
+    for (const ship of ships) {
+      const typeKey = ship.type ? normalizeShipType(ship.type) : null;
+      const shipTypeId = typeKey ? (shipTypeIdByName.get(typeKey) ?? null) : null;
+
+      const raw = ship.rawData as Record<string, unknown> | null;
+      const uniconsoleRaw =
+        ship.uniconsole ??
+        (typeof raw?.uniconsole === "string" ? raw.uniconsole : null);
+      const uniconsole = decodeHtmlEntitiesOrNull(uniconsoleRaw);
+      const uniconsoleId = uniconsole
+        ? (infoboxByName.get(uniconsole) ?? null)
+        : null;
+      const experimentalWeapon = experimentalWeaponName(
+        ship.name,
+        experimentalByShip,
+      );
+      const experimentalWeaponId = experimentalWeapon
+        ? (infoboxByName.get(experimentalWeapon) ??
+          infoboxByNormalized.get(normalizeInfoboxName(experimentalWeapon)) ??
+          null)
+        : null;
+
+      await prisma.ship.update({
+        where: { id: ship.id },
+        data: {
+          shipTypeId,
+          uniconsole,
+          uniconsoleId,
+          experimentalWeapon,
+          experimentalWeaponId,
+        },
+      });
+      progress.tick();
+    }
+
+    // --- StarshipTrait.obtained -> Ships (M:N) ---
+    await prisma.starshipTraitShip.deleteMany();
+    const traitShipRows: { starshipTraitId: number; shipId: number }[] = [];
+    for (const trait of traits) {
+      for (const target of extractWikiTargets(trait.obtained)) {
+        const shipId = lookupShipId(shipNames, target);
+        if (shipId) {
+          traitShipRows.push({ starshipTraitId: trait.id, shipId });
+        }
       }
     }
-  }
-  if (traitShipRows.length) {
-    await prisma.starshipTraitShip.createMany({
-      data: traitShipRows,
-      skipDuplicates: true,
-    });
-  }
+    if (traitShipRows.length) {
+      await prisma.starshipTraitShip.createMany({
+        data: traitShipRows,
+        skipDuplicates: true,
+      });
+    }
+    progress.tick();
 
-  // --- Mastery.trait* -> StarshipTrait ---
-  for (const m of masteries) {
-    const shipTypeId = m.masterypackage
-      ? (shipTypeIdByName.get(normalizeShipType(m.masterypackage)) ?? null)
-      : null;
+    // --- Mastery.trait* -> StarshipTrait ---
+    for (const m of masteries) {
+      const shipTypeId = m.masterypackage
+        ? (shipTypeIdByName.get(normalizeShipType(m.masterypackage)) ?? null)
+        : null;
 
-    const traitName = decodeHtmlEntitiesOrNull(m.trait);
-    const trait2Name = decodeHtmlEntitiesOrNull(m.trait2);
-    const trait3Name = decodeHtmlEntitiesOrNull(m.trait3);
-    const acctraitName = decodeHtmlEntitiesOrNull(m.acctrait);
+      const traitName = decodeHtmlEntitiesOrNull(m.trait);
+      const trait2Name = decodeHtmlEntitiesOrNull(m.trait2);
+      const trait3Name = decodeHtmlEntitiesOrNull(m.trait3);
+      const acctraitName = decodeHtmlEntitiesOrNull(m.acctrait);
 
-    await prisma.mastery.update({
-      where: { id: m.id },
-      data: {
-        traitId: traitName ? (traitByName.get(traitName) ?? null) : null,
-        trait2Id: trait2Name ? (traitByName.get(trait2Name) ?? null) : null,
-        trait3Id: trait3Name ? (traitByName.get(trait3Name) ?? null) : null,
-        acctraitId: acctraitName
-          ? (traitByName.get(acctraitName) ?? null)
-          : null,
-        shipTypeId,
-      },
-    });
-  }
+      await prisma.mastery.update({
+        where: { id: m.id },
+        data: {
+          traitId: traitName ? (traitByName.get(traitName) ?? null) : null,
+          trait2Id: trait2Name ? (traitByName.get(trait2Name) ?? null) : null,
+          trait3Id: trait3Name ? (traitByName.get(trait3Name) ?? null) : null,
+          acctraitId: acctraitName
+            ? (traitByName.get(acctraitName) ?? null)
+            : null,
+          shipTypeId,
+        },
+      });
+      progress.tick();
+    }
 
-  // --- Gw/SwObtain.lb -> Infobox ("{lb}" Lock Box) ---
-  for (const row of gwRows) {
-    const lb = decodeHtmlEntitiesOrNull(row.lb);
-    const lockBoxId = lb ? (infoboxByName.get(`${lb} Lock Box`) ?? null) : null;
-    await prisma.gwObtain.update({
-      where: { id: row.id },
-      data: { lockBoxId },
-    });
-  }
+    // --- Gw/SwObtain.lb -> Infobox ("{lb}" Lock Box) ---
+    for (const row of gwRows) {
+      const lb = decodeHtmlEntitiesOrNull(row.lb);
+      const lockBoxId = lb ? (infoboxByName.get(`${lb} Lock Box`) ?? null) : null;
+      await prisma.gwObtain.update({
+        where: { id: row.id },
+        data: { lockBoxId },
+      });
+      progress.tick();
+    }
 
-  for (const row of swRows) {
-    const lb = decodeHtmlEntitiesOrNull(row.lb);
-    const lockBoxId = lb ? (infoboxByName.get(`${lb} Lock Box`) ?? null) : null;
-    await prisma.swObtain.update({
-      where: { id: row.id },
-      data: { lockBoxId },
-    });
-  }
+    for (const row of swRows) {
+      const lb = decodeHtmlEntitiesOrNull(row.lb);
+      const lockBoxId = lb ? (infoboxByName.get(`${lb} Lock Box`) ?? null) : null;
+      await prisma.swObtain.update({
+        where: { id: row.id },
+        data: { lockBoxId },
+      });
+      progress.tick();
+    }
 
-  // --- Modifier.available -> Infobox (M:N) ---
-  await prisma.modifierItem.deleteMany();
-  const modifierItems: { modifierId: number; infoboxId: number }[] = [];
-  for (const mod of modifiers) {
-    for (const itemName of splitList(mod.available)) {
-      const infoboxId = infoboxByName.get(itemName);
-      if (infoboxId) {
-        modifierItems.push({ modifierId: mod.id, infoboxId });
+    // --- Modifier.available -> Infobox (M:N) ---
+    await prisma.modifierItem.deleteMany();
+    const modifierItems: { modifierId: number; infoboxId: number }[] = [];
+    for (const mod of modifiers) {
+      for (const itemName of splitList(mod.available)) {
+        const infoboxId = infoboxByName.get(itemName);
+        if (infoboxId) {
+          modifierItems.push({ modifierId: mod.id, infoboxId });
+        }
       }
     }
-  }
-  if (modifierItems.length) {
-    await prisma.modifierItem.createMany({
-      data: modifierItems,
-      skipDuplicates: true,
-    });
-  }
+    if (modifierItems.length) {
+      await prisma.modifierItem.createMany({
+        data: modifierItems,
+        skipDuplicates: true,
+      });
+    }
+    progress.tick();
 
-  console.log("Relations linked:", {
-    encodedNameDedupe: {
-      shipsMerged: shipDedupe.merged,
-      shipsRenamed: shipDedupe.renamed,
-      traitsMerged: traitDedupe.merged,
-      traitsRenamed: traitDedupe.renamed,
-    },
-    shipTypes: shipTypeIdByName.size,
-    traitShips: traitShipRows.length,
-    modifierItems: modifierItems.length,
-    experimentalWeapons: Object.values(experimentalByShip).filter(Boolean).length,
-  });
+    progress.stop();
+    console.log("Relations linked:", {
+      encodedNameDedupe: {
+        shipsMerged: shipDedupe.merged,
+        shipsRenamed: shipDedupe.renamed,
+        traitsMerged: traitDedupe.merged,
+        traitsRenamed: traitDedupe.renamed,
+      },
+      shipTypes: shipTypeIdByName.size,
+      traitShips: traitShipRows.length,
+      modifierItems: modifierItems.length,
+      experimentalWeapons: Object.values(experimentalByShip).filter(Boolean).length,
+    });
+  } finally {
+    progress.stop();
+  }
 }
 
 function experimentalWeaponName(

@@ -9,6 +9,10 @@ import {
 import type { ImportConfig } from "./importConfig.js";
 import { planIdentityReplace } from "./identityReplace.js";
 import { validateCargoJson } from "../utils/validateCargoJson.js";
+import {
+  createImportProgress,
+  type ImportProgress,
+} from "../utils/importProgress.js";
 
 export async function importTable<
   TRaw extends Record<string, unknown>,
@@ -109,16 +113,34 @@ export async function importTable<
   const strategy =
     config.strategy ?? (config.uniqueFields?.length ? "upsert" : "replace");
 
-  if (strategy === "replace") {
-    await replaceAll(model, rows, config.mapper, config.identityFields);
-  } else {
-    if (!config.uniqueFields?.length) {
-      console.error(
-        `${table}: upsert strategy requires uniqueFields — import skipped`,
+  if (strategy !== "replace" && !config.uniqueFields?.length) {
+    console.error(
+      `${table}: upsert strategy requires uniqueFields — import skipped`,
+    );
+    return false;
+  }
+
+  const progress = createImportProgress({ label: table, total: rows.length });
+  try {
+    if (strategy === "replace") {
+      await replaceAll(
+        model,
+        rows,
+        config.mapper,
+        config.identityFields,
+        progress,
       );
-      return false;
+    } else {
+      await upsertAll(
+        model,
+        rows,
+        config.mapper,
+        config.uniqueFields!,
+        progress,
+      );
     }
-    await upsertAll(model, rows, config.mapper, config.uniqueFields);
+  } finally {
+    progress.stop();
   }
 
   const count = await model.count();
@@ -144,6 +166,7 @@ async function upsertAll<
   rows: TRaw[],
   mapper: (row: TRaw) => TMapped,
   uniqueFields: readonly (keyof TMapped)[],
+  progress: ImportProgress,
 ) {
   for (const row of rows) {
     const mapped = mapper(row);
@@ -154,6 +177,7 @@ async function upsertAll<
       update: mapped,
       create: mapped,
     });
+    progress.tick();
   }
 }
 
@@ -166,7 +190,8 @@ async function replaceAll<
   model: any,
   rows: TRaw[],
   mapper: (row: TRaw) => TMapped,
-  identityFields?: readonly (keyof TMapped)[],
+  identityFields: readonly (keyof TMapped)[] | undefined,
+  progress: ImportProgress,
 ) {
   if (!identityFields?.length) {
     await model.deleteMany();
@@ -174,6 +199,7 @@ async function replaceAll<
     await model.createMany({
       data: rows.map((row) => mapper(row)),
     });
+    progress.setDone(rows.length);
     return;
   }
 
@@ -190,8 +216,15 @@ async function replaceAll<
     identityFields.map(String),
   );
 
+  const planned =
+    plan.deleteIds.length + plan.update.length + plan.create.length;
+  progress.setTotal(planned);
+  let completed = 0;
+
   if (plan.deleteIds.length > 0) {
     await model.deleteMany({ where: { id: { in: plan.deleteIds } } });
+    completed += plan.deleteIds.length;
+    progress.setDone(completed);
   }
 
   for (let i = 0; i < plan.update.length; i += IDENTITY_UPDATE_BATCH) {
@@ -199,10 +232,14 @@ async function replaceAll<
     await Promise.all(
       chunk.map(({ id, data }) => model.update({ where: { id }, data })),
     );
+    completed += chunk.length;
+    progress.setDone(completed);
   }
 
   if (plan.create.length > 0) {
     await model.createMany({ data: plan.create });
+    completed += plan.create.length;
+    progress.setDone(completed);
   }
 }
 
