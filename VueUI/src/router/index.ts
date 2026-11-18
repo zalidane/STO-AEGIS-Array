@@ -3,8 +3,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from "@/views/Home.vue";
 import Search from "@/views/Search.vue";
 import Collection from "@/views/Collection.vue";
-import Loadouts from "@/views/Loadouts.vue";
-import PublicBuilds from "@/views/PublicBuilds.vue";
+import Builds from "@/views/Builds.vue";
 import SharedBuild from "@/views/SharedBuild.vue";
 import Ships from "@/views/Ships.vue";
 import AdvancedShipSearch from "@/views/AdvancedShipSearch.vue";
@@ -51,14 +50,16 @@ const router = createRouter({
     {
       path: "/loadouts",
       name: "loadouts",
-      component: Loadouts,
-      meta: { breadcrumb: "Loadouts" },
+      redirect: (to) => ({
+        path: "/builds",
+        query: { ...to.query, tab: "mine" },
+      }),
     },
     {
       path: "/builds",
-      name: "published-builds",
-      component: PublicBuilds,
-      meta: { breadcrumb: "Published Builds" },
+      name: "builds",
+      component: Builds,
+      meta: { breadcrumb: "Builds" },
     },
     {
       path: "/b/:code",

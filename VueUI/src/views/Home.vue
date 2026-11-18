@@ -201,7 +201,7 @@ const queryError = computed(
           :fill-count="buildOfTheDay.fillCount"
           :ship="buildOfTheDay.ship"
         />
-        <RouterLink to="/builds" class="home-builds__link">
+        <RouterLink to="/builds?tab=published" class="home-builds__link">
           Browse published builds
         </RouterLink>
       </div>

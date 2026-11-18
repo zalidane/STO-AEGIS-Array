@@ -2,15 +2,24 @@
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useQuery } from "@vue/apollo-composable";
-import { PublicBuildsDocument } from "@/graphql/generated/graphql";
+import { storeToRefs } from "pinia";
+import {
+  PublicBuildsDocument,
+  ShipsDocument,
+} from "@/graphql/generated/graphql";
 import AppBreadcrumbs from "@/components/shared/AppBreadcrumbs.vue";
 import LoadingPanel from "@/components/shared/LoadingPanel.vue";
 import PublicBuildCard from "@/components/builds/PublicBuildCard.vue";
+import { useCollectionStore } from "@/stores/collection";
+import { loadoutsForCharacter } from "@/logic/loadout/state";
+import { listMyBuilds } from "@/logic/publicBuilds/myBuilds";
+import { formatPublicBuildDate } from "@/logic/publicBuilds/queryState";
 import {
   DEFAULT_PUBLIC_BUILDS_VIEW_STATE,
   PUBLIC_BUILDS_PAGE_SIZE,
   PUBLIC_BUILD_SORT_OPTIONS,
   clampPublicBuildsPage,
+  parseBuildsTab,
   parsePublicBuildsViewState,
   publicBuildsFiltersAreActive,
   publicBuildsOffset,
@@ -19,14 +28,19 @@ import {
   type PublicBuildsViewState,
 } from "@/logic/publicBuilds/queryState";
 
-defineOptions({ name: "PublicBuilds" });
+defineOptions({ name: "Builds" });
 
 const route = useRoute();
 const router = useRouter();
+const store = useCollectionStore();
+const { activeCharacter, state } = storeToRefs(store);
 
 const filters = ref<PublicBuildsViewState>(
   parsePublicBuildsViewState(route.query),
 );
+
+const isMine = computed(() => filters.value.tab === "mine");
+const isPublished = computed(() => filters.value.tab === "published");
 
 const queryVariables = computed(() => ({
   search: filters.value.search.trim() || null,
@@ -41,18 +55,50 @@ const queryVariables = computed(() => ({
 const { result, loading, error } = useQuery(
   PublicBuildsDocument,
   queryVariables,
+  { enabled: isPublished },
 );
 
+const { result: shipsResult } = useQuery(ShipsDocument, {}, {
+  enabled: isMine,
+});
+
 const connection = computed(() => result.value?.publicBuilds ?? null);
-const items = computed(() => connection.value?.items ?? []);
-const totalCount = computed(() => connection.value?.totalCount ?? 0);
-const facets = computed(
-  () =>
-    connection.value?.facets ?? {
-      factions: [],
-      tiers: [],
-      shipNames: [],
-    },
+
+const loadouts = computed(() =>
+  loadoutsForCharacter(state.value, state.value.activeCharacterId),
+);
+
+const ships = computed(() => shipsResult.value?.ships ?? []);
+
+const myConnection = computed(() =>
+  listMyBuilds({
+    loadouts: loadouts.value,
+    ships: ships.value,
+    captain: activeCharacter.value,
+    search: filters.value.search,
+    shipName: filters.value.shipName,
+    faction: filters.value.faction,
+    tier: filters.value.tier,
+    sort: filters.value.sort,
+    offset: publicBuildsOffset(filters.value.page),
+    limit: PUBLIC_BUILDS_PAGE_SIZE,
+  }),
+);
+
+const publishedItems = computed(() => connection.value?.items ?? []);
+const mineItems = computed(() => myConnection.value.items);
+const items = computed(() =>
+  isPublished.value ? publishedItems.value : mineItems.value,
+);
+const totalCount = computed(() =>
+  isPublished.value
+    ? (connection.value?.totalCount ?? 0)
+    : myConnection.value.totalCount,
+);
+const facets = computed(() =>
+  isPublished.value
+    ? (connection.value?.facets ?? { factions: [], tiers: [], shipNames: [] })
+    : myConnection.value.facets,
 );
 
 const pageCount = computed(() => publicBuildsPageCount(totalCount.value));
@@ -65,6 +111,15 @@ const sortItems = PUBLIC_BUILD_SORT_OPTIONS.map((option) => ({
 const shipSelectItems = computed(() =>
   facets.value.shipNames.map((name) => ({ title: name, value: name })),
 );
+
+const tab = computed({
+  get: () => filters.value.tab,
+  set: (value: string) => {
+    const next = parseBuildsTab(value);
+    if (next === filters.value.tab) return;
+    patch({ tab: next, page: 1 });
+  },
+});
 
 watch(
   () => route.query,
@@ -112,6 +167,7 @@ function clearFilters() {
   filters.value = {
     ...DEFAULT_PUBLIC_BUILDS_VIEW_STATE,
     sort: filters.value.sort,
+    tab: filters.value.tab,
   };
 }
 
@@ -119,36 +175,76 @@ function onSort(value: unknown) {
   const match = PUBLIC_BUILD_SORT_OPTIONS.find((option) => option.value === value);
   if (match) patch({ sort: match.value });
 }
+
+function publishedDateLabel(item: {
+  listedAt?: unknown;
+  createdAt?: unknown;
+}): string {
+  const formatted = formatPublicBuildDate(item.listedAt ?? item.createdAt);
+  return formatted ? `Published ${formatted}` : "";
+}
+
+function mineDateLabel(item: { createdAt: string; updatedAt: string }): string {
+  const updated = formatPublicBuildDate(item.updatedAt);
+  if (updated && item.updatedAt !== item.createdAt) return `Updated ${updated}`;
+  const created = formatPublicBuildDate(item.createdAt);
+  return created ? `Created ${created}` : "";
+}
+
+const showPublishedLoading = computed(
+  () => isPublished.value && loading.value && !connection.value,
+);
 </script>
 
 <template>
   <app-breadcrumbs />
   <v-container class="pub-page" fluid>
-    <loading-panel v-if="loading && !connection" message="Published Builds" />
-    <v-alert v-else-if="error" type="error" class="mb-4">
+    <loading-panel v-if="showPublishedLoading" message="Published Builds" />
+    <v-alert v-else-if="isPublished && error" type="error" class="mb-4">
       {{ error.message }}
     </v-alert>
 
     <template v-else>
       <header class="pub-header">
-        <div class="pub-header__eyebrow">STO-AEGIS Array // Shared Boards</div>
+        <div class="pub-header__eyebrow">STO-AEGIS Array // Builds</div>
         <div class="pub-header__row">
           <div>
-            <h1 class="pub-header__title">Published Builds</h1>
+            <h1 class="pub-header__title">Builds</h1>
             <p class="pub-header__lede">
-              Publicly listed loadouts. Open a card to view the shared board.
+              <template v-if="isMine">
+                {{
+                  activeCharacter
+                    ? `Saved hull loadouts for ${activeCharacter.name}. Equip from the collection into legal slots.`
+                    : "Create a captain, then open a ship and start a loadout."
+                }}
+              </template>
+              <template v-else>
+                Publicly listed loadouts. Open a card to view the shared board.
+              </template>
             </p>
           </div>
           <div class="pub-header__counts">
-            <div>{{ totalCount }} published</div>
             <div>
-              {{ items.length }} on this page
+              {{ totalCount }}
+              {{ isMine ? "saved" : "published" }}
             </div>
+            <div>{{ items.length }} on this page</div>
           </div>
         </div>
       </header>
 
-      <section class="pub-filters" aria-label="Published build filters">
+      <v-tabs
+        v-model="tab"
+        color="primary"
+        bg-color="transparent"
+        show-arrows
+        class="pub-tabs"
+      >
+        <v-tab value="mine">My Builds</v-tab>
+        <v-tab value="published">Published</v-tab>
+      </v-tabs>
+
+      <section class="pub-filters" aria-label="Build filters">
         <div class="pub-filters__toolbar">
           <label class="pub-search">
             <v-icon size="18" icon="mdi-magnify" />
@@ -225,22 +321,46 @@ function onSort(value: unknown) {
         </div>
       </section>
 
-      <div v-if="items.length === 0" class="empty-featured">
-        No published builds match the current search and filters.
+      <div v-if="isMine && !activeCharacter" class="empty-featured">
+        No captain selected.
+      </div>
+      <div
+        v-else-if="isMine && loadouts.length === 0"
+        class="empty-featured"
+      >
+        No builds yet. Open a ship and choose Build.
+      </div>
+      <div v-else-if="items.length === 0" class="empty-featured">
+        No builds match the current search and filters.
       </div>
       <div v-else class="pub-grid">
-        <PublicBuildCard
-          v-for="item in items"
-          :key="item.publicCode"
-          :public-code="item.publicCode"
-          :title="item.title"
-          :ship-name="item.shipName"
-          :fill-count="item.fillCount"
-          :featured-count="item.featuredCount"
-          :listed-at="item.listedAt"
-          :created-at="item.createdAt"
-          :ship="item.ship"
-        />
+        <template v-if="isPublished">
+          <PublicBuildCard
+            v-for="item in publishedItems"
+            :key="item.publicCode"
+            :to="`/b/${item.publicCode}`"
+            :title="item.title"
+            :ship-name="item.shipName"
+            :fill-count="item.fillCount"
+            :featured-count="item.featuredCount"
+            :date-label="publishedDateLabel(item)"
+            :ship="item.ship"
+          />
+        </template>
+        <template v-else>
+          <PublicBuildCard
+            v-for="item in mineItems"
+            :key="item.id"
+            :to="item.to"
+            :title="item.title"
+            :ship-name="item.shipName"
+            :fill-count="item.filled"
+            :fill-total="item.total"
+            :date-label="mineDateLabel(item)"
+            :extra-labels="item.peakDpsLabel ? [item.peakDpsLabel] : []"
+            :ship="item.ship"
+          />
+        </template>
       </div>
 
       <div v-if="pageCount > 1" class="pub-pager">
@@ -275,7 +395,7 @@ function onSort(value: unknown) {
 }
 
 .pub-header {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
 }
 
 .pub-header__eyebrow {
@@ -307,6 +427,10 @@ function onSort(value: unknown) {
 .pub-header__counts {
   text-align: right;
   font-size: 0.9rem;
+}
+
+.pub-tabs {
+  margin-bottom: 1rem;
 }
 
 .pub-filters {

@@ -10,6 +10,12 @@ export const PUBLIC_BUILD_SORT_OPTIONS = [
 export type PublicBuildSortValue =
   (typeof PUBLIC_BUILD_SORT_OPTIONS)[number]["value"];
 
+export const BUILDS_TABS = ["mine", "published"] as const;
+
+export type BuildsTab = (typeof BUILDS_TABS)[number];
+
+export const DEFAULT_BUILDS_TAB: BuildsTab = "mine";
+
 export type PublicBuildsViewState = {
   search: string;
   shipName: string;
@@ -17,6 +23,7 @@ export type PublicBuildsViewState = {
   tier: number | null;
   sort: PublicBuildSortValue;
   page: number;
+  tab: BuildsTab;
 };
 
 export const DEFAULT_PUBLIC_BUILDS_VIEW_STATE: PublicBuildsViewState = {
@@ -26,11 +33,19 @@ export const DEFAULT_PUBLIC_BUILDS_VIEW_STATE: PublicBuildsViewState = {
   tier: null,
   sort: "NEWEST",
   page: 1,
+  tab: DEFAULT_BUILDS_TAB,
 };
 
 function firstQueryValue(value: unknown): string {
   if (Array.isArray(value)) return firstQueryValue(value[0]);
   return typeof value === "string" ? value : "";
+}
+
+export function parseBuildsTab(value: unknown): BuildsTab {
+  const raw = firstQueryValue(value).trim().toLowerCase();
+  if (raw === "published" || raw === "public") return "published";
+  if (raw === "mine" || raw === "my" || raw === "loadouts") return "mine";
+  return DEFAULT_BUILDS_TAB;
 }
 
 function parsePage(value: unknown): number {
@@ -63,6 +78,7 @@ export function parsePublicBuildsViewState(
     tier: parseTier(query.tier),
     sort: parseSort(query.sort),
     page: parsePage(query.page),
+    tab: parseBuildsTab(query.tab),
   };
 }
 
@@ -78,6 +94,7 @@ export function serializePublicBuildsViewState(
     query.sort = state.sort;
   }
   if (state.page > 1) query.page = String(state.page);
+  if (state.tab !== DEFAULT_BUILDS_TAB) query.tab = state.tab;
   return query;
 }
 

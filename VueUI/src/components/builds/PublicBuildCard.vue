@@ -5,13 +5,16 @@ import { FALLBACK_SHIP_IMAGE, getShipImageUrl } from "@/utils/shipImage";
 import { formatPublicBuildDate } from "@/logic/publicBuilds/queryState";
 
 const props = defineProps<{
-  publicCode: string;
+  to: string;
   title: string;
   shipName: string;
-  fillCount: number;
+  fillCount?: number | null;
+  fillTotal?: number | null;
   featuredCount?: number | null;
   listedAt?: string | Date | null | unknown;
   createdAt?: string | Date | null | unknown;
+  dateLabel?: string;
+  extraLabels?: string[];
   ship?: {
     id: number;
     name: string;
@@ -27,13 +30,23 @@ const imageUrl = computed(() =>
 
 const displayShip = computed(() => props.ship?.name ?? props.shipName);
 
-const publishedLabel = computed(() =>
-  formatPublicBuildDate(props.listedAt ?? props.createdAt),
-);
+const resolvedDateLabel = computed(() => {
+  if (props.dateLabel) return props.dateLabel;
+  const formatted = formatPublicBuildDate(props.listedAt ?? props.createdAt);
+  return formatted ? `Published ${formatted}` : "";
+});
+
+const seatedLabel = computed(() => {
+  if (props.fillTotal != null && props.fillTotal > 0) {
+    return `${props.fillCount ?? 0}/${props.fillTotal} slots seated`;
+  }
+  if (props.fillCount != null) return `${props.fillCount} seated`;
+  return "";
+});
 </script>
 
 <template>
-  <RouterLink :to="`/b/${publicCode}`" class="pub-build">
+  <RouterLink :to="to" class="pub-build">
     <div class="pub-build__art">
       <v-img :src="imageUrl" :alt="displayShip" cover />
     </div>
@@ -47,11 +60,12 @@ const publishedLabel = computed(() =>
         <v-chip v-if="ship?.type" size="small" color="secondary" variant="outlined">
           {{ ship.type }}
         </v-chip>
-        <v-chip size="small" variant="tonal">{{ fillCount }} seated</v-chip>
+        <v-chip v-if="seatedLabel" size="small" variant="tonal">{{ seatedLabel }}</v-chip>
       </div>
       <div class="pub-build__foot">
-        <span v-if="publishedLabel">Published {{ publishedLabel }}</span>
+        <span v-if="resolvedDateLabel">{{ resolvedDateLabel }}</span>
         <span v-if="featuredCount">Featured {{ featuredCount }}×</span>
+        <span v-for="label in extraLabels ?? []" :key="label">{{ label }}</span>
       </div>
     </div>
   </RouterLink>

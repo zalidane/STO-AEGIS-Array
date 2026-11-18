@@ -11,12 +11,7 @@ export type AppNavItem = {
 export const APP_NAV_ITEMS: readonly AppNavItem[] = [
   { title: "Home", icon: "mdi-home", to: "/" },
   { title: "Collection", icon: "mdi-bookmark", to: "/collection" },
-  { title: "Loadouts", icon: "mdi-view-dashboard-outline", to: "/loadouts" },
-  {
-    title: "Published Builds",
-    icon: "mdi-share-variant",
-    to: "/builds",
-  },
+  { title: "Builds", icon: "mdi-view-dashboard-outline", to: "/builds" },
   { title: "Ships", icon: "mdi-ferry", to: "/ships" },
   {
     title: "Ship Search",
@@ -44,4 +39,6 @@ export const REMOVED_SIDEBAR_NAV_TITLES = [
   "Modifiers",
   "About",
   "Attributions",
+  "Loadouts",
+  "Published Builds",
 ] as const;
