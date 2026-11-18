@@ -131,45 +131,49 @@ After changing `GraphQL/src/schema/**/*.graphql` or `VueUI/src/graphql/**/*.grap
 
 ## Railway (shared monorepo)
 
-**Deploy from GitHub creates one service** (named after the repo). Railway will not auto-add GraphQL / VueUI / Extractor as separate services for this workspace layout. You configure services by hand.
+**Deploy from GitHub creates one service** (named after the repo). Railway will not auto-add GraphQL / VueUI as separate services for this workspace layout. You configure services by hand.
 
-`railway.toml` at the repo root defaults that first service to **GraphQL**. Sub-app configs live at `/GraphQL/railway.toml`, `/VueUI/railway.toml`, `/Extractor/railway.toml`.
+This repo has **no `railway.toml` files**. Railway stops reading Config as Code for existing services on Dec 1, 2026, so every build and deploy setting lives in each service's **Settings** in the dashboard. Keep **Root Directory** at `/` on every service so npm workspaces resolve.
 
-### Fix the service you already created (GraphQL)
+### GraphQL service
 
-1. Open the `STO-AEGIS-Array` service → **Settings**
-2. **Root Directory**: leave empty / `/` (required so workspaces work)
-3. **Config as Code**: `/railway.toml` (or `/GraphQL/railway.toml` — same GraphQL deploy)
-4. **Variables** → add (after Postgres is in the project):
-   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
-5. **Networking** → Generate domain
-6. Redeploy
+Settings:
 
-GraphQL **start** runs `prisma migrate deploy` before the API. **Release** runs migrate again, then `import:force`. Railway does not migrate on its own — if Config as Code is unset, those commands never run.
+- **Builder**: Railpack
+- **Build command**: `npm install && npm run generate -w @sto-aegis/database`
+- **Watch paths**: `/GraphQL/**`, `/packages/database/**`, `/Extractor/**`, `/package.json`, `/package-lock.json`
+- **Start command**: `npm run migrate:deploy -w @sto-aegis/database && npm run start -w @sto-aegis/graphql`
+- **Healthcheck**: path `/graphql`, timeout `300`
+- **Restart policy**: On Failure, max retries `10`
+- **Pre-deploy command**: leave empty (Cargo imports are manual; see below)
 
-Rename the service to `GraphQL` if you want.
+Variables:
 
-### Add VueUI
+- `DATABASE_URL` = the Postgres connection URL (private URL when Postgres is in the same project)
+- `RAILPACK_BUILD_CMD` / `RAILPACK_START_CMD` (optional backup copies of the build and start commands above)
 
-1. Project canvas → **+ Create** → **Empty service** → name it `VueUI`
-2. Settings → connect the **same** GitHub repo / branch
-3. Root Directory: `/`
-4. Config as Code: `/VueUI/railway.toml`
-5. Variables (available at **build** time on the **VueUI** service; Vite inlines them, so a change applies on the next VueUI deploy):
+The start command runs `prisma migrate deploy` before the API, so a restart cannot boot against a stale schema. Railway does not migrate on its own.
+
+### VueUI service
+
+1. Project canvas → **+ Create** → **Empty service** → name it `VueUI`, connect the **same** GitHub repo / branch
+2. Settings:
+   - **Builder**: Railpack
+   - **Build command**: `npm install && npm run build-only -w @sto-aegis/vue-ui`
+   - **Watch paths**: `/VueUI/**`, `/package.json`, `/package-lock.json`
+   - **Start command**: `npm run start -w @sto-aegis/vue-ui`
+   - **Restart policy**: On Failure, max retries `10`
+3. Variables (available at **build** time; Vite inlines them, so a change applies on the next VueUI deploy):
    - `VITE_GRAPHQL_URL` = `https://${{GraphQL.RAILWAY_PUBLIC_DOMAIN}}/graphql`
-   - `VITE_IMAGE_BASE_URL` = `https://img.aegisarray.com` (optional; leave unset until R2 is verified. Inlined at build time. See [docs/image-hosting.md](docs/image-hosting.md))
+   - `VITE_IMAGE_BASE_URL` = `https://img.aegisarray.com` (optional; leave unset until R2 is verified. See [docs/image-hosting.md](docs/image-hosting.md))
    - `VITE_DISCORD_URL` = full Discord invite (optional). Unset keeps `https://discord.gg/2jTgb9HnY`.
    - `VITE_RAILWAY_REFERRAL_CODE` = Railway affiliate code only, not a full URL (optional). Unset or empty hides the footer credit. When set, the footer links "Hosted on Railway" to `https://railway.com?referralCode=<VITE_RAILWAY_REFERRAL_CODE>`.
-6. Generate domain → Deploy
+   - `RAILPACK_BUILD_CMD` / `RAILPACK_START_CMD` (optional backup copies of the commands above)
+4. Generate domain → Deploy
 
-### Add Extractor import (optional Cron / one-shot)
+### Cargo data import
 
-1. **+ Create** → Empty service (or Cron Job) → name it `Import`
-2. Same repo, Root Directory `/`, Config as Code: `/Extractor/railway.toml`
-3. Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
-4. Deploy (exits after import; restart policy is `NEVER`)
-
-GraphQL’s `releaseCommand` already runs `import:force`, so a separate Import service is optional.
+Railway never imports Cargo data. After merging updated `Extractor/output/*.json`, sync images (`npm run images:sync`) and run `npm run import:prod` from a home machine. Production only imports committed JSON — never extract on Railway.
 
 ### Postgres
 

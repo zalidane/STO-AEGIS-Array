@@ -76,4 +76,4 @@ They are © Cryptic Studios / Arc Games / DECA / Paramount; sourced from STOWiki
 
 ## Deploy
 
-Railway config: [`railway.toml`](railway.toml). On the **VueUI** service, at build time, set `VITE_GRAPHQL_URL`. Set `VITE_IMAGE_BASE_URL` only after the image bucket is verified. Optionally set `VITE_DISCORD_URL` (unset keeps `https://discord.gg/2jTgb9HnY`) and `VITE_RAILWAY_REFERRAL_CODE` (unset hides the footer credit; the link format is `https://railway.com?referralCode=<code>`). See the [monorepo README](../README.md#railway-shared-monorepo).
+Railway settings live in the service dashboard (no `railway.toml`). On the **VueUI** service, at build time, set `VITE_GRAPHQL_URL`. Set `VITE_IMAGE_BASE_URL` only after the image bucket is verified. Optionally set `VITE_DISCORD_URL` (unset keeps `https://discord.gg/2jTgb9HnY`) and `VITE_RAILWAY_REFERRAL_CODE` (unset hides the footer credit; the link format is `https://railway.com?referralCode=<code>`). See the [monorepo README](../README.md#railway-shared-monorepo).
