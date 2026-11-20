@@ -5,6 +5,7 @@ import {
 } from "@/logic/captain/identity";
 import { EXTRA_PERSONAL_TRAIT_UNLOCK } from "@/logic/captain/upgrade";
 import { normalizeTraitCareerCode } from "@/logic/loadout/personalTraitCareer";
+import { normalizeTraitType } from "@/logic/traitType";
 
 export type CaptainTraitGroup =
   | "personalSpace"
@@ -219,7 +220,7 @@ function environmentIsSpace(environment: string | null | undefined): boolean {
 }
 
 function typeIs(trait: Pick<CaptainTraitSource, "type">, expected: string): boolean {
-  return normalize(trait.type) === expected;
+  return normalizeTraitType(trait.type) === expected;
 }
 
 /**

@@ -1,5 +1,6 @@
 import type { FactionIdentity } from "@/logic/resolvePrimaryFaction";
 import { normalizeWikiPlainText } from "@/logic/wikiPlainText";
+import { normalizeTraitType } from "@/logic/traitType";
 import {
   getStarshipTraitImageUrl,
   getTraitImageUrl,
@@ -106,7 +107,8 @@ export function displayTraitType(
 ): string | null {
   const trimmed = type?.trim();
   if (!trimmed) return null;
-  return TRAIT_TYPE_LABELS[trimmed.toLowerCase()] ?? trimmed;
+  const normalized = normalizeTraitType(trimmed);
+  return (normalized && TRAIT_TYPE_LABELS[normalized]) ?? trimmed;
 }
 
 export function displayTraitEnvironment(
@@ -238,7 +240,8 @@ export function mapPersonalTraitToBrowserItem(
     listDescription: description,
     detailDescription: description,
     source: trait.source,
-    type: trait.type,
+    // Fold wiki free-text types ("Race (Space)") into `char` so facets group them.
+    type: normalizeTraitType(trait.type) ?? trait.type,
     environment: trait.environment,
     career: trait.career,
     imageSrc: getTraitImageUrl(trait.name, trait.iconName),
