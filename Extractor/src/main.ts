@@ -1,6 +1,7 @@
 import { config } from "dotenv";
+import { mkdir, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 import {
   extractTable,
@@ -34,8 +35,21 @@ function parseArgs(argv: string[]) {
     forceImages: argv.includes("--force-images"),
     skipImages: argv.includes("--skip-images"),
     // --plan implies images-only: print the image fetch plan, touch nothing.
-    imagesOnly: argv.includes("--images-only") || argv.includes("--plan"),
-    imagesPlan: argv.includes("--plan"),
+    imagesOnly:
+      argv.includes("--images-only") ||
+      argv.includes("--plan") ||
+      argv.some((a) => a === "--browser-script" || a.startsWith("--browser-script=")),
+    imagesPlan:
+      argv.includes("--plan") ||
+      argv.some((a) => a === "--browser-script" || a.startsWith("--browser-script=")),
+    // Write the planned fetch list as a DevTools console downloader.
+    browserScript: (() => {
+      const flag = argv.find((a) => a === "--browser-script" || a.startsWith("--browser-script="));
+      if (!flag) return null;
+      return flag.includes("=") ? flag.slice(flag.indexOf("=") + 1) : "output/browser-download.js";
+    })(),
+    // Never contact the wiki; record unfetched titles as failed/missing.
+    noFetch: argv.includes("--no-fetch") || argv.includes("--offline"),
     remoteCheck: !argv.includes("--no-remote-check"),
     imageBaseUrl:
       argv
@@ -93,6 +107,8 @@ async function runExtract(options: {
   skipImages: boolean;
   imagesOnly: boolean;
   imagesPlan: boolean;
+  browserScript: string | null;
+  noFetch: boolean;
   remoteCheck: boolean;
   imageBaseUrl: string | null;
 }) {
@@ -149,7 +165,7 @@ async function runExtract(options: {
     console.log("Images: skipped (--skip-images)");
   } else {
     const root = monorepoRoot();
-    await extractImages(wiki, {
+    const result = await extractImages(wiki, {
       cargoDir,
       imagesDir: resolve(root, "VueUI/public/images"),
       force: options.forceImages,
@@ -157,7 +173,20 @@ async function runExtract(options: {
       remoteCheck: options.remoteCheck,
       store: options.remoteCheck ? optionalR2Store() : null,
       imageBaseUrl: resolveImageBaseUrl(options.imageBaseUrl, process.env),
+      noFetch: options.noFetch,
     });
+    if (options.browserScript) {
+      const { browserDownloadEntries, buildBrowserDownloadScript } = await import(
+        "./images/browserDownloadScript.js"
+      );
+      const entries = browserDownloadEntries(result.toFetch);
+      const outPath = resolve(process.cwd(), options.browserScript);
+      await mkdir(dirname(outPath), { recursive: true });
+      await writeFile(outPath, await buildBrowserDownloadScript(entries));
+      console.log(
+        `Images: wrote browser downloader for ${entries.length} files to ${outPath}. Paste it into the DevTools console on a https://stowiki.net tab.`,
+      );
+    }
     if (options.imagesPlan) return;
     console.log(
       "Image extract complete. Files land in VueUI/public/images/{items,ships,traits,starship-traits,tray-skills}/.",
@@ -195,6 +224,8 @@ async function main() {
     skipImages,
     imagesOnly,
     imagesPlan,
+    browserScript,
+    noFetch,
     remoteCheck,
     imageBaseUrl,
     prod,
@@ -214,6 +245,8 @@ async function main() {
       skipImages,
       imagesOnly,
       imagesPlan,
+      browserScript,
+      noFetch,
       remoteCheck,
       imageBaseUrl,
     });
