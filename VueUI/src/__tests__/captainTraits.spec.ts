@@ -168,6 +168,26 @@ describe("captain trait slots", () => {
     ).toBe(true);
   });
 
+  it("offers wiki free-text personal types like Astrophysicist's \"Race (Space)\"", () => {
+    const slot = buildCaptainTraitSlots({
+      faction: "federation",
+      race: "human",
+    }).find((row) => row.group === "personalSpace")!;
+    const astrophysicist = {
+      id: 4,
+      name: "Astrophysicist",
+      type: "Race (Space)",
+      environment: "space",
+      career: null,
+      catalogKind: "trait" as const,
+    };
+    const anchored = { ...astrophysicist, id: 5, name: "Anchored", type: "Lock box (Space)" };
+    const boffCopy = { ...astrophysicist, id: 6, type: "boff" };
+    expect(traitFitsCaptainSlot(astrophysicist, slot, { career: "science", raceLabel: "Human" })).toBe(true);
+    expect(traitFitsCaptainSlot(anchored, slot, { career: "science", raceLabel: "Human" })).toBe(true);
+    expect(traitFitsCaptainSlot(boffCopy, slot, { career: "science", raceLabel: "Human" })).toBe(false);
+  });
+
   it("hides A Good Day to Die from Eng/Sci captains (#69)", () => {
     const slot = buildCaptainTraitSlots({
       faction: "federation",
