@@ -17,11 +17,34 @@ Production never hits STOWiki; it only imports JSON shipped in git. Run extract 
 |-------|--------------|----------|
 | **Cargo tables** | Age-gated full refresh | If `output/{Table}.json` is newer than **24 hours**, that table is skipped. When stale (or `--force-refresh`), extract re-fetches the **entire** table — not row-level deltas. |
 | **ShipExperimentalWeapons** | Yes (new hulls) | Only experimental ships missing from the sidecar JSON are scraped. Delete the sidecar to rebuild. `--force-refresh` does **not** re-scrape existing hulls. |
-| **Images** | Yes (files) | Skips files already under `VueUI/public/images/`; skips titles already recorded missing/skipped in `imageIndex.json`. Only new or previously failed titles hit the wiki. `--force-images` re-queries and re-downloads. |
+| **Images** | Yes (files) | Skips files already under `VueUI/public/images/`; skips `imageIndex.json` rows marked `exists`/`downloaded` that the public image host (R2) still serves; skips titles already recorded missing/skipped. Only new, failed, or lost titles hit the wiki. `--force-images` re-queries and re-downloads. See [Images on a machine without the local image tree](#images-on-a-machine-without-the-local-image-tree). |
 | **Official images category** | Cached list | Incremental image runs reuse `OfficialImages.json`; `--force-images` re-lists the category. |
 | **Import / `linkRelations`** | N/A (no wiki) | Runs against committed JSON, then merges `CatalogSupplement`. Local `importState.json` (gitignored) hash-skips unchanged tables unless `--force-import`. A `CatalogSupplement` edit changes that hash, so the next import applies it without a new commit. |
 
 There was no gap to “fix” for images — they were already file-level incremental. Cargo cannot be row-level incremental via the public Cargo API without fetching tables; the 24h gate plus the monthly home check is the intended skip policy.
+
+## Images on a machine without the local image tree
+
+Images are served from R2 (`VITE_IMAGE_BASE_URL`, e.g. `https://img.aegisarray.com`), so `VueUI/public/images/` is usually nearly empty. The image extract therefore checks the image host, not just the disk, before deciding what is new:
+
+1. **R2 listing** (preferred): when `R2_ENDPOINT`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY` are set (the same repo-root `.env` that `images:sync` uses), the bucket is listed once per kind. This is read-only.
+2. **HTTP HEAD**: with no R2 credentials, each prior `exists`/`downloaded` row is HEAD-checked under the public base URL. That URL comes from `--image-base-url=URL`, `IMAGE_BASE_URL`, or `VITE_IMAGE_BASE_URL`. A 404, 403, or 410 means re-fetch. Throttling and network errors are retried, then the committed index is trusted.
+3. **Index only**: with neither configured, rows the committed `imageIndex.json` marks present are trusted.
+
+Rows skipped this way stay in `imageIndex.json` as `exists`, so Infobox and tray-skill stamping keep their filenames. Only newly downloaded files land on disk. `npm run images:sync` uploads only local files and never deletes remote objects unless you pass `--delete`. Don't use `--delete` from a sparse local tree, because it would remove everything that isn't on disk.
+
+```bash
+# print what would be fetched: no wiki requests, no file writes
+npm run extract:images:plan
+npm run extract:images:plan -- --image-base-url=https://img.aegisarray.com   # without R2 creds
+
+# fetch just those, then upload just those
+npm run extract:images
+npm run images:sync -- --dry-run
+npm run images:sync
+```
+
+`--no-remote-check` restores the old disk-only behavior.
 
 ## Monthly home extract (scheduled check)
 

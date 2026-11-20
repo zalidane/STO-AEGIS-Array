@@ -12,6 +12,9 @@ import { writeLastExtractState } from "./extractors/homeExtractSchedule.js";
 import { tableSchemas } from "./extractors/schemas/schemaList.js";
 import { WikiClient } from "./wiki/client.js";
 import { loadWikiConfig, WikiConfigError } from "./wiki/config.js";
+import { readR2Config, type ObjectStore } from "./images/imageObjects.js";
+import { createR2ObjectStore } from "./images/r2ObjectStore.js";
+import { resolveImageBaseUrl } from "./images/remoteImagePresence.js";
 
 type Command = "extract" | "import";
 
@@ -30,7 +33,14 @@ function parseArgs(argv: string[]) {
     forceImport: argv.includes("--force-import"),
     forceImages: argv.includes("--force-images"),
     skipImages: argv.includes("--skip-images"),
-    imagesOnly: argv.includes("--images-only"),
+    // --plan implies images-only: print the image fetch plan, touch nothing.
+    imagesOnly: argv.includes("--images-only") || argv.includes("--plan"),
+    imagesPlan: argv.includes("--plan"),
+    remoteCheck: !argv.includes("--no-remote-check"),
+    imageBaseUrl:
+      argv
+        .find((a) => a.startsWith("--image-base-url="))
+        ?.slice("--image-base-url=".length) ?? null,
     prod: argv.includes("--prod"),
   };
 }
@@ -82,6 +92,9 @@ async function runExtract(options: {
   forceImages: boolean;
   skipImages: boolean;
   imagesOnly: boolean;
+  imagesPlan: boolean;
+  remoteCheck: boolean;
+  imageBaseUrl: string | null;
 }) {
   const cargoDir = resolve(process.cwd(), "output");
   const wiki = new WikiClient(loadWikiConfig(process.env, "output"));
@@ -140,7 +153,12 @@ async function runExtract(options: {
       cargoDir,
       imagesDir: resolve(root, "VueUI/public/images"),
       force: options.forceImages,
+      plan: options.imagesPlan,
+      remoteCheck: options.remoteCheck,
+      store: options.remoteCheck ? optionalR2Store() : null,
+      imageBaseUrl: resolveImageBaseUrl(options.imageBaseUrl, process.env),
     });
+    if (options.imagesPlan) return;
     console.log(
       "Image extract complete. Files land in VueUI/public/images/{items,ships,traits,starship-traits,tray-skills}/.",
     );
@@ -151,6 +169,15 @@ async function runExtract(options: {
 
   // Local-only stamp for the monthly home check (gitignored).
   await writeLastExtractState(cargoDir, new Date(), "extract");
+}
+
+/** R2 store from the images:sync settings, or null when they are not set. */
+function optionalR2Store(): ObjectStore | null {
+  try {
+    return createR2ObjectStore(readR2Config(process.env));
+  } catch {
+    return null;
+  }
 }
 
 async function runImport(forceImport: boolean) {
@@ -167,6 +194,9 @@ async function main() {
     forceImages,
     skipImages,
     imagesOnly,
+    imagesPlan,
+    remoteCheck,
+    imageBaseUrl,
     prod,
   } = parseArgs(process.argv.slice(2));
 
@@ -178,7 +208,15 @@ async function main() {
         "Note: extract is a manual/local operation; --prod only affects which .env file is loaded (not used for wiki fetch).",
       );
     }
-    await runExtract({ forceRefresh, forceImages, skipImages, imagesOnly });
+    await runExtract({
+      forceRefresh,
+      forceImages,
+      skipImages,
+      imagesOnly,
+      imagesPlan,
+      remoteCheck,
+      imageBaseUrl,
+    });
     return;
   }
 

@@ -7,6 +7,11 @@ import { catalogImageTargets, applyImageIndexToInfoboxes, applyImageIndexToTrayS
 import { decideImageFetch } from "../wiki/imageSync";
 import { alignCatalogImageFiles } from "../wiki/localImageFiles";
 import type { ImageTarget } from "../wiki/filenames";
+import type { ObjectStore } from "../images/imageObjects";
+import {
+  buildRemoteImagePresence,
+  type RemoteImagePresence,
+} from "../images/remoteImagePresence";
 
 const OFFICIAL_CATEGORY = "Category:Official images";
 const IMAGE_INFO_BATCH = 20;
@@ -16,6 +21,17 @@ export type ImageExtractOptions = {
   cargoDir: string;
   imagesDir: string;
   force: boolean;
+  /** Print what would be fetched and exit: no wiki requests, no file writes. */
+  plan?: boolean;
+  /**
+   * Treat prior index rows (exists/downloaded) as done when the public image
+   * host still has them. Default true. `false` restores local-disk-only checks.
+   */
+  remoteCheck?: boolean;
+  /** R2 store from the images:sync settings, when credentials are set. */
+  store?: ObjectStore | null;
+  /** Public image base (VITE_IMAGE_BASE_URL), used for HEAD checks without R2. */
+  imageBaseUrl?: string | null;
 };
 
 export type ImageIndexRecord = {
@@ -81,11 +97,13 @@ export async function extractImages(
     return;
   }
 
-  const aligned = await alignCatalogImageFiles(options.imagesDir, targets);
-  if (aligned.renamed > 0) {
-    console.log(
-      `Images: renamed ${aligned.renamed} files onto apostrophe- and ampersand-free, case-accurate public names`,
-    );
+  if (!options.plan) {
+    const aligned = await alignCatalogImageFiles(options.imagesDir, targets);
+    if (aligned.renamed > 0) {
+      console.log(
+        `Images: renamed ${aligned.renamed} files onto apostrophe- and ampersand-free, case-accurate public names`,
+      );
+    }
   }
 
   const priorIndex = loadPriorIndex(
@@ -93,21 +111,34 @@ export async function extractImages(
   );
 
   const skipLocal: Array<{ target: ImageTarget; prior: PriorIndexRow | undefined; bytes: number }> = [];
+  const skipRemote: Array<{ target: ImageTarget; prior: PriorIndexRow }> = [];
   const skipMissing: Array<{ target: ImageTarget; prior: PriorIndexRow }> = [];
   const toFetch: ImageTarget[] = [];
 
+  const scanned: Array<{ target: ImageTarget; prior: PriorIndexRow | undefined; localBytes: number | null }> = [];
   for (const target of targets) {
     const localPath = join(options.imagesDir, target.kind, target.localFilename);
-    const already = await existingFileSize(localPath);
-    const prior = priorIndex.get(priorIndexKey(target.kind, target.wikiTitle));
+    scanned.push({
+      target,
+      prior: priorIndex.get(priorIndexKey(target.kind, target.wikiTitle)),
+      localBytes: await existingFileSize(localPath),
+    });
+  }
+
+  const remote = await remotePresenceFor(options, scanned);
+
+  for (const { target, prior, localBytes } of scanned) {
     const decision = decideImageFetch({
       force: options.force,
-      localBytes: already,
+      localBytes,
       priorStatus: prior?.status ?? null,
+      remotePresent: remote ? remote.has(target.kind, target.localFilename) : null,
     });
 
-    if (decision === "skip-local" && already != null) {
-      skipLocal.push({ target, prior, bytes: already });
+    if (decision === "skip-local" && localBytes != null) {
+      skipLocal.push({ target, prior, bytes: localBytes });
+    } else if (decision === "skip-remote" && prior) {
+      skipRemote.push({ target, prior });
     } else if (decision === "skip-known-missing" && prior) {
       skipMissing.push({ target, prior });
     } else {
@@ -116,12 +147,23 @@ export async function extractImages(
   }
 
   console.log(
-    `Images: ${skipLocal.length} already on disk, ${skipMissing.length} known missing, ${toFetch.length} new to fetch`,
+    `Images: ${skipLocal.length} already on disk, ${skipRemote.length} already on image host, ${skipMissing.length} known missing, ${toFetch.length} new to fetch`,
   );
+
+  if (options.plan) {
+    for (const target of toFetch) {
+      const prior = priorIndex.get(priorIndexKey(target.kind, target.wikiTitle));
+      console.log(
+        `  fetch ${target.kind}/${target.localFilename}  (${target.wikiTitle}; prior ${prior?.status ?? "none"})`,
+      );
+    }
+    console.log("Images: --plan only; no wiki requests made and no files written");
+    return;
+  }
 
   const index: ImageIndexRecord[] = [];
   let downloaded = 0;
-  let existed = skipLocal.length;
+  let existed = skipLocal.length + skipRemote.length;
   let missing = skipMissing.filter((row) => row.prior.status === "missing").length;
   let skipped = skipMissing.filter((row) => row.prior.status === "skipped").length;
   let failed = 0;
@@ -136,6 +178,22 @@ export async function extractImages(
       status: "exists",
       bytes: row.bytes,
       official: row.prior?.official ?? false,
+    });
+  }
+
+  // Already in object storage: keep the row as `exists` so Infobox / tray
+  // stamping still points at the hosted file. images:sync only uploads local
+  // files and never deletes without --delete, so these stay untouched.
+  for (const row of skipRemote) {
+    index.push({
+      kind: row.target.kind,
+      wikiTitle: row.target.wikiTitle,
+      localFilename: row.target.localFilename,
+      localPath: `/images/${row.target.kind}/${row.target.localFilename}`,
+      url: row.prior.url ?? null,
+      status: "exists",
+      bytes: row.prior.bytes ?? null,
+      official: row.prior.official ?? false,
     });
   }
 
@@ -185,6 +243,32 @@ export async function extractImages(
   console.log(
     `Images: downloaded ${downloaded}, existed ${existed}, missing ${missing}, skipped ${skipped}, failed ${failed}`,
   );
+}
+
+const PRESENT_STATUSES = new Set(["exists", "downloaded"]);
+
+async function remotePresenceFor(
+  options: ImageExtractOptions,
+  scanned: ReadonlyArray<{ target: ImageTarget; prior: PriorIndexRow | undefined; localBytes: number | null }>,
+): Promise<RemoteImagePresence | null> {
+  if (options.force || options.remoteCheck === false) return null;
+  const candidates = scanned
+    .filter(
+      (row) =>
+        row.localBytes == null &&
+        row.prior != null &&
+        PRESENT_STATUSES.has(row.prior.status),
+    )
+    .map((row) => ({ kind: row.target.kind, localFilename: row.target.localFilename }));
+  if (candidates.length === 0) return null;
+  const presence = await buildRemoteImagePresence({
+    candidates,
+    store: options.store ?? null,
+    baseUrl: options.imageBaseUrl ?? null,
+    log: (message) => console.warn(message),
+  });
+  console.log(`Images: remote check (${presence.mode}): ${presence.summary}`);
+  return presence;
 }
 
 async function fetchAndDownload(
