@@ -56,4 +56,4 @@ Logic lives in `src/logic/*.ts` with colocated `*.test.ts` files.
 
 ## Deploy
 
-Railway config: [`railway.toml`](railway.toml) (or the repo-root [`railway.toml`](../railway.toml), which is the same GraphQL service). Start migrates then runs this package; release migrates then imports committed JSON. See the [monorepo README](../README.md#railway-shared-monorepo).
+Railway settings live in the service dashboard (no `railway.toml`). The start command migrates, then runs this package. Cargo data is imported manually with `npm run import:prod`. See the [monorepo README](../README.md#railway-shared-monorepo).

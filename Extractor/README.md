@@ -40,7 +40,7 @@ npm run extract:home -- --check-only
 
 What runs when due: `extract --force-refresh` (full **Cargo** refresh; experimental-weapon sidecar and **images stay incremental** — no `--force-images`). `--force-refresh` is required so a fresh clone (JSON mtime = now) cannot skip the wiki via the 24h Cargo cache. After a successful extract, `Extractor/output/last-extract.json` is written (gitignored). If that file is missing, the check falls back to the newest Cargo JSON mtime.
 
-After a real run, review the diff, commit updated `Extractor/output/*.json`, sync images with `npm run images:sync`, push, then `npm run import:prod` (or rely on GraphQL `releaseCommand` after push). Image hosting: [`docs/image-hosting.md`](../docs/image-hosting.md).
+After a real run, review the diff, commit updated `Extractor/output/*.json`, sync images with `npm run images:sync`, push, then `npm run import:prod` (Railway never imports on deploy). Image hosting: [`docs/image-hosting.md`](../docs/image-hosting.md).
 
 ### Schedule examples
 
