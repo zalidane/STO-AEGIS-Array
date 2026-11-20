@@ -46,6 +46,34 @@ npm run images:sync
 
 `--no-remote-check` restores the old disk-only behavior.
 
+## Downloading images through the browser (when Cloudflare blocks Node)
+
+STOWiki's Cloudflare rules can block the extractor even from a home IP. A browser tab that has passed the check can still fetch files, so the planned list can be downloaded from the DevTools console instead.
+
+```bash
+# 1. Build the console script from the --plan list (no wiki requests)
+npm run extract:images:browser-script
+#    add -- --image-base-url=https://img.aegisarray.com if R2 creds are not in .env
+#    writes Extractor/output/browser-download.js (gitignored)
+```
+
+2. In Chrome or Edge, open https://stowiki.net and pass any check. Open DevTools (F12) > Console, paste the file, and press Enter. Chrome may ask you to type `allow pasting` first.
+3. A panel appears at the top right. Click **Pick images folder & start**, choose `<repo>/VueUI/public/images`, and allow edits. The folder picker needs a click, which is why the script adds a button.
+   - Files are written into `items/`, `ships/`, `traits/` and the other subfolders. Files already there are skipped, so re-pasting resumes.
+   - Requests are same-origin and run one at a time, 1.5–2.5 s apart. The script tries the hashed `/w/images/...` path first, then `/wiki/Special:FilePath/...`.
+   - 403, 429, and 5xx responses back off for 5, 15, then 45 s. A Cloudflare challenge page stops the run. Reload the tab, pass the check, paste again, and start.
+   - At the end, the console prints a summary and JSON lists of failures and files not on the wiki. `browser-download-report.json` is written to the images folder.
+4. Fallback with no folder picker (Firefox/Safari, or if the picker fails): click **Save to Downloads instead**. Allow multiple downloads, then run `npm run images:import-downloads -- --from="%USERPROFILE%\Downloads"` (`--dry-run` to preview). Files are saved as `<kind>__<filename>`.
+5. Rebuild the index without contacting the wiki, then upload:
+
+```bash
+npm run extract:images:offline     # = extract --images-only --no-fetch
+npm run images:sync -- --dry-run
+npm run images:sync
+```
+
+`--no-fetch` (alias `--offline`) records files now on disk as `exists` and stamps them into `Infobox.json` and `TraySkill.json`. Titles the browser report lists as 404 become `missing`, so later runs skip them. Anything else still unfetched becomes `failed`, so a later online run retries it.
+
 ## Monthly home extract (scheduled check)
 
 Use this on a **home** machine so Railway never contacts stowiki.net / Cloudflare.

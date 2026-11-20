@@ -32,6 +32,22 @@ export type ImageExtractOptions = {
   store?: ObjectStore | null;
   /** Public image base (VITE_IMAGE_BASE_URL), used for HEAD checks without R2. */
   imageBaseUrl?: string | null;
+  /**
+   * Never contact the wiki. Rebuild imageIndex.json from local + remote state;
+   * titles still to fetch are recorded as `missing` when the browser
+   * downloader's report says the wiki has no such file, else `failed` (so a
+   * later online run retries them).
+   */
+  noFetch?: boolean;
+};
+
+export type ImageExtractResult = { toFetch: ImageTarget[] };
+
+/** Written by the DevTools browser downloader into VueUI/public/images/. */
+export const BROWSER_REPORT_FILENAME = "browser-download-report.json";
+
+type BrowserReport = {
+  missing?: Array<{ kind?: string; localFilename?: string; wikiTitle?: string }>;
 };
 
 export type ImageIndexRecord = {
@@ -75,7 +91,7 @@ function loadPriorIndex(rows: readonly PriorIndexRow[]): Map<string, PriorIndexR
 export async function extractImages(
   wiki: WikiClient,
   options: ImageExtractOptions,
-): Promise<void> {
+): Promise<ImageExtractResult> {
   const ships = (await readJsonFile<CatalogImageSource["ships"]>(join(options.cargoDir, "Ships.json"))) ?? [];
   const traits = (await readJsonFile<CatalogImageSource["traits"]>(join(options.cargoDir, "Traits.json"))) ?? [];
   const starshipTraits =
@@ -94,7 +110,7 @@ export async function extractImages(
 
   if (targets.length === 0) {
     console.log("Images: no catalog JSON found. Run a cargo extract first.");
-    return;
+    return { toFetch: [] };
   }
 
   if (!options.plan) {
@@ -158,7 +174,7 @@ export async function extractImages(
       );
     }
     console.log("Images: --plan only; no wiki requests made and no files written");
-    return;
+    return { toFetch };
   }
 
   const index: ImageIndexRecord[] = [];
@@ -211,7 +227,28 @@ export async function extractImages(
     });
   }
 
-  if (toFetch.length > 0) {
+  if (toFetch.length > 0 && options.noFetch) {
+    const reportMissing = await browserReportMissing(options.imagesDir);
+    for (const target of toFetch) {
+      const isMissing = reportMissing.has(priorIndexKey(target.kind, target.wikiTitle));
+      const prior = priorIndex.get(priorIndexKey(target.kind, target.wikiTitle));
+      if (isMissing) missing += 1;
+      else failed += 1;
+      index.push({
+        kind: target.kind,
+        wikiTitle: target.wikiTitle,
+        localFilename: target.localFilename,
+        localPath: `/images/${target.kind}/${target.localFilename}`,
+        url: isMissing ? null : prior?.url ?? null,
+        status: isMissing ? "missing" : "failed",
+        bytes: null,
+        official: prior?.official ?? false,
+      });
+    }
+    console.log(
+      `Images: --no-fetch: recorded ${toFetch.length} unfetched titles without contacting the wiki (${reportMissing.size} known-missing from ${BROWSER_REPORT_FILENAME})`,
+    );
+  } else if (toFetch.length > 0) {
     await wiki.login();
     const fetched = await fetchAndDownload(wiki, options, toFetch);
     index.push(...fetched.index);
@@ -243,6 +280,18 @@ export async function extractImages(
   console.log(
     `Images: downloaded ${downloaded}, existed ${existed}, missing ${missing}, skipped ${skipped}, failed ${failed}`,
   );
+  return { toFetch };
+}
+
+/** Titles the browser downloader found absent on the wiki (HTTP 404). */
+async function browserReportMissing(imagesDir: string): Promise<Set<string>> {
+  const report = await readJsonFile<BrowserReport>(join(imagesDir, BROWSER_REPORT_FILENAME));
+  const keys = new Set<string>();
+  for (const row of report?.missing ?? []) {
+    if (!row.kind || !row.wikiTitle) continue;
+    keys.add(priorIndexKey(row.kind as ImageTarget["kind"], row.wikiTitle));
+  }
+  return keys;
 }
 
 const PRESENT_STATUSES = new Set(["exists", "downloaded"]);
