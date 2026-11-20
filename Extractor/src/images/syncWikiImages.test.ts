@@ -219,6 +219,27 @@ describe("syncWikiImages", () => {
     assert.equal(report.contentTypes["image/png"], 1);
   });
 
+  it("never deletes remote-only objects without --delete (sparse local tree)", async () => {
+    const root = await mkdtemp(join(tmpdir(), "image-sync-sparse-"));
+    await mkdir(join(root, "items"), { recursive: true });
+    await writeFile(join(root, "items", "New_icon.png"), Buffer.from("new"));
+    const store = memoryStore([
+      { key: "items/Old_icon.png", etag: '"old"', size: 3 },
+      { key: "items/Other_icon.png", etag: '"other"', size: 5 },
+    ]);
+
+    const report = await syncWikiImages({
+      imagesDir: root,
+      store,
+      dryRun: false,
+      deleteExtraneous: false,
+    });
+
+    assert.deepEqual(report.uploaded, ["items/New_icon.png"]);
+    assert.deepEqual(report.deleted, []);
+    assert.equal(store.deleted.length, 0);
+  });
+
   it("does not write during a dry run", async () => {
     const root = await mkdtemp(join(tmpdir(), "image-sync-dry-"));
     await mkdir(join(root, "ships"), { recursive: true });

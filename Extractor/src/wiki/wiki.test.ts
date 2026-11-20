@@ -387,6 +387,33 @@ describe("decideImageFetch", () => {
     );
   });
 
+  it("skips index rows still on the remote image host when the disk is empty", () => {
+    assert.equal(
+      decideImageFetch({ force: false, localBytes: null, priorStatus: "exists", remotePresent: true }),
+      "skip-remote",
+    );
+    assert.equal(
+      decideImageFetch({ force: false, localBytes: null, priorStatus: "downloaded", remotePresent: true }),
+      "skip-remote",
+    );
+    assert.equal(
+      decideImageFetch({ force: false, localBytes: null, priorStatus: "exists", remotePresent: false }),
+      "fetch",
+    );
+    assert.equal(
+      decideImageFetch({ force: false, localBytes: null, priorStatus: null, remotePresent: true }),
+      "fetch",
+    );
+    assert.equal(
+      decideImageFetch({ force: false, localBytes: null, priorStatus: "failed", remotePresent: true }),
+      "fetch",
+    );
+    assert.equal(
+      decideImageFetch({ force: true, localBytes: null, priorStatus: "exists", remotePresent: true }),
+      "fetch",
+    );
+  });
+
   it("fetches new, failed, or deleted files, and everything when forced", () => {
     assert.equal(
       decideImageFetch({ force: false, localBytes: null, priorStatus: null }),
