@@ -162,7 +162,7 @@ export function homeExtractReminder(): string {
     "  1. Review git diff under Extractor/output/",
     "  2. Commit updated JSON",
     "  3. Sync new or changed images to object storage: npm run images:sync",
-    "  4. Push, then run: npm run import:prod",
+    "  4. Push. The GraphQL deploy on Railway imports the committed JSON (pre-deploy).",
     "Production/Railway must never hit stowiki.net — only import committed JSON.",
   ].join("\n");
 }

@@ -16,6 +16,10 @@ const { prisma, pool } = createPrismaClient(process.env.DATABASE_URL);
 
 Cargo-backed tables: **Ship**, **Infobox**, **Trait**, **StarshipTrait**, **TraySkill**, **Mastery**, **Reputation**, **Modifier**, **SetBonus**, **GwObtain**, **SwObtain**. Join / lookup: **ShipType**, **StarshipTraitShip**, **ModifierItem**.
 
+App data (never touched by the Extractor's Cargo import): **Build** (published loadout snapshots, keyed by ship name, with a hashed edit token), **BuildFill** (catalog items each build uses, for usage counts), and **BuildFeatured** (build of the day). These are the tables that matter in a backup.
+
+**ImportState** holds the last imported content hash per Cargo table. Railway's pre-deploy import (`import --deploy`) uses it to skip unchanged tables; local imports use `Extractor/output/importState.json` instead.
+
 **CatalogSupplement** is app data, not a Cargo dump. One row is one correction. `kind` names the Cargo table (`Modifiers`, `Reputation`, `SetBonus`, `Traits`). `payload` is the Cargo-shaped record that kind's importer merges. Extractor replace never deletes these rows, so a correction survives the next import without a repository change.
 
 Ships store wiki console counts and `t5uConsole`; unique console and experimental weapon FKs (`uniconsoleId`, `experimentalWeaponId`) are filled by Extractor `linkRelations` after import.
@@ -28,21 +32,25 @@ From the monorepo root:
 
 ```bash
 npm run db:generate
+npm run db:wait          # retry until DATABASE_URL accepts connections (Railway pre-deploy)
 npm run db:migrate
 npm run db:migrate:dev
 npm run db:studio
-npm run db:migrate:prod
-npm run db:studio:prod
+npm run db:migrate:prod  # production from the PC; needs a temporary TCP proxy
+npm run db:studio:prod   # same
 ```
 
 Or from this package:
 
 ```bash
 npm run generate
+npm run wait
 npm run migrate:dev
 npm run migrate:deploy
 ```
 
-`DATABASE_URL` is read from the monorepo root `.env` (or `packages/database/.env`). Production scripts load `.env.production` via `scripts/withProdEnv.cjs`.
+`DATABASE_URL` is read from the environment first, then the monorepo root `.env` (or `packages/database/.env`). The `*:prod` scripts load `.env.production` via `scripts/withProdEnv.cjs`. Production Postgres has no public TCP proxy, so those only work while one is temporarily added; on Railway, migrations run in GraphQL's pre-deploy command. See [docs/railway-private-db.md](../../docs/railway-private-db.md).
+
+Prisma is 7.x (`prisma`, `@prisma/client`, and `@prisma/adapter-pg` ^7.9). The generated client is written to `src/generated/prisma/` (gitignored); run `npm run db:generate` after install or schema changes.
 
 Prisma CLI config is [`prisma.config.ts`](prisma.config.ts) (`prisma generate` does not require a live database URL).

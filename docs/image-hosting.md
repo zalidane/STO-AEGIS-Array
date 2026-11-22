@@ -2,14 +2,21 @@
 
 Wiki icons and ship renders are served at runtime from a Cloudflare R2 bucket.
 The Vue app builds those URLs from `VITE_IMAGE_BASE_URL`. When that variable is
-unset, URLs stay on the local Vite path `/images/...`, so local dev, unit
-tests, and the current Railway deploy keep working before the bucket exists.
+unset, URLs stay on the local Vite path `/images/...`, which is what local dev
+and unit tests use.
 
-**Status (Oct 9, 2026):** the cutover is done. `VueUI/public/images/` was removed
-from git and scrubbed from history, and it is now gitignored (except `NOTICE`).
-Keep local copies on the machine that runs the Extractor and `images:sync`.
+**Status (Nov 22, 2026):** live. Production serves images from
+`https://img.aegisarray.com`, and the Railway VueUI service has
+`VITE_IMAGE_BASE_URL=https://img.aegisarray.com`. `VueUI/public/images/` was
+removed from git and scrubbed from history on Oct 9, 2026, and is gitignored
+(except `NOTICE`). The local folder on the home PC is usually nearly empty;
+R2 is the complete copy.
 
-Planned public origin: `https://img.aegisarray.com`.
+Checked Nov 22, 2026: a sample object returns 200 with `image/png`, the sync's
+`Cache-Control`, and the `X-Image-Credit` header; a foreign Referer gets 403
+(hotlink rule active). Responses showed `cf-cache-status: DYNAMIC`, so the
+"Cache image host" rule in [cloudflare-hardening.md](cloudflare-hardening.md)
+does not appear to be caching yet.
 
 Object keys match the path after `/images`:
 
@@ -53,8 +60,13 @@ The sync script reads the environment and `.env`. It has no credential flags
 and does not print secret values.
 
 `VITE_IMAGE_BASE_URL` is read by Vite from the VueUI service environment at
-build time, or from `VueUI/.env.local` / the shell for a local build. Leave it
-unset until a sample object returns 200. Changing it requires a VueUI rebuild.
+build time, or from `VueUI/.env.local` / the shell for a local build. Changing
+it requires a VueUI rebuild. Leave it unset for local dev (the hotlink rule
+blocks `localhost` referers).
+
+The Extractor also reads `IMAGE_BASE_URL` or `VITE_IMAGE_BASE_URL` (or
+`--image-base-url=`) to HEAD-check which images the host already serves when
+the R2 keys are not in `.env`.
 
 ## 1. Create the bucket
 
@@ -115,10 +127,33 @@ Do not use `immutable`. Filenames are stable wiki titles, and a later extract
 can replace the bytes at the same key. Edge cache rules for this host are in
 [cloudflare-hardening.md](cloudflare-hardening.md).
 
-## 3. Sync
+## 3. Getting new images and syncing them
 
-From the monorepo root, on the home machine that already has
-`VueUI/public/images/`:
+New catalog rows need new images. `extract:images` is incremental against R2,
+not just the local disk: it lists the bucket (with the R2 keys) or HEAD-checks
+the public host, so only images R2 does not have are fetched. Preview with:
+
+```bash
+npm run extract:images:plan
+```
+
+STOWiki's Cloudflare check usually blocks the Node extractor (a "Just a
+moment" page), even from a home IP. The practical path is the browser
+downloader:
+
+```bash
+npm run extract:images:browser-script   # writes Extractor/output/browser-download.js
+# paste it into DevTools on a stowiki.net tab, click "Pick images folder & start",
+# choose VueUI/public/images (or use "Save to Downloads instead", then:
+#   npm run images:import-downloads -- --from=<downloads folder>)
+npm run extract:images:offline          # index files on disk, stamp Infobox/TraySkill JSON
+```
+
+Full steps: [Extractor README](../Extractor/README.md#downloading-images-through-the-browser-when-cloudflare-blocks-node).
+Then sync and commit `Extractor/output/imageIndex.json`, `Infobox.json`, and
+`TraySkill.json`.
+
+From the monorepo root, on the home machine:
 
 ```bash
 npm run images:sync -- --dry-run
@@ -129,12 +164,10 @@ npm run images:sync
 write. `--dry-run` without those variables only inventories local files and
 prints the missing variable names (not their values).
 
-```bash
-npm run images:sync -- --delete
-```
-
-`--delete` removes remote objects under the five prefixes that are not on
-disk. It is off by default so a partial local tree cannot empty the bucket.
+**Do not use `--delete`.** It removes remote objects under the five prefixes
+that are not on disk. The home PC's local tree is nearly empty, so `--delete`
+would wipe almost the whole bucket. It is off by default for that reason; use
+it only from a complete local mirror of R2.
 A missing kind folder is not scanned and is not deleted. `NOTICE`, placeholder
 filenames, empty files, and unknown extensions are skipped.
 
@@ -159,8 +192,8 @@ send a CRC32 checksum header that R2 rejects. Re-runs upload only when the
 size or single-part MD5 ETag differs.
 
 After a home extract, `npm run extract:home` reminds you to sync images. Commit
-the JSON under `Extractor/output/`. Do not treat the image binaries as the
-thing to commit for hosting.
+the JSON under `Extractor/output/` and push; the GraphQL deploy imports it.
+The image binaries are never committed.
 
 ## 4. Point the frontend at the bucket
 
@@ -183,8 +216,9 @@ Redeploy so the build inlines it. Then check Ships, Collection, Loadout
 Builder, and trait pages. Placeholders still load from the Vue app
 (`/placeholders/...`), including when a wiki image 404s.
 
-Leave the variable unset to roll back to `/images` on the next build. The
-files are still in git until a later, separate removal.
+Leaving the variable unset would point the next build back at `/images`, but
+those files are no longer in git or in the deployed app, so that is not a
+working rollback. Fix the bucket or domain instead.
 
 ## 5. Cloudflare rules (manual)
 
@@ -267,25 +301,22 @@ checked May 5, 2026).
 
 - Modify response header: **Set static**
 - Header name: `X-Image-Credit`
-- Value: `© Cryptic Studios / Arc Games / Paramount - unofficial fan project`
+- Value: `Copyright Cryptic Studios / Arc Games / Paramount - unofficial fan project` (the live value; `©` also works since it is U+00A9, Latin-1)
 
 Set static adds the header or replaces one with the same name
 ([Response Header Transform Rules](https://developers.cloudflare.com/rules/transform/response-header-modification/),
-checked Sep 4, 2026). The `©` character is U+00A9 (Latin-1). This header does
-not change caching. Confirm with:
+checked Sep 4, 2026). This header does not change caching. Confirm with:
 
 ```bash
 curl -sI "https://img.aegisarray.com/ships/Fed_Ship_Achilles.png" | grep -i x-image-credit
 ```
 
-## Still manual after this repo change
+## Setup checklist (status Nov 22, 2026)
 
-1. Create the R2 bucket and API token. Leave `r2.dev` off.
-2. Move `aegisarray.com` onto Cloudflare (full setup on the Free plan) and
-   recreate the existing Porkbun records before cutting nameservers.
-3. Attach `img.aegisarray.com` to the bucket.
-4. Run `npm run images:sync` from the home machine.
-5. Check a few object URLs (`content-type`, `cache-control`, `cf-cache-status`).
-6. Set `VITE_IMAGE_BASE_URL` on VueUI and redeploy. Check the catalog pages.
-7. Add the WAF custom rule and the response header rule above.
-8. Done Oct 9, 2026: `VueUI/public/images/` removed from git and history, now gitignored.
+1. Done: R2 bucket and API token; `r2.dev` off.
+2. Done: `aegisarray.com` on Cloudflare (full setup); `img.aegisarray.com` attached to the bucket.
+3. Done: `npm run images:sync` from the home machine.
+4. Done: `VITE_IMAGE_BASE_URL` set on VueUI.
+5. Done: hotlink WAF rule (foreign Referer → 403) and the `X-Image-Credit` response header.
+6. Done Oct 9, 2026: `VueUI/public/images/` removed from git and history, now gitignored.
+7. Check: the "Cache image host" Cache Rule ([cloudflare-hardening.md](cloudflare-hardening.md#image-host)). Image responses still show `cf-cache-status: DYNAMIC`.

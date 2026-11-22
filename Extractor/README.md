@@ -6,8 +6,8 @@ Cargo gaps are filled at import, and Cargo stays the source of the committed JSO
 
 **Workflow**
 
-1. **Extract (manual or monthly home check, local)** — fetch wiki → commit `output/*.json`, then sync images to object storage (`npm run images:sync`)
-2. **Import (automatic / deploy)** — read committed JSON, merge `CatalogSupplement` rows → production DB
+1. **Extract (manual or monthly home check, local)** — fetch wiki → commit `output/*.json`, then sync images to object storage (`npm run images:sync`). If Cloudflare blocks Node, download images [through the browser](#downloading-images-through-the-browser-when-cloudflare-blocks-node).
+2. **Import (automatic, on deploy)** — GraphQL's Railway pre-deploy command (`npm run railway:predeploy`) reads the committed JSON, merges `CatalogSupplement` rows, and writes the production DB over the private network. See [`docs/railway-private-db.md`](../docs/railway-private-db.md).
 
 Production never hits STOWiki; it only imports JSON shipped in git. Run extract from a home/residential IP, not Railway.
 
@@ -19,7 +19,7 @@ Production never hits STOWiki; it only imports JSON shipped in git. Run extract 
 | **ShipExperimentalWeapons** | Yes (new hulls) | Only experimental ships missing from the sidecar JSON are scraped. Delete the sidecar to rebuild. `--force-refresh` does **not** re-scrape existing hulls. |
 | **Images** | Yes (files) | Skips files already under `VueUI/public/images/`; skips `imageIndex.json` rows marked `exists`/`downloaded` that the public image host (R2) still serves; skips titles already recorded missing/skipped. Only new, failed, or lost titles hit the wiki. `--force-images` re-queries and re-downloads. See [Images on a machine without the local image tree](#images-on-a-machine-without-the-local-image-tree). |
 | **Official images category** | Cached list | Incremental image runs reuse `OfficialImages.json`; `--force-images` re-lists the category. |
-| **Import / `linkRelations`** | N/A (no wiki) | Runs against committed JSON, then merges `CatalogSupplement`. Local `importState.json` (gitignored) hash-skips unchanged tables unless `--force-import`. A `CatalogSupplement` edit changes that hash, so the next import applies it without a new commit. |
+| **Import / `linkRelations`** | N/A (no wiki) | Runs against committed JSON, then merges `CatalogSupplement`. Per-table hashes skip unchanged tables unless `--force-import`: local runs keep them in `output/importState.json` (gitignored); Railway's `import:deploy` keeps them in the `ImportState` table. A `CatalogSupplement` edit changes that hash, so the next import applies it without a new commit. |
 
 There was no gap to “fix” for images — they were already file-level incremental. Cargo cannot be row-level incremental via the public Cargo API without fetching tables; the 24h gate plus the monthly home check is the intended skip policy.
 
@@ -154,7 +154,7 @@ npm run db:generate
 npm run db:migrate
 ```
 
-Use root `.env` for local DB + wiki credentials and `.env.production` for Railway.
+Use root `.env` for the local DB, wiki contact, and R2 sync keys. `.env.production` (gitignored) is only for the `*:prod` scripts, which reach production only while its TCP proxy is temporarily on. Railway itself injects `DATABASE_URL`.
 
 ## Usage
 
@@ -172,9 +172,13 @@ npm run extract:home -- --check-only
 
 # Images only (uses existing output/*.json)
 npm run extract:images
+npm run extract:images:plan              # what would be fetched, no requests
+npm run extract:images:browser-script    # DevTools downloader when Cloudflare blocks Node
+npm run extract:images:offline           # re-index files on disk, no requests
+npm run images:import-downloads -- --from=<dir>
 npm run extract -- --images-only --force-images
 
-# Publish local images to R2 (see docs/image-hosting.md)
+# Publish local images to R2 (see docs/image-hosting.md); never add --delete from a sparse tree
 npm run images:sync -- --dry-run
 npm run images:sync
 
@@ -258,8 +262,13 @@ Cargo `StarshipTraits` stores one row per specialization family. Improved and Su
 | `--force-images` | Re-query the wiki and re-download image files even if they already exist |
 | `--skip-images` | Cargo only |
 | `--images-only` | Images only (needs `output/*.json`) |
+| `--plan` | Images only: print the fetch plan; no wiki requests, no writes (`extract:images:plan`) |
+| `--browser-script[=path]` | Images only: write the plan as a DevTools downloader, default `output/browser-download.js` (`extract:images:browser-script`) |
+| `--no-fetch` / `--offline` | Images only: never contact the wiki; index files on disk (`extract:images:offline`) |
+| `--no-remote-check` | Skip the R2 / HTTP check; trust only local files and `imageIndex.json` |
+| `--image-base-url=URL` | Public image origin for HEAD checks when R2 credentials are not set |
 | `--force-import` | Re-import all JSON files (ignore hash skip) |
-| `--prod` | Load `.env.production` (used by `import:prod`) |
+| `--prod` | Load `.env.production` (used by `import:prod`; needs a temporary TCP proxy on production) |
 | `--deploy` | Railway pre-deploy mode (used by `import:deploy`): skip `.env` files, keep hashes in the `ImportState` table, exit non-zero if any table fails |
 | `--state=db` | Keep import hashes in the `ImportState` table instead of `output/importState.json` |
 | `--force` / `--check-only` | With `extract:home` only: always run / print decision without extracting |
@@ -272,7 +281,7 @@ From the monorepo root:
 npm run test:extractor
 ```
 
-Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier / reputation / set-bonus / traits supplement merge, the `CatalogSupplement` loader, import name dedupe, import progress formatting and throttling, and the monthly home-extract schedule gate.
+Node’s test runner covers wiki helpers, ship name lookup, experimental-weapon parsing, modifier / reputation / set-bonus / traits supplement merge, the `CatalogSupplement` loader, import name dedupe, import progress formatting and throttling, the monthly home-extract schedule gate, R2 / HTTP image presence checks, the browser downloader script, browser-download import, image sync, and the database-backed import state.
 
 ## Images
 
@@ -284,9 +293,9 @@ Catalog rows map to wiki files (`File:{Name} icon.png` for items/traits, Cargo `
 - `VueUI/public/images/ships/`
 - `VueUI/public/images/tray-skills/`
 
-`output/OfficialImages.json` and `output/imageIndex.json` record what was found. After the first full download, incremental extracts skip files already in `VueUI/public/images/` and skip titles already recorded as missing on the wiki. Only catalog rows with no local file (new items, or a previous failed download) hit the wiki. After image extract, resolved filenames are stamped onto `Infobox.json` and `TraySkill.json` as `image`. Re-import (`npm run import`) so the UI can turn that filename into `/images/{kind}/{filename}`, or `{VITE_IMAGE_BASE_URL}/{kind}/{filename}` when the image host is set. Missing wiki files stay as UI placeholders in `VueUI/public/placeholders/`. Use `--force-images` if a previously missing file was later added on the wiki.
+`output/OfficialImages.json` and `output/imageIndex.json` record what was found. After the first full download, incremental extracts skip files already in `VueUI/public/images/` and skip titles already recorded as missing on the wiki. Only catalog rows with no local file (new items, or a previous failed download) hit the wiki. After image extract, resolved filenames are stamped onto `Infobox.json` and `TraySkill.json` as `image`. Commit those JSON files and push (production imports on deploy; `npm run import` locally) so the UI can turn that filename into `/images/{kind}/{filename}`, or `{VITE_IMAGE_BASE_URL}/{kind}/{filename}` when the image host is set. Missing wiki files stay as UI placeholders in `VueUI/public/placeholders/`. Use `--force-images` if a previously missing file was later added on the wiki.
 
-Ship renders can be large; files over 8MB are skipped. Item/trait icons are tiny. The local tree is what extract writes. Publish it with `npm run images:sync` ([`docs/image-hosting.md`](../docs/image-hosting.md)). Those binaries are not required for the DB import. They remain in git until the bucket cutover; do not delete them in the same change as the URL switch.
+Ship renders can be large; files over 8MB are skipped. Item/trait icons are tiny. The local tree is what extract writes. Publish it with `npm run images:sync` ([`docs/image-hosting.md`](../docs/image-hosting.md)). Those binaries are not required for the DB import, and `VueUI/public/images/` is gitignored (only `NOTICE` is tracked). Production serves them from R2 (`https://img.aegisarray.com`).
 
 Game artwork and icons are © Cryptic Studios / Arc Games / DECA / Paramount; sourced from STOWiki; not covered by this repo's licenses; unofficial non-commercial fan site; removed on rights-holder request. See
 [`ATTRIBUTION.md`](../ATTRIBUTION.md) and [`VueUI/public/images/NOTICE`](../VueUI/public/images/NOTICE).
@@ -295,6 +304,6 @@ Game artwork and icons are © Cryptic Studios / Arc Games / DECA / Paramount; so
 
 `Extractor/output/*.json` **is tracked** so production deploys can import without extracting (including `ShipExperimentalWeapons.json`). Cargo corrections live in `CatalogSupplement`, not in committed supplement files.
 
-`output/importState.json`, `output/last-extract.json`, and `output/.wiki-session.json` are **local-only** (gitignored).
+`output/importState.json`, `output/last-extract.json`, `output/.wiki-session.json`, and `output/browser-download.js` are **local-only** (gitignored). Production import state lives in the database `ImportState` table.
 
 See the monorepo [README](../README.md) for workspace layout.
