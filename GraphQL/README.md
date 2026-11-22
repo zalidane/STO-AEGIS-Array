@@ -56,4 +56,4 @@ Logic lives in `src/logic/*.ts` with colocated `*.test.ts` files.
 
 ## Deploy
 
-Railway config: [`railway.toml`](railway.toml) (or the repo-root [`railway.toml`](../railway.toml), which is the same GraphQL service). Start migrates then runs this package; release migrates then imports committed JSON. See the [monorepo README](../README.md#railway-shared-monorepo).
+Railway settings live in the dashboard. The pre-deploy command `npm run railway:predeploy` migrates and imports committed JSON; start runs this package. See [docs/railway-private-db.md](../docs/railway-private-db.md). See the [monorepo README](../README.md#railway-shared-monorepo).

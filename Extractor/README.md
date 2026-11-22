@@ -91,7 +91,7 @@ npm run extract:home -- --check-only
 
 What runs when due: `extract --force-refresh` (full **Cargo** refresh; experimental-weapon sidecar and **images stay incremental** — no `--force-images`). `--force-refresh` is required so a fresh clone (JSON mtime = now) cannot skip the wiki via the 24h Cargo cache. After a successful extract, `Extractor/output/last-extract.json` is written (gitignored). If that file is missing, the check falls back to the newest Cargo JSON mtime.
 
-After a real run, review the diff, commit updated `Extractor/output/*.json`, sync images with `npm run images:sync`, push, then `npm run import:prod` (or rely on GraphQL `releaseCommand` after push). Image hosting: [`docs/image-hosting.md`](../docs/image-hosting.md).
+After a real run, review the diff, commit updated `Extractor/output/*.json`, sync images with `npm run images:sync`, push. The GraphQL pre-deploy command (`npm run railway:predeploy`) imports the changed JSON on Railway; see [`docs/railway-private-db.md`](../docs/railway-private-db.md). `npm run import:prod` from the PC only works while the database has a public TCP proxy. Image hosting: [`docs/image-hosting.md`](../docs/image-hosting.md).
 
 ### Schedule examples
 
@@ -185,8 +185,11 @@ npm run extract -- --skip-images
 npm run import
 npm run import -- --force-import
 
-# Import committed JSON into production (Railway)
+# Import committed JSON into production from the PC (needs the DB's public TCP proxy)
 npm run import:prod
+
+# What Railway's GraphQL pre-deploy runs (platform DATABASE_URL, hashes in the DB)
+npm run import:deploy
 ```
 
 While each table is written, import prints a progress line with the table name, a bar, done/total rows, percent, and elapsed time. The timer keeps updating even if no rows advance (for example a database lock). After the bar finishes, the existing summary lines still print (`imported N records`, and the JSON-vs-database count warning when it applies). `Resolving relationships...` starts with a spinner, then a bar once the work is counted. In a terminal the line rewrites in place; in CI or redirected logs it prints a plain line about every 10%, plus a heartbeat if a table stalls.
@@ -257,6 +260,8 @@ Cargo `StarshipTraits` stores one row per specialization family. Improved and Su
 | `--images-only` | Images only (needs `output/*.json`) |
 | `--force-import` | Re-import all JSON files (ignore hash skip) |
 | `--prod` | Load `.env.production` (used by `import:prod`) |
+| `--deploy` | Railway pre-deploy mode (used by `import:deploy`): skip `.env` files, keep hashes in the `ImportState` table, exit non-zero if any table fails |
+| `--state=db` | Keep import hashes in the `ImportState` table instead of `output/importState.json` |
 | `--force` / `--check-only` | With `extract:home` only: always run / print decision without extracting |
 
 ## Tests
