@@ -442,3 +442,13 @@ model BuildFeatured {
 
   @@index([buildId])
 }
+
+/// Last imported content hash per Cargo table (plus ShipExperimentalWeapons).
+/// Lets the Railway pre-deploy import skip tables whose committed JSON and
+/// CatalogSupplement rows have not changed. Local runs keep using
+/// Extractor/output/importState.json unless `--state=db` is passed.
+model ImportState {
+  table        String   @id
+  hash         String
+  lastImported DateTime
+}

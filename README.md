@@ -116,19 +116,20 @@ After changing `GraphQL/src/schema/**/*.graphql` or `VueUI/src/graphql/queries/*
 
 **Deploy from GitHub creates one service** (named after the repo). Railway will not auto-add GraphQL / VueUI / Extractor as separate services for this workspace layout. You configure services by hand.
 
-`railway.toml` at the repo root defaults that first service to **GraphQL**. Sub-app configs live at `/GraphQL/railway.toml`, `/VueUI/railway.toml`, `/Extractor/railway.toml`.
+Railway settings live in the dashboard (the old `railway.toml` files were removed).
 
-### Fix the service you already created (GraphQL)
+### GraphQL service
 
 1. Open the `STO-AEGIS-Array` service → **Settings**
 2. **Root Directory**: leave empty / `/` (required so workspaces work)
-3. **Config as Code**: `/railway.toml` (or `/GraphQL/railway.toml` — same GraphQL deploy)
-4. **Variables** → add (after Postgres is in the project):
-   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
-5. **Networking** → Generate domain
-6. Redeploy
+3. **Build command**: `npm install && npm run generate -w @sto-aegis/database`
+4. **Pre-deploy command**: `npm run railway:predeploy` (waits for the database, runs `prisma migrate deploy`, then imports changed committed JSON over the private network; a failed import stops the deploy). Pre-deploy timeout: `900`.
+5. **Start command**: `npm run start -w @sto-aegis/graphql`
+6. **Variables** → `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (Postgres in the same project, private network)
+7. **Networking** → Generate domain
+8. Redeploy
 
-GraphQL **start** runs `prisma migrate deploy` before the API. **Release** runs migrate again, then `import:force`. Railway does not migrate on its own — if Config as Code is unset, those commands never run.
+Moving Postgres into this project with no public TCP proxy, plus rollback: [docs/railway-private-db.md](docs/railway-private-db.md).
 
 Rename the service to `GraphQL` if you want.
 
@@ -145,18 +146,13 @@ Rename the service to `GraphQL` if you want.
    - `VITE_RAILWAY_REFERRAL_CODE` = Railway affiliate code only, not a full URL (optional). Unset or empty hides the footer credit. When set, the footer links "Hosted on Railway" to `https://railway.com?referralCode=<VITE_RAILWAY_REFERRAL_CODE>`.
 6. Generate domain → Deploy
 
-### Add Extractor import (optional Cron / one-shot)
+### Separate Import service (optional)
 
-1. **+ Create** → Empty service (or Cron Job) → name it `Import`
-2. Same repo, Root Directory `/`, Config as Code: `/Extractor/railway.toml`
-3. Variables: `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`
-4. Deploy (exits after import; restart policy is `NEVER`)
-
-GraphQL’s `releaseCommand` already runs `import:force`, so a separate Import service is optional.
+Not needed while GraphQL's pre-deploy command imports. If imports ever get too slow to block GraphQL deploys, add an empty service from the same repo (Root Directory `/`, same build command), start command `npm run db:wait && npm run db:migrate && npm run import:deploy`, restart policy **Never**, watch paths `/Extractor/output/**`, and `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`; then clear GraphQL's pre-deploy import.
 
 ### Postgres
 
-Add Railway Postgres to the project if it is not already there, then reference its `DATABASE_URL` as above. Use the **private** URL between services when possible.
+Keep Postgres in the same project and reference its private `DATABASE_URL` as above; the TCP proxy can stay off. See [docs/railway-private-db.md](docs/railway-private-db.md).
 
 ## License
 

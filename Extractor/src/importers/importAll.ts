@@ -3,7 +3,12 @@ import { createPrismaClient } from "@sto-aegis/database";
 
 import { importMappings } from "./importMappings.js";
 import { importTable } from "./importTable.js";
-import { loadState, saveState } from "./importState.js";
+import {
+  dbStateStore,
+  fileStateStore,
+  type ImportStateDelegate,
+  type ImportStateStore,
+} from "./importState.js";
 import { getFileHash } from "../extractors/getFileHash.js";
 import { linkRelations } from "./linkRelations.js";
 import { SHIP_EXPERIMENTAL_WEAPONS_PATH } from "../extractors/extractShipExperimentalWeapons.js";
@@ -75,13 +80,51 @@ async function tableImportHash(
   return parts.join(":");
 }
 
-export async function importAll(forceImport = false) {
+export interface ImportAllOptions {
+  /** Where per-table hashes live. Default `file` (output/importState.json). */
+  stateStore?: "file" | "db";
+}
+
+export interface ImportAllResult {
+  imported: string[];
+  skipped: string[];
+  failed: string[];
+}
+
+function resolveStateStore(
+  prisma: PrismaClient,
+  kind: "file" | "db",
+): ImportStateStore {
+  if (kind === "file") return fileStateStore;
+  const model = (prisma as unknown as Record<string, unknown>)["importState"];
+  if (!model) {
+    throw new Error(
+      "Prisma model importState not found. Run `npm run db:generate` after pulling the ImportState migration.",
+    );
+  }
+  return dbStateStore(model as ImportStateDelegate);
+}
+
+export async function importAll(
+  forceImport = false,
+  options: ImportAllOptions = {},
+): Promise<ImportAllResult> {
   // Create client only after env is loaded (see main.ts loadEnv).
   const { prisma, pool } = createPrismaClient();
+  const result: ImportAllResult = { imported: [], skipped: [], failed: [] };
 
   try {
-    const state = await loadState();
+    const store = resolveStateStore(prisma, options.stateStore ?? "file");
+    const state = await store.load();
+    if (store.kind === "db") {
+      console.log(
+        `Import state: database (${Object.keys(state).length} table hash(es) on record)`,
+      );
+    }
     let anyImported = false;
+    // Hashes are recorded only after linkRelations succeeds, so a failed
+    // relink is retried on the next run instead of being skipped as unchanged.
+    const pending: [string, { hash: string; lastImported: string }][] = [];
 
     for (const table of IMPORT_ORDER) {
       const config = importMappings[table];
@@ -96,12 +139,14 @@ export async function importAll(forceImport = false) {
         console.error(
           `${table}: could not read CatalogSupplement (${error.message}). Apply database migrations before import.`,
         );
+        result.failed.push(table);
         continue;
       }
       const previousHash = state[table]?.hash;
 
       if (!forceImport && currentHash === previousHash) {
         console.log(`${table}: unchanged, skipping`);
+        result.skipped.push(table);
         continue;
       }
 
@@ -114,15 +159,17 @@ export async function importAll(forceImport = false) {
 
       if (!imported) {
         console.error(`${table}: import failed — state not updated`);
+        result.failed.push(table);
         continue;
       }
 
       anyImported = true;
-      state[table] = {
+      result.imported.push(table);
+      const entry = {
         hash: currentHash,
         lastImported: new Date().toISOString(),
       };
-      await saveState(state);
+      pending.push([table, entry]);
     }
 
     const experimentalHash = existsSync(SHIP_EXPERIMENTAL_WEAPONS_PATH)
@@ -136,13 +183,25 @@ export async function importAll(forceImport = false) {
       console.log("Resolving relationships...");
       await linkRelations(prisma);
       if (experimentalHash != null) {
-        state.ShipExperimentalWeapons = {
+        const entry = {
           hash: experimentalHash,
           lastImported: new Date().toISOString(),
         };
-        await saveState(state);
+        pending.push(["ShipExperimentalWeapons", entry]);
       }
     }
+
+    for (const [table, entry] of pending) {
+      state[table] = entry;
+      await store.save(table, entry, state);
+    }
+
+    console.log(
+      `Import summary: ${result.imported.length} imported, ${result.skipped.length} unchanged, ${result.failed.length} failed${
+        result.failed.length ? ` (${result.failed.join(", ")})` : ""
+      }`,
+    );
+    return result;
   } finally {
     await prisma.$disconnect();
     await pool.end();

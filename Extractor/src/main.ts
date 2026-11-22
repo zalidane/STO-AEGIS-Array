@@ -56,6 +56,12 @@ function parseArgs(argv: string[]) {
         .find((a) => a.startsWith("--image-base-url="))
         ?.slice("--image-base-url=".length) ?? null,
     prod: argv.includes("--prod"),
+    // Railway pre-deploy: platform env only, hashes in the database, and a
+    // non-zero exit when any table fails so the deploy stops.
+    deploy: argv.includes("--deploy"),
+    stateStore: (argv.includes("--deploy") || argv.includes("--state=db")
+      ? "db"
+      : "file") as "file" | "db",
   };
 }
 
@@ -209,10 +215,20 @@ function optionalR2Store(): ObjectStore | null {
   }
 }
 
-async function runImport(forceImport: boolean) {
+async function runImport(
+  forceImport: boolean,
+  stateStore: "file" | "db",
+  strict: boolean,
+) {
   // Dynamic import so createPrismaClient runs after loadEnv().
   const { importAll } = await import("./importers/importAll.js");
-  await importAll(forceImport);
+  const result = await importAll(forceImport, { stateStore });
+  if (strict && result.failed.length > 0) {
+    console.error(
+      `Import failed for: ${result.failed.join(", ")}. Exiting non-zero so the deploy stops; fix the JSON or database and redeploy.`,
+    );
+    process.exitCode = 1;
+  }
 }
 
 async function main() {
@@ -229,9 +245,16 @@ async function main() {
     remoteCheck,
     imageBaseUrl,
     prod,
+    deploy,
+    stateStore,
   } = parseArgs(process.argv.slice(2));
 
-  loadEnv(prod);
+  if (deploy) {
+    // Railway injects DATABASE_URL; never let a stray .env file override it.
+    if (!process.env.NODE_ENV) process.env.NODE_ENV = "production";
+  } else {
+    loadEnv(prod);
+  }
 
   if (command === "extract") {
     if (prod) {
@@ -257,17 +280,19 @@ async function main() {
     throw new Error(
       prod
         ? "DATABASE_URL missing. Set it in monorepo root .env.production or the environment."
-        : "DATABASE_URL missing. Set it in monorepo root .env or the environment.",
+        : deploy
+          ? "DATABASE_URL missing. On Railway set it on this service to ${{Postgres.DATABASE_URL}}."
+          : "DATABASE_URL missing. Set it in monorepo root .env or the environment.",
     );
   }
 
   console.log(
-    `Importing into ${prod ? "production" : "local"} database host: ${
+    `Importing into ${deploy ? "deploy" : prod ? "production" : "local"} database host: ${
       new URL(process.env.DATABASE_URL).host
     }`,
   );
 
-  await runImport(forceImport);
+  await runImport(forceImport, stateStore, deploy);
 }
 
 main().catch((err) => {
