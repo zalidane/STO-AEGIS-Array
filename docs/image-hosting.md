@@ -14,9 +14,11 @@ R2 is the complete copy.
 
 Checked Nov 22, 2026: a sample object returns 200 with `image/png`, the sync's
 `Cache-Control`, and the `X-Image-Credit` header; a foreign Referer gets 403
-(hotlink rule active). Responses showed `cf-cache-status: DYNAMIC`, so the
-"Cache image host" rule in [cloudflare-hardening.md](cloudflare-hardening.md)
-does not appear to be caching yet.
+(hotlink rule active). GET requests return `cf-cache-status: HIT` with a
+multi-day `Age`, so the "Cache image host" rule in
+[cloudflare-hardening.md](cloudflare-hardening.md) is caching. Test with GET
+(`curl -s -o /dev/null -D - <url>`), not `curl -I`: HEAD requests always show
+`DYNAMIC`.
 
 Object keys match the path after `/images`:
 
@@ -319,4 +321,4 @@ curl -sI "https://img.aegisarray.com/ships/Fed_Ship_Achilles.png" | grep -i x-im
 4. Done: `VITE_IMAGE_BASE_URL` set on VueUI.
 5. Done: hotlink WAF rule (foreign Referer → 403) and the `X-Image-Credit` response header.
 6. Done Oct 9, 2026: `VueUI/public/images/` removed from git and history, now gitignored.
-7. Check: the "Cache image host" Cache Rule ([cloudflare-hardening.md](cloudflare-hardening.md#image-host)). Image responses still show `cf-cache-status: DYNAMIC`.
+7. Done: the "Cache image host" Cache Rule ([cloudflare-hardening.md](cloudflare-hardening.md#image-host)). GET responses show `cf-cache-status: HIT`.
