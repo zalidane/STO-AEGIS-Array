@@ -22,7 +22,7 @@ GraphQL/src/
 ├── server.ts             # Yoga HTTP server
 ├── schema/               # SDL (*.graphql), merged at startup
 ├── resolvers/            # Query + type resolvers
-└── logic/                # Search ranking, HTML decode, ship name formatting
+└── logic/                # Search ranking, HTML decode, ship names, shared builds, STO news, request logging
 ```
 
 Resolvers wrap string fields with HTML-entity decoding so wiki Cargo values such as `Mat&#039;Ha` display as `Mat'Ha`.
@@ -39,6 +39,10 @@ List / by-id / by-name (or compound key) for:
 | TraySkill, Mastery, Reputation, Modifier, SetBonus, ShipType | matching `*s` / by id / by name |
 | GwObtain / SwObtain | ground / space obtain tables |
 | Search | `search(text:)` |
+| Shared builds | `sharedBuild(code:)`, `publicBuilds(...)`, `buildOfTheDay`, `catalogUsage(...)` |
+| STO news | `stoNews(limit:)` (Arc Games RSS, falling back to Arc's JSON news API; cached in memory) |
+
+Mutations (shared builds): `publishBuild`, `updateBuild`, and `unlistBuild`. Publishing returns an `editToken`; only its hash is stored (`Build.editTokenHash`), and later edits or unlisting need that token. Builds are keyed by ship **name**, not Cargo id, so a re-import cannot orphan them.
 
 `search` matches ships, traits, starship traits, tray skills, reputations, set bonuses, and items. Item hits split **identity** fields (name, type, rarity, …) from **body** copy (Text/Head/Subhead 1–9) so a weapon name match does not hide consoles that only mention the damage type in the infobox body.
 
@@ -56,4 +60,4 @@ Logic lives in `src/logic/*.ts` with colocated `*.test.ts` files.
 
 ## Deploy
 
-Railway settings live in the dashboard. The pre-deploy command `npm run railway:predeploy` migrates and imports committed JSON; start runs this package. See [docs/railway-private-db.md](../docs/railway-private-db.md). See the [monorepo README](../README.md#railway-shared-monorepo).
+Railway service `GraphQL` (settings in the dashboard, no `railway.toml`). The pre-deploy command `npm run railway:predeploy` waits for Postgres, migrates, and imports changed committed JSON over the private network; the start command runs this package with `tsx` on `PORT` (Railway routes port 8080). `DATABASE_URL` = `${{Postgres.DATABASE_URL}}`. Public URL: `https://sto-aegis-array-production.up.railway.app/graphql`. Details: [docs/railway-private-db.md](../docs/railway-private-db.md) and the [monorepo README](../README.md#railway-shared-monorepo).

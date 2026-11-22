@@ -1,8 +1,8 @@
 # Vue UI
 
-Vue 3 catalog, collection, and ship loadout builder for STO AEGIS Array. Talks to the GraphQL API via Apollo; collection and builds persist in the browser.
+Vue 3 catalog, collection, and ship loadout builder for STO AEGIS Array. Talks to the GraphQL API via Apollo. Collection and saved loadouts persist in the browser; published (shared) builds are stored through the API.
 
-**Live site:** [https://vueui-production.up.railway.app](https://vueui-production.up.railway.app)
+**Live site:** [https://aegisarray.com](https://aegisarray.com)
 
 
 ## Run
@@ -17,7 +17,7 @@ npm run dev:vue           # http://localhost:5173 (Vite HMR)
 
 The API URL defaults to `http://localhost:4000/graphql`. Override with `VITE_GRAPHQL_URL` (required at **build** time on Railway).
 
-Wiki image URLs default to `/images/...`. Set `VITE_IMAGE_BASE_URL` (for example `https://img.aegisarray.com`, no trailing slash) to load them from object storage. It is inlined at **build** time. Leave it unset for local dev. See [`docs/image-hosting.md`](../docs/image-hosting.md).
+Wiki image URLs default to `/images/...`. Set `VITE_IMAGE_BASE_URL` (production: `https://img.aegisarray.com`, no trailing slash) to load them from object storage. It is inlined at **build** time. Leave it unset for local dev: the image host's hotlink rule blocks `localhost` referers. See [`docs/image-hosting.md`](../docs/image-hosting.md).
 
 The Discord invite defaults to `https://discord.gg/2jTgb9HnY`. Set `VITE_DISCORD_URL` to replace it. `VITE_RAILWAY_REFERRAL_CODE` is the affiliate code only. When it is set, the footer shows "Hosted on Railway" linking to `https://railway.com?referralCode=<code>`. When it is unset or blank, that line is not rendered. Both are inlined at **build** time on the **VueUI** service.
 
@@ -34,6 +34,8 @@ The Discord invite defaults to `https://discord.gg/2jTgb9HnY`. Set `VITE_DISCORD
 - **Search** — `/search` tabs over GraphQL `search(text:)` (name vs item body-text hits)
 - **Collection** — captains, owned ships/items/traits, bind scope; stored in `localStorage` (not the API)
 - **Build** — `/ships/:id/loadout` seats gear on hull slots, captain traits, quality/mark, set bonuses, granted unique console / experimental weapon
+- **Share** — publish a loadout to get a `/b/:code` link (unlisted or listed); `/builds` browses listed builds with a build of the day
+- **Also** — ship advanced search and compare (`/ships/advanced`, `/ships/compare`), pack simulator, official STO news (`/news`), About and attributions pages
 
 Hull slots use wiki Tac/Eng/Sci counts plus optional extras (T5-U career console, T5-X/X2 or T6-X/X2, Commander Miracle Worker universal). Each loadout can hide or lock unused extras and hide quality/mark/suffix pickers. Universal consoles never take suffix mods; career consoles do when listed in Modifiers `available`.
 
@@ -50,6 +52,8 @@ VueUI/src/
 ├── stores/               # Pinia (calls logic + repository)
 ├── graphql/queries/      # Operations (hand-written)
 └── graphql/generated/    # Codegen output — do not edit
+
+VueUI/server/             # vite dev/preview plugin: static-host policy (404 for dotfiles, cache headers)
 ```
 
 ## GraphQL client types
@@ -76,4 +80,4 @@ They are © Cryptic Studios / Arc Games / DECA / Paramount; sourced from STOWiki
 
 ## Deploy
 
-Railway config: [`railway.toml`](railway.toml). On the **VueUI** service, at build time, set `VITE_GRAPHQL_URL`. Set `VITE_IMAGE_BASE_URL` only after the image bucket is verified. Optionally set `VITE_DISCORD_URL` (unset keeps `https://discord.gg/2jTgb9HnY`) and `VITE_RAILWAY_REFERRAL_CODE` (unset hides the footer credit; the link format is `https://railway.com?referralCode=<code>`). See the [monorepo README](../README.md#railway-shared-monorepo).
+Railway service `VueUI` (settings in the dashboard, no `railway.toml`): build `npm install && npm run build-only -w @sto-aegis/vue-ui`, start `npm run start -w @sto-aegis/vue-ui` (`vite preview`), watch paths `/VueUI/**`, `/package.json`, `/package-lock.json`. Domains: `aegisarray.com`, `www.aegisarray.com`, `vueui-production.up.railway.app`. Build-time variables: `VITE_GRAPHQL_URL` (`https://${{GraphQL.RAILWAY_PUBLIC_DOMAIN}}/graphql`) and `VITE_IMAGE_BASE_URL` (`https://img.aegisarray.com`). Optionally set `VITE_DISCORD_URL` (unset keeps `https://discord.gg/2jTgb9HnY`) and `VITE_RAILWAY_REFERRAL_CODE` (unset hides the footer credit; the link format is `https://railway.com?referralCode=<code>`). See the [monorepo README](../README.md#railway-shared-monorepo).

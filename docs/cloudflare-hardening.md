@@ -9,6 +9,14 @@ rule, and the image credit header.
 
 Checked against Cloudflare docs on Nov 5, 2026.
 
+**Live check (Nov 22, 2026):** `/notifications/.env` on `aegisarray.com` returns
+403 (probe rule active); a hashed `/assets/` file returns `immutable` with
+`cf-cache-status: HIT`; `/` returns `max-age=0` and `CDN-Cache-Control:
+no-store`. Images on `img.aegisarray.com` return `cf-cache-status: HIT` on GET
+with a multi-day `Age`, so the [Image host](#image-host) Cache Rule works.
+Check with GET, not `curl -I`: Cloudflare reports HEAD requests as `DYNAMIC`
+even when the object is cached.
+
 ## Free plan limits
 
 | Feature | Free plan |
