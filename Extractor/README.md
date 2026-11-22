@@ -158,12 +158,14 @@ Use root `.env` for the local DB, wiki contact, and R2 sync keys. `.env.producti
 
 ## Usage
 
+Root `extract`, `extract:images`, and `import*` scripts do not forward extra flags (`npm run extract -- --skip-images` is silently ignored). Use the workspace script, `npm run extract -w @sto-aegis/extractor -- <flags>`, as below. `extract:home`, `extract:images:plan` / `:browser-script` / `:offline`, `images:import-downloads`, and `images:sync` do forward. See [Passing flags](../README.md#passing-flags).
+
 ```bash
 # from monorepo root
 
 # Cargo tables + catalog images (slow and polite on purpose)
 npm run extract
-npm run extract -- --force-refresh
+npm run extract:force                                   # --force-refresh
 
 # Monthly home check (no-op if last extract < ~1 month)
 npm run extract:home
@@ -176,18 +178,18 @@ npm run extract:images:plan              # what would be fetched, no requests
 npm run extract:images:browser-script    # DevTools downloader when Cloudflare blocks Node
 npm run extract:images:offline           # re-index files on disk, no requests
 npm run images:import-downloads -- --from=<dir>
-npm run extract -- --images-only --force-images
+npm run extract -w @sto-aegis/extractor -- --images-only --force-images
 
 # Publish local images to R2 (see docs/image-hosting.md); never add --delete from a sparse tree
 npm run images:sync -- --dry-run
 npm run images:sync
 
 # Cargo only
-npm run extract -- --skip-images
+npm run extract -w @sto-aegis/extractor -- --skip-images
 
 # Import committed JSON into local DB
 npm run import
-npm run import -- --force-import
+npm run import:force                                    # --force-import
 
 # Import committed JSON into production from the PC (needs the DB's public TCP proxy)
 npm run import:prod
